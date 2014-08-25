@@ -21,4 +21,4 @@ class Account(models.Model):
     money = models.DecimalField(max_digits=7, decimal_places=3)
 
     def __unicode__(self):
-        return self.owner.name, "("+self.bar.id+")"
+        return self.owner.name + " ("+self.bar.id+")"
