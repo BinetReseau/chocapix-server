@@ -2,9 +2,9 @@ bars-django
 ===========
 Run:
 
-pip install djangorestframework
+pip install djangorestframework markdown
 
-pip install markdown
+pip install django-extensions Werkzeug
 
 
 python manage.py syncdb
