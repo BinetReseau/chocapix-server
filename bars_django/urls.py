@@ -14,10 +14,11 @@ for (name, model) in {
 			'account':Account,
 			'item':Item,
 			'accountoperation':AccountOperation,
-			'itemoperation':ItemOperation,
-			'transaction':Transaction
+			'itemoperation':ItemOperation
 		}.items():
 	router.register(name, type("ViewSet", (viewsets.ModelViewSet,), {"model":model}))
+
+router.register(r'transaction', TransactionViewSet)
 
 
 
