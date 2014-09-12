@@ -1,5 +1,7 @@
 from django.db import models
+from rest_framework import viewsets, routers, mixins, status
 from rest_framework import serializers
+from django.core.exceptions import ValidationError
 
 
 class User(models.Model):
@@ -72,3 +74,49 @@ class ItemOperation(models.Model):
 class TransactionSerializer(serializers.ModelSerializer):
     class Meta:
         model = Transaction
+
+
+class BuyTransactionSerializer(TransactionSerializer):
+    item = serializers.PrimaryKeyRelatedField(queryset=Item.objects.all(), required=False)
+    qty = serializers.DecimalField(max_digits=7, decimal_places=3, required=False)
+
+    def save_object(self, t, **kwargs):
+        super(BuyTransactionSerializer, self).save_object(t, **kwargs)
+
+        t.itemoperation_set.create(
+            item=t.item,
+            delta=t.qty)
+        t.accountoperation_set.create(
+            account=Account.objects.get(owner=t.author, bar=t.bar),
+            delta=t.qty*t.item.price)
+
+    def to_native(self, transaction):
+        obj = super(BuyTransactionSerializer, self).to_native(transaction)
+
+        if transaction is None:
+            return obj
+
+        try:
+            if len(transaction.itemoperation_set.all()) != 1:
+                raise serializers.ValidationError("")
+            iop = transaction.itemoperation_set.all()[0]
+            obj["item"] = iop.item.id
+            obj["qty"] = abs(iop.delta)
+
+            if len(transaction.accountoperation_set.all()) != 1:
+                raise serializers.ValidationError("")
+            if transaction.accountoperation_set.all()[0].account.owner != transaction.author:
+                raise serializers.ValidationError("")
+
+        except serializers.ValidationError:
+            obj["type"] = ""
+            # return obj
+        else:
+            obj["type"] = transaction.type.title() + "Transaction"
+
+        return obj
+
+class TransactionViewSet(mixins.CreateModelMixin, mixins.RetrieveModelMixin,
+                           mixins.ListModelMixin, viewsets.GenericViewSet):
+    queryset = Transaction.objects.all()
+    serializer_class = BuyTransactionSerializer
