@@ -1,13 +1,6 @@
 from django.db import models
+from rest_framework import serializers
 
-
-class Bar(models.Model):
-    id = models.CharField(max_length=50, primary_key=True)
-    name = models.CharField(max_length=100)
-    last_modified = models.DateTimeField(auto_now=True)
-
-    def __unicode__(self):
-        return self.id
 
 class User(models.Model):
     login = models.CharField(max_length=50, unique=True)
@@ -21,7 +14,24 @@ class User(models.Model):
     def __unicode__(self):
         return self.name
 
+class UserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ('login', 'name', 'pseudo', 'last_modified')
+        write_only_fields = ('password',)
+
+
+class Bar(models.Model):
+    id = models.CharField(max_length=50, primary_key=True)
+    name = models.CharField(max_length=100)
+    last_modified = models.DateTimeField(auto_now=True)
+
+    def __unicode__(self):
+        return self.id
+
 class Account(models.Model):
+    class Meta:
+        unique_together = (("bar", "owner"))
     bar = models.ForeignKey(Bar)
     owner = models.ForeignKey(User)
     money = models.DecimalField(max_digits=7, decimal_places=3)
@@ -40,6 +50,7 @@ class Item(models.Model):
     def __unicode__(self):
         return self.name
 
+
 class Transaction(models.Model):
     bar = models.ForeignKey(Bar)
     author = models.ForeignKey(User)
@@ -56,3 +67,8 @@ class ItemOperation(models.Model):
     transaction = models.ForeignKey(Transaction)
     item = models.ForeignKey(Item)
     delta = models.DecimalField(max_digits=7, decimal_places=3)
+
+    
+class TransactionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Transaction
