@@ -12,7 +12,10 @@ for (name, model) in {
 			'user':User,
 			'bar':Bar,
 			'account':Account,
-			'item':Item
+			'item':Item,
+			'accountoperation':AccountOperation,
+			'itemoperation':ItemOperation,
+			'transaction':Transaction
 		}.items():
 	router.register(name, type("ViewSet", (viewsets.ModelViewSet,), {"model":model}))
 

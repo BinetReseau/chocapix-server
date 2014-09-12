@@ -39,3 +39,20 @@ class Item(models.Model):
 
     def __unicode__(self):
         return self.name
+
+class Transaction(models.Model):
+    bar = models.ForeignKey(Bar)
+    author = models.ForeignKey(User)
+    type = models.CharField(max_length=25)
+    timestamp = models.DateTimeField(auto_now_add=True)
+    canceled = models.BooleanField()
+    last_modified = models.DateTimeField(auto_now=True)
+class AccountOperation(models.Model):
+    transaction = models.ForeignKey(Transaction)
+    account = models.ForeignKey(Account)
+    delta = models.DecimalField(max_digits=7, decimal_places=3)
+
+class ItemOperation(models.Model):
+    transaction = models.ForeignKey(Transaction)
+    item = models.ForeignKey(Item)
+    delta = models.DecimalField(max_digits=7, decimal_places=3)
