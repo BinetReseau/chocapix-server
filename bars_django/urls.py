@@ -4,21 +4,17 @@ from django.contrib import admin
 admin.autodiscover()
 
 
-from rest_framework import viewsets, routers
-from bars_api.models import User, Account, Bar
+from rest_framework import viewsets, routers, mixins, status
+from bars_api.models import *
 
 router = routers.DefaultRouter()
-class UserViewSet(viewsets.ModelViewSet):
-    model = User
-router.register(r'users', UserViewSet)
-
-class AccountViewSet(viewsets.ModelViewSet):
-    model = Account
-router.register(r'accounts', AccountViewSet)
-
-class BarViewSet(viewsets.ModelViewSet):
-    model = Bar
-router.register(r'bars', BarViewSet)
+for (name, model) in {
+			'user':User,
+			'bar':Bar,
+			'account':Account,
+			'item':Item
+		}.items():
+	router.register(name, type("ViewSet", (viewsets.ModelViewSet,), {"model":model}))
 
 
 
