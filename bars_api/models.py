@@ -8,6 +8,7 @@ class VirtualField(fields.Field):
     type_name = 'VirtualField'
     type_label = 'virtual'
     label = 'virtual'
+    source = ''
 
     def __init__(self, value):
         self.value = value
@@ -98,7 +99,7 @@ class Transaction(models.Model):
     author = models.ForeignKey(User)
     type = models.CharField(max_length=25)
     timestamp = models.DateTimeField(auto_now_add=True)
-    canceled = models.BooleanField()
+    canceled = models.BooleanField(default = False)
     last_modified = models.DateTimeField(auto_now=True)
 class AccountOperation(models.Model):
     transaction = models.ForeignKey(Transaction)
