@@ -1,2 +1,2 @@
-python manage.py dumpscript bars_api > script/dbdump.py
+python manage.py dumpscript bars_api > scripts/dbdump.py
 
