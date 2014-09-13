@@ -101,6 +101,42 @@ class Transaction(models.Model):
     timestamp = models.DateTimeField(auto_now_add=True)
     canceled = models.BooleanField(default = False)
     last_modified = models.DateTimeField(auto_now=True)
+
+    # def clean(self):
+    #     error = ValidationError("Invalid '%s' transaction (id=%s)"%(self.type, self.id))
+    #     try:
+    #         if self.type in ["buy", "throw"]:
+    #             if len(self.itemoperation_set.all()) != 1:
+    #                 raise error
+
+    #         if self.type in ["throw"]:
+    #             if len(self.accountoperation_set.all()) != 0:
+    #                 raise error
+
+    #         if self.type in ["buy"]:
+    #             if len(self.accountoperation_set.all()) != 1:
+    #                 raise error
+    #             if self.accountoperation_set.all()[0].account.owner != self.author:
+    #                 raise error
+
+    #         if self.type in ["give"]:
+    #             if len(self.accountoperation_set.all()) != 2:
+    #                 raise error
+    #             from_account = self.accountoperation_set.all()[0]
+    #             to_account = self.accountoperation_set.all()[1]
+    #             if from_account.delta > 0:
+    #                 from_account, to_account = to_account, from_account
+    #             if from_account.delta != -to_account.delta:
+    #                 raise error
+    #             if from_account.owner != self.author:
+    #                 raise error
+
+    #         if self.type in ["appro", "inventory"]:
+    #             pass
+    #     except ValidationError:
+    #         self.type=""
+
+
 class AccountOperation(models.Model):
     transaction = models.ForeignKey(Transaction)
     account = models.ForeignKey(Account)
@@ -112,19 +148,78 @@ class ItemOperation(models.Model):
     delta = models.DecimalField(max_digits=7, decimal_places=3)
 
 
-class TransactionSerializer(serializers.ModelSerializer):
+
+class BaseTransactionSerializer(serializers.ModelSerializer):
     class Meta:
         model = Transaction
 
     def to_native(self, transaction):
         fields = self.fields
         self.fields = {k:v for k,v in self.fields.items() if k in ('id', 'bar', 'author', 'type', 'timestamp', 'last_modified', 'canceled')}
-        obj = super(TransactionSerializer, self).to_native(transaction)
+        obj = super(BaseTransactionSerializer, self).to_native(transaction)
         self.fields = fields
         return obj
 
 
-class BuyTransactionSerializer(TransactionSerializer):
+    # def to_native(self, transaction):
+    #     if transaction is None:
+    #         return super(TransactionSerializer, self).to_native(transaction)
+
+    #     # try:
+    #     #     transaction.clean()
+    #     # except ValidationError as e:
+    #     #     raise serializers.ValidationError(e.message_dict)
+    #     obj = super(TransactionSerializer, self).to_native(transaction)
+
+    #     try:
+    #         if transaction.type in ["buy", "throw"]:
+    #             if len(transaction.itemoperation_set.all()) != 1:
+    #                 raise serializers.ValidationError("")
+    #             iop = transaction.itemoperation_set.all()[0]
+    #             obj["item"] = iop.item.id
+    #             obj["qty"] = abs(iop.delta)
+
+    #         if transaction.type in ["throw"]:
+    #             if len(transaction.accountoperation_set.all()) != 0:
+    #                 raise serializers.ValidationError("")
+
+    #         if transaction.type in ["buy"]:
+    #             if len(transaction.accountoperation_set.all()) != 1:
+    #                 raise serializers.ValidationError("")
+    #             if transaction.accountoperation_set.all()[0].account.owner != transaction.author:
+    #                 raise serializers.ValidationError("")
+
+    #         if transaction.type in ["give"]:
+    #             if len(transaction.accountoperation_set.all()) != 2:
+    #                 raise serializers.ValidationError("")
+    #             from_account = transaction.accountoperation_set.all()[0]
+    #             to_account = transaction.accountoperation_set.all()[1]
+    #             if from_account.delta > 0:
+    #                 from_account, to_account = to_account, from_account
+    #             if from_account.delta != -to_account.delta:
+    #                 raise serializers.ValidationError("")
+    #             if from_account.owner != transaction.author:
+    #                 raise serializers.ValidationError("")
+    #             obj["to_account"] = to_account.id
+
+    #         if transaction.type in ["appro", "inventory"]:
+    #             pass
+
+    #     except serializers.ValidationError:
+    #         obj["type"] = ""
+    #         return obj
+
+    #     obj["type"] = transaction.type.title() + "Transaction"
+
+    #     return obj
+
+    # def validate(self, attrs):
+    #     if not super(serializers.ModelSerializer, self).validate(attrs):
+    #         return False
+
+
+
+class BuyTransactionSerializer(BaseTransactionSerializer):
     item = serializers.PrimaryKeyRelatedField(queryset=Item.objects.all())
     qty = serializers.DecimalField(max_digits=7, decimal_places=3)
 
@@ -166,7 +261,7 @@ class BuyTransactionSerializer(TransactionSerializer):
 
 
 
-class GiveTransactionSerializer(TransactionSerializer):
+class GiveTransactionSerializer(BaseTransactionSerializer):
     account = serializers.PrimaryKeyRelatedField(queryset=Account.objects.all())
     amount = serializers.DecimalField(max_digits=7, decimal_places=3)
 
@@ -209,14 +304,14 @@ class GiveTransactionSerializer(TransactionSerializer):
 
 
 
-class MultiTransactionSerializer(serializers.Serializer):
+class TransactionSerializer(serializers.Serializer):
     serializers_class_map = {
-        "": TransactionSerializer,
+        "": BaseTransactionSerializer,
         "buy": BuyTransactionSerializer,
         "give": GiveTransactionSerializer}
 
     def __init__(self, *args, **kwargs):
-        super(MultiTransactionSerializer, self).__init__(*args, **kwargs)
+        super(TransactionSerializer, self).__init__(*args, **kwargs)
         self.serializers_map = {}
         for key, serializer in self.serializers_class_map.items():
             self.serializers_map[key] = serializer(*args, **kwargs)
@@ -253,11 +348,3 @@ class MultiTransactionSerializer(serializers.Serializer):
 
     def save_object(self, obj, **kwargs):
         self.get_serializer(obj).save_object(obj, **kwargs)
-
-
-
-
-class TransactionViewSet(mixins.CreateModelMixin, mixins.RetrieveModelMixin,
-                           mixins.ListModelMixin, viewsets.GenericViewSet):
-    queryset = Transaction.objects.all()
-    serializer_class = MultiTransactionSerializer

@@ -12,17 +12,15 @@ for (name, x) in {
 			'user': (User, UserSerializer),
 			'bar': (Bar, BarSerializer),
 			'account': (Account, AccountSerializer),
-			'item': (Item, ItemSerializer)
+			'item': (Item, ItemSerializer),
+			'transaction': (Transaction, TransactionSerializer)
 		}.items():
 	router.register(name,
 		type("ViewSet", (viewsets.ModelViewSet,),
 			{
-				"queryset":x[0].objects.all(),
-				"serializer_class":x[1]
+				"queryset": x[0].objects.all(),
+				"serializer_class": x[1]
 			}))
-
-router.register(r'transaction', TransactionViewSet)
-
 
 
 urlpatterns = patterns('',
