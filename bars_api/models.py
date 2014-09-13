@@ -116,6 +116,13 @@ class TransactionSerializer(serializers.ModelSerializer):
     class Meta:
         model = Transaction
 
+    def to_native(self, transaction):
+        fields = self.fields
+        self.fields = {k:v for k,v in self.fields.items() if k in ('id', 'bar', 'author', 'type', 'timestamp', 'last_modified', 'canceled')}
+        obj = super(TransactionSerializer, self).to_native(transaction)
+        self.fields = fields
+        return obj
+
 
 class BuyTransactionSerializer(TransactionSerializer):
     item = serializers.PrimaryKeyRelatedField(queryset=Item.objects.all())
@@ -201,7 +208,56 @@ class GiveTransactionSerializer(TransactionSerializer):
         return obj
 
 
+
+class MultiTransactionSerializer(serializers.Serializer):
+    serializers_class_map = {
+        "": TransactionSerializer,
+        "buy": BuyTransactionSerializer,
+        "give": GiveTransactionSerializer}
+
+    def __init__(self, *args, **kwargs):
+        super(MultiTransactionSerializer, self).__init__(*args, **kwargs)
+        self.serializers_map = {}
+        for key, serializer in self.serializers_class_map.items():
+            self.serializers_map[key] = serializer(*args, **kwargs)
+
+    def get_serializer(self, obj):
+        if obj is None:
+            type = ""
+        elif isinstance(obj, dict):
+            type = obj.get("type", "")
+        else:
+            type = obj.type or ""
+
+        if type in self.serializers_map:
+            return self.serializers_map[type]
+        else:
+            return self.serializers_map[""]
+
+    def to_native(self, obj):
+        return self.get_serializer(obj).to_native(obj)
+
+    def from_native(self, data, files=None):
+        s = self.get_serializer(data)
+        s._errors = self._errors
+        ret = self.get_serializer(data).from_native(data, files)
+        self._errors = s._errors
+        return ret
+
+    def restore_fields(self, data, files):
+        s = self.get_serializer(data)
+        s._errors = self._errors
+        ret = s.restore_fields(data, files)
+        self._errors = s._errors
+        return ret
+
+    def save_object(self, obj, **kwargs):
+        self.get_serializer(obj).save_object(obj, **kwargs)
+
+
+
+
 class TransactionViewSet(mixins.CreateModelMixin, mixins.RetrieveModelMixin,
                            mixins.ListModelMixin, viewsets.GenericViewSet):
     queryset = Transaction.objects.all()
-    serializer_class = BuyTransactionSerializer
+    serializer_class = MultiTransactionSerializer
