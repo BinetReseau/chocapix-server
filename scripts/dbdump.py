@@ -26,7 +26,6 @@
 # you must make sure ./some_folder/__init__.py exists
 # and run  ./manage.py runscript some_folder.some_script
 
-import sys, os
 from django.db import transaction
 
 class BasicImportHelper(object):
@@ -139,8 +138,16 @@ def import_data():
     bars_api_user_1.password = u'changeme'
     bars_api_user_1.name = u'Nadrieril'
     bars_api_user_1.pseudo = u'Nadri'
-    bars_api_user_1.last_modified = dateutil.parser.parse("2014-09-02T13:38:04+00:00")
+    bars_api_user_1.last_modified = dateutil.parser.parse("2014-09-13T16:08:41+00:00")
     bars_api_user_1 = importer.save_or_locate(bars_api_user_1)
+
+    bars_api_user_2 = User()
+    bars_api_user_2.login = u'ntag'
+    bars_api_user_2.password = u''
+    bars_api_user_2.name = u'Ntag'
+    bars_api_user_2.pseudo = u'Ntag'
+    bars_api_user_2.last_modified = dateutil.parser.parse("2014-09-13T16:08:41+00:00")
+    bars_api_user_2 = importer.save_or_locate(bars_api_user_2)
 
     # Processing model: Bar
 
@@ -149,7 +156,7 @@ def import_data():
     bars_api_bar_1 = Bar()
     bars_api_bar_1.id = u'avironjone'
     bars_api_bar_1.name = u'Aviron J\xf4ne'
-    bars_api_bar_1.last_modified = dateutil.parser.parse("2014-09-02T13:37:00+00:00")
+    bars_api_bar_1.last_modified = dateutil.parser.parse("2014-09-13T16:08:41+00:00")
     bars_api_bar_1 = importer.save_or_locate(bars_api_bar_1)
 
     # Processing model: Account
@@ -160,8 +167,15 @@ def import_data():
     bars_api_account_1.bar = bars_api_bar_1
     bars_api_account_1.owner = bars_api_user_1
     bars_api_account_1.money = Decimal('100.000')
-    bars_api_account_1.last_modified = dateutil.parser.parse("2014-09-02T13:38:37+00:00")
+    bars_api_account_1.last_modified = dateutil.parser.parse("2014-09-13T16:08:41+00:00")
     bars_api_account_1 = importer.save_or_locate(bars_api_account_1)
+
+    bars_api_account_2 = Account()
+    bars_api_account_2.bar = bars_api_bar_1
+    bars_api_account_2.owner = bars_api_user_2
+    bars_api_account_2.money = Decimal('50.000')
+    bars_api_account_2.last_modified = dateutil.parser.parse("2014-09-13T16:08:41+00:00")
+    bars_api_account_2 = importer.save_or_locate(bars_api_account_2)
 
     # Processing model: Item
 
@@ -172,7 +186,7 @@ def import_data():
     bars_api_item_1.name = u'Chocolat'
     bars_api_item_1.qty = Decimal('10.000')
     bars_api_item_1.price = Decimal('1.000')
-    bars_api_item_1.last_modified = dateutil.parser.parse("2014-09-02T18:12:54+00:00")
+    bars_api_item_1.last_modified = dateutil.parser.parse("2014-09-13T16:08:41+00:00")
     bars_api_item_1 = importer.save_or_locate(bars_api_item_1)
 
     bars_api_item_2 = Item()
@@ -180,7 +194,7 @@ def import_data():
     bars_api_item_2.name = u'Pizza'
     bars_api_item_2.qty = Decimal('10.000')
     bars_api_item_2.price = Decimal('2.000')
-    bars_api_item_2.last_modified = dateutil.parser.parse("2014-09-02T18:13:07+00:00")
+    bars_api_item_2.last_modified = dateutil.parser.parse("2014-09-13T16:08:41+00:00")
     bars_api_item_2 = importer.save_or_locate(bars_api_item_2)
 
     # Processing model: Transaction
@@ -191,10 +205,19 @@ def import_data():
     bars_api_transaction_1.bar = bars_api_bar_1
     bars_api_transaction_1.author = bars_api_user_1
     bars_api_transaction_1.type = u'buy'
-    bars_api_transaction_1.timestamp = dateutil.parser.parse("2014-09-02T22:59:13+00:00")
+    bars_api_transaction_1.timestamp = dateutil.parser.parse("2014-09-13T16:08:41+00:00")
     bars_api_transaction_1.canceled = False
-    bars_api_transaction_1.last_modified = dateutil.parser.parse("2014-09-02T23:15:44+00:00")
+    bars_api_transaction_1.last_modified = dateutil.parser.parse("2014-09-13T16:08:41+00:00")
     bars_api_transaction_1 = importer.save_or_locate(bars_api_transaction_1)
+
+    bars_api_transaction_2 = Transaction()
+    bars_api_transaction_2.bar = bars_api_bar_1
+    bars_api_transaction_2.author = bars_api_user_1
+    bars_api_transaction_2.type = u'give'
+    bars_api_transaction_2.timestamp = dateutil.parser.parse("2014-09-13T16:14:43+00:00")
+    bars_api_transaction_2.canceled = False
+    bars_api_transaction_2.last_modified = dateutil.parser.parse("2014-09-13T16:14:43+00:00")
+    bars_api_transaction_2 = importer.save_or_locate(bars_api_transaction_2)
 
     # Processing model: AccountOperation
 
@@ -205,6 +228,18 @@ def import_data():
     bars_api_accountoperation_1.account = bars_api_account_1
     bars_api_accountoperation_1.delta = Decimal('-1.000')
     bars_api_accountoperation_1 = importer.save_or_locate(bars_api_accountoperation_1)
+
+    bars_api_accountoperation_2 = AccountOperation()
+    bars_api_accountoperation_2.transaction = bars_api_transaction_2
+    bars_api_accountoperation_2.account = bars_api_account_1
+    bars_api_accountoperation_2.delta = Decimal('-10.000')
+    bars_api_accountoperation_2 = importer.save_or_locate(bars_api_accountoperation_2)
+
+    bars_api_accountoperation_3 = AccountOperation()
+    bars_api_accountoperation_3.transaction = bars_api_transaction_2
+    bars_api_accountoperation_3.account = bars_api_account_2
+    bars_api_accountoperation_3.delta = Decimal('10.000')
+    bars_api_accountoperation_3 = importer.save_or_locate(bars_api_accountoperation_3)
 
     # Processing model: ItemOperation
 
