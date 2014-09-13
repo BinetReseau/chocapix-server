@@ -8,15 +8,18 @@ from rest_framework import viewsets, routers, mixins, status
 from bars_api.models import *
 
 router = routers.DefaultRouter()
-for (name, model) in {
-			'user':User,
-			'bar':Bar,
-			'account':Account,
-			'item':Item,
-			'accountoperation':AccountOperation,
-			'itemoperation':ItemOperation
+for (name, x) in {
+			'user': (User, UserSerializer),
+			'bar': (Bar, BarSerializer),
+			'account': (Account, AccountSerializer),
+			'item': (Item, ItemSerializer)
 		}.items():
-	router.register(name, type("ViewSet", (viewsets.ModelViewSet,), {"model":model}))
+	router.register(name,
+		type("ViewSet", (viewsets.ModelViewSet,),
+			{
+				"queryset":x[0].objects.all(),
+				"serializer_class":x[1]
+			}))
 
 router.register(r'transaction', TransactionViewSet)
 

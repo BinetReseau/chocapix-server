@@ -3,7 +3,29 @@ from rest_framework import viewsets, routers, mixins, status
 from rest_framework import serializers
 from django.core.exceptions import ValidationError
 
+from rest_framework import fields
+class VirtualField(fields.Field):
+    type_name = 'VirtualField'
+    type_label = 'virtual'
+    label = 'virtual'
 
+    def __init__(self, value):
+        self.value = value
+
+    # def validate(self, value):
+    #     pass
+
+    def field_to_native(self, obj, field_name):
+        return self.value
+
+    def field_from_native(self, data, files, field_name, into):
+        pass
+
+    # def from_native(self, value):
+    #     return value
+
+
+## User
 class User(models.Model):
     login = models.CharField(max_length=50, unique=True)
     password = models.CharField(max_length=100)
@@ -21,8 +43,9 @@ class UserSerializer(serializers.ModelSerializer):
         model = User
         fields = ('login', 'name', 'pseudo', 'last_modified')
         write_only_fields = ('password',)
+    _type = VirtualField("User")
 
-
+## Bar
 class Bar(models.Model):
     id = models.CharField(max_length=50, primary_key=True)
     name = models.CharField(max_length=100)
@@ -31,6 +54,12 @@ class Bar(models.Model):
     def __unicode__(self):
         return self.id
 
+class BarSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Bar
+    _type = VirtualField("Bar")
+
+## Account
 class Account(models.Model):
     class Meta:
         unique_together = (("bar", "owner"))
@@ -42,6 +71,12 @@ class Account(models.Model):
     def __unicode__(self):
         return self.owner.name + " ("+self.bar.id+")"
 
+class AccountSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Account
+    _type = VirtualField("Account")
+
+## Item
 class Item(models.Model):
     bar = models.ForeignKey(Bar)
     name = models.CharField(max_length=100)
@@ -52,7 +87,12 @@ class Item(models.Model):
     def __unicode__(self):
         return self.name
 
+class ItemSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Item
+    _type = VirtualField("Item")
 
+## Transaction
 class Transaction(models.Model):
     bar = models.ForeignKey(Bar)
     author = models.ForeignKey(User)
