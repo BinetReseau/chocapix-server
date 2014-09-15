@@ -2,3 +2,4 @@ djangorestframework
 markdown
 django-extensions
 werkzeug
+djangorestframework-jwt
