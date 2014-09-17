@@ -1,6 +1,7 @@
 from django.db import models
 from rest_framework import viewsets, routers, mixins, status
-from rest_framework import serializers
+from rest_framework import serializers, decorators
+from rest_framework.response import Response
 from django.core.exceptions import ValidationError
 
 from rest_framework import fields
@@ -46,6 +47,14 @@ class UserSerializer(serializers.ModelSerializer):
         write_only_fields = ('password',)
     _type = VirtualField("User")
 
+class UserViewSet(viewsets.ModelViewSet):
+    queryset = User.objects.all()
+    serializer_class = UserSerializer
+
+    @decorators.list_route()
+    def me(self, request):
+        return Response(request.user.username)
+
 ## Bar
 class Bar(models.Model):
     id = models.CharField(max_length=50, primary_key=True)
@@ -76,6 +85,16 @@ class AccountSerializer(serializers.ModelSerializer):
     class Meta:
         model = Account
     _type = VirtualField("Account")
+
+class AccountViewSet(viewsets.ModelViewSet):
+    queryset = Account.objects.all()
+    serializer_class = AccountSerializer
+
+    @decorators.list_route()
+    def me(self, request):
+        account = Account.objects.all()[0]
+        serializer = AccountSerializer(account)
+        return Response(serializer.data)
 
 ## Item
 class Item(models.Model):

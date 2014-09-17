@@ -9,9 +9,9 @@ from bars_api.models import *
 
 router = routers.DefaultRouter()
 for (name, x) in {
-			'user': (User, UserSerializer),
+			# 'user': (User, UserSerializer),
 			'bar': (Bar, BarSerializer),
-			'account': (Account, AccountSerializer),
+			# 'account': (Account, AccountSerializer),
 			'item': (Item, ItemSerializer),
 			'transaction': (Transaction, TransactionSerializer)
 		}.items():
@@ -22,6 +22,8 @@ for (name, x) in {
 				"serializer_class": x[1]
 			}))
 
+router.register('user', UserViewSet)
+router.register('account', AccountViewSet)
 
 urlpatterns = patterns('',
     url(r'^admin/', include(admin.site.urls)),
