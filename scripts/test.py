@@ -21,4 +21,10 @@
     "account": 2,
     "amount": 10
 }
+
+{
+    "type": "buy",
+    "item": 1,
+    "qty": 2
+}
 """

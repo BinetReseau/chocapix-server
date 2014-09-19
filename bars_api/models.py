@@ -171,6 +171,8 @@ class ItemOperation(models.Model):
 class BaseTransactionSerializer(serializers.ModelSerializer):
     class Meta:
         model = Transaction
+        # fields = ('id', 'bar', 'author', 'type', 'timestamp', 'last_modified', 'canceled')
+        read_only_fields = ('bar', 'author', 'timestamp', 'last_modified')
 
     def to_native(self, transaction):
         fields = self.fields
@@ -179,6 +181,13 @@ class BaseTransactionSerializer(serializers.ModelSerializer):
         self.fields = fields
         return obj
 
+
+    def restore_object(self, attrs, instance=None):
+        t = super(BaseTransactionSerializer, self).restore_object(attrs, instance)
+        # Todo: add correct author/bar
+        t.author = User.objects.all()[0] # self.context['request'].user
+        t.bar = Bar.objects.all()[0] # self.context['request'].bar
+        return t
 
     # def to_native(self, transaction):
     #     if transaction is None:
