@@ -53,7 +53,8 @@ class UserViewSet(viewsets.ModelViewSet):
 
     @decorators.list_route()
     def me(self, request):
-        return Response(request.user.username)
+        serializer = self.serializer_class(User.objects.all()[0]) # Todo: request.user
+        return Response(serializer.data)
 
 ## Bar
 class Bar(models.Model):
@@ -100,8 +101,10 @@ class AccountViewSet(viewsets.ModelViewSet):
 class Item(models.Model):
     bar = models.ForeignKey(Bar)
     name = models.CharField(max_length=100)
+    keywords = models.CharField(max_length=200) # Todo: length
     qty = models.DecimalField(max_digits=7, decimal_places=3)
     price = models.DecimalField(max_digits=7, decimal_places=3)
+    deleted = models.BooleanField(default = False)
     last_modified = models.DateTimeField(auto_now=True)
 
     def __unicode__(self):
@@ -171,7 +174,6 @@ class ItemOperation(models.Model):
 class BaseTransactionSerializer(serializers.ModelSerializer):
     class Meta:
         model = Transaction
-        # fields = ('id', 'bar', 'author', 'type', 'timestamp', 'last_modified', 'canceled')
         read_only_fields = ('bar', 'author', 'timestamp', 'last_modified')
 
     def to_native(self, transaction):
@@ -283,7 +285,8 @@ class BuyTransactionSerializer(BaseTransactionSerializer):
             obj["_type"] = "Transaction"
             # return obj
         else:
-            obj["_type"] = transaction.type.title() + "Transaction"
+            # obj["_type"] = transaction.type.title() + "Transaction"
+            obj["_type"] = "Transaction"
 
         return obj
 
@@ -326,7 +329,8 @@ class GiveTransactionSerializer(BaseTransactionSerializer):
             obj["_type"] = "Transaction"
             # return obj
         else:
-            obj["_type"] = transaction.type.title() + "Transaction"
+            # obj["_type"] = transaction.type.title() + "Transaction"
+            obj["_type"] = "Transaction"
 
         return obj
 
