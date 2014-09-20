@@ -278,8 +278,10 @@ class BuyTransactionSerializer(BaseTransactionSerializer):
 
             if len(transaction.accountoperation_set.all()) != 1:
                 raise error
-            if transaction.accountoperation_set.all()[0].account.owner != transaction.author:
+            aop = transaction.accountoperation_set.all()[0]
+            if aop.account.owner != transaction.author:
                 raise error
+            obj["moneyflow"] = -aop.delta
 
         except serializers.ValidationError:
             obj["_type"] = "Transaction"
@@ -325,6 +327,7 @@ class GiveTransactionSerializer(BaseTransactionSerializer):
                 raise error
             obj["account"] = to_op.account.id
             obj["amount"] = to_op.delta
+            obj["moneyflow"] = to_op.delta
 
         except serializers.ValidationError:
             obj["_type"] = "Transaction"
