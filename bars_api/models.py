@@ -321,9 +321,10 @@ class GiveTransactionSerializer(BaseTransactionSerializer):
                 from_op, to_op = to_op, from_op
             if from_op.account.owner != transaction.author:
                 raise error
-            if from_op.delta <= 0 and from_op.delta != -to_op.delta:
+            if from_op.delta >= 0 or from_op.delta != -to_op.delta:
                 raise error
             obj["account"] = to_op.account.id
+            obj["amount"] = to_op.delta
 
         except serializers.ValidationError:
             obj["_type"] = "Transaction"
