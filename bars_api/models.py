@@ -258,10 +258,10 @@ class BuyTransactionSerializer(BaseTransactionSerializer):
 
         t.itemoperation_set.create(
             item=t.item,
-            delta=t.qty)
+            delta=-t.qty)
         t.accountoperation_set.create(
             account=Account.objects.get(owner=t.author, bar=t.bar),
-            delta=t.qty*t.item.price)
+            delta=-t.qty*t.item.price)
 
     def to_native(self, transaction):
         obj = super(BuyTransactionSerializer, self).to_native(transaction)
