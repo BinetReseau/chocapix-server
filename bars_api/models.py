@@ -53,7 +53,7 @@ class UserViewSet(viewsets.ModelViewSet):
 
     @decorators.list_route()
     def me(self, request):
-        serializer = self.serializer_class(User.objects.all()[0]) # Todo: request.user
+        serializer = self.serializer_class(self.queryset[0]) # Todo: request.user
         return Response(serializer.data)
 
 ## Bar
@@ -91,10 +91,9 @@ class AccountViewSet(viewsets.ModelViewSet):
     queryset = Account.objects.all()
     serializer_class = AccountSerializer
 
-    @decorators.list_route()
+    @decorators.list_route(methods=['get'])
     def me(self, request):
-        account = Account.objects.all()[0]
-        serializer = AccountSerializer(account)
+        serializer = self.serializer_class(self.queryset[0])
         return Response(serializer.data)
 
 ## Item
@@ -384,3 +383,24 @@ class TransactionSerializer(serializers.Serializer):
 
     def save_object(self, obj, **kwargs):
         self.get_serializer(obj).save_object(obj, **kwargs)
+
+
+class TransactionViewSet(viewsets.ModelViewSet):
+    queryset = Transaction.objects.all()
+    serializer_class = TransactionSerializer
+
+    @decorators.detail_route(methods=['post'])
+    def cancel(self, request, pk=None):
+        transaction = Transaction.objects.get(pk=pk)
+        transaction.canceled = True;
+        transaction.save()
+        serializer = self.serializer_class(transaction)
+        return Response(serializer.data)
+
+    @decorators.detail_route(methods=['post'])
+    def restore(self, request, pk=None):
+        transaction = Transaction.objects.get(pk=pk)
+        transaction.canceled = False;
+        transaction.save()
+        serializer = self.serializer_class(transaction)
+        return Response(serializer.data)

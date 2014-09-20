@@ -13,7 +13,7 @@ for (name, x) in {
 			'bar': (Bar, BarSerializer),
 			# 'account': (Account, AccountSerializer),
 			'item': (Item, ItemSerializer),
-			'transaction': (Transaction, TransactionSerializer)
+			# 'transaction': (Transaction, TransactionSerializer)
 		}.items():
 	router.register(name,
 		type("ViewSet", (viewsets.ModelViewSet,),
@@ -24,6 +24,7 @@ for (name, x) in {
 
 router.register('user', UserViewSet)
 router.register('account', AccountViewSet)
+router.register('transaction', TransactionViewSet)
 
 urlpatterns = patterns('',
     url(r'^admin/', include(admin.site.urls)),
