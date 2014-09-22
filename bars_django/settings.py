@@ -38,10 +38,12 @@ INSTALLED_APPS = (
     'django.contrib.staticfiles',
     'django_extensions',
     'rest_framework',
+    'corsheaders',
     'bars_api',
 )
 
 MIDDLEWARE_CLASSES = (
+    'corsheaders.middleware.CorsMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -112,6 +114,11 @@ import datetime
 JWT_AUTH = {
     'JWT_EXPIRATION_DELTA': datetime.timedelta(hours=7*24), ## Todo: temporary
 }
+
+# CORS headers
+
+CORS_ORIGIN_ALLOW_ALL = False
+
 
 # API app
 # AUTH_USER_MODEL = 'bars_api.User'
