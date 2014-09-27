@@ -110,6 +110,8 @@ REST_FRAMEWORK = {
     )
 }
 
+AUTHENTICATION_BACKENDS = ('bars_api.auth.AuthenticationBackend',)
+
 import datetime
 JWT_AUTH = {
     'JWT_EXPIRATION_DELTA': datetime.timedelta(hours=7*24), ## Todo: temporary
@@ -121,4 +123,5 @@ CORS_ORIGIN_ALLOW_ALL = False
 
 
 # API app
-# AUTH_USER_MODEL = 'bars_api.User'
+
+AUTH_USER_MODEL = 'bars_api.User'

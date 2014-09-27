@@ -134,17 +134,17 @@ def import_data():
     from bars_api.models import User
 
     bars_api_user_1 = User()
-    bars_api_user_1.login = u'nadri'
-    bars_api_user_1.password = u'changeme'
-    bars_api_user_1.name = u'Nadrieril'
+    bars_api_user_1.username = u'nadri'
+    bars_api_user_1.set_password(u'nadri')
+    bars_api_user_1.full_name = u'Nadrieril'
     bars_api_user_1.pseudo = u'Nadri'
     bars_api_user_1.last_modified = dateutil.parser.parse("2014-09-13T16:08:41+00:00")
     bars_api_user_1 = importer.save_or_locate(bars_api_user_1)
 
     bars_api_user_2 = User()
-    bars_api_user_2.login = u'ntag'
-    bars_api_user_2.password = u''
-    bars_api_user_2.name = u'Ntag'
+    bars_api_user_2.username = u'ntag'
+    bars_api_user_2.set_password(u'ntag')
+    bars_api_user_2.full_name = u'Ntag'
     bars_api_user_2.pseudo = u'Ntag'
     bars_api_user_2.last_modified = dateutil.parser.parse("2014-09-13T16:08:41+00:00")
     bars_api_user_2 = importer.save_or_locate(bars_api_user_2)

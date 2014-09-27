@@ -45,7 +45,8 @@ class AccountViewSet(viewsets.ModelViewSet):
 
     @decorators.list_route(methods=['get'])
     def me(self, request):
-        serializer = self.serializer_class(self.queryset[0])
+        # Todo: bar
+        serializer = self.serializer_class(request.user.account_set.get(bar=Bar.objects.all()[0]))
         return Response(serializer.data)
 
 ## Item

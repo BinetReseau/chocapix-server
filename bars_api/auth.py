@@ -10,6 +10,20 @@ def make_password(password):
     return hashlib.sha512(password).hexdigest()
 
 
+
+class UserManager(BaseUserManager):
+    def create_user(self, username, password):
+        user = self.model(username=username)
+        user.set_password(password)
+        user.save(using=self._db)
+        return user
+
+    def create_superuser(self, username, password):
+        user = self.create_user(username, password)
+        user.is_admin = True
+        user.save(using=self._db)
+        return user
+
 ## User
 class User(models.Model): # cannot inherit from AbstractBaseUser, need to override password field
     username = models.CharField(max_length=128, unique=True)
@@ -73,6 +87,25 @@ class User(models.Model): # cannot inherit from AbstractBaseUser, need to overri
     @property
     def is_staff(self):
         return True
+
+
+
+class AuthenticationBackend(object):
+    def authenticate(self, password=None):
+        if password is None: return None
+        encoded_password = make_password(password)
+        try:
+            return User.objects.get(password=encoded_password)
+        except User.DoesNotExist:
+            return None
+
+    def get_user(self, user_id):
+        try:
+            return User.objects.get(pk=user_id)
+        except User.DoesNotExist:
+            return None
+
+    # def has_perm(self, user_obj, perm, obj=None):
 
 
 class UserSerializer(serializers.ModelSerializer):
