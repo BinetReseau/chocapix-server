@@ -5,7 +5,9 @@ admin.autodiscover()
 
 
 from rest_framework import viewsets, routers, mixins, status
+# Todo: organize imports
 from bars_api.models import *
+from bars_api.auth import *
 
 router = routers.DefaultRouter()
 for (name, x) in {

@@ -4,36 +4,9 @@ from rest_framework import serializers, decorators
 from rest_framework.response import Response
 from django.core.exceptions import ValidationError
 
+from bars_api.auth import User
 from bars_api import VirtualField
 
-## User
-class User(models.Model):
-    login = models.CharField(max_length=50, unique=True)
-    password = models.CharField(max_length=100)
-
-    name = models.CharField(max_length=100)
-    pseudo = models.CharField(max_length=50)
-
-    last_modified = models.DateTimeField(auto_now=True)
-
-    def __unicode__(self):
-        return self.name
-
-class UserSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = User
-        fields = ('id', '_type', 'login', 'name', 'pseudo', 'last_modified')
-        write_only_fields = ('password',)
-    _type = VirtualField("User")
-
-class UserViewSet(viewsets.ModelViewSet):
-    queryset = User.objects.all()
-    serializer_class = UserSerializer
-
-    @decorators.list_route()
-    def me(self, request):
-        serializer = self.serializer_class(self.queryset[0]) # Todo: request.user
-        return Response(serializer.data)
 
 ## Bar
 class Bar(models.Model):
