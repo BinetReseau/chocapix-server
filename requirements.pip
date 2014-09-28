@@ -2,5 +2,4 @@ markdown
 django-extensions
 werkzeug
 djangorestframework
-djangorestframework-jwt
 django-cors-headers
