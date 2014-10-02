@@ -42,6 +42,7 @@ INSTALLED_APPS = (
     'bars_api',
 )
 
+
 MIDDLEWARE_CLASSES = (
     'corsheaders.middleware.CorsMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -89,7 +90,7 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/1.6/howto/static-files/
 
 STATIC_URL = '/api/static/'
-PROJECT_ROOT = os.path.dirname(__file__)
+PROJECT_ROOT = os.path.dirname(os.path.dirname(__file__))
 STATIC_ROOT = os.path.join(PROJECT_ROOT, 'static/')
 
 # Rest framework
