@@ -2,7 +2,7 @@ bars-django
 ===========
 Run:
 
-pip install -r requirements.pip
+pip install -r requirements.txt
 
 python manage.py syncdb
 

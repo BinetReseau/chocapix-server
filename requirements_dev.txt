@@ -1,0 +1,6 @@
+djangorestframework
+django-cors-headers
+markdown
+
+django-extensions
+werkzeug

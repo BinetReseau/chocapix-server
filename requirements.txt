@@ -1,5 +1,3 @@
-markdown
-django-extensions
-werkzeug
 djangorestframework
 django-cors-headers
+markdown
