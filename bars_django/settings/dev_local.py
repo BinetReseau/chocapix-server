@@ -13,17 +13,19 @@ INSTALLED_APPS = INSTALLED_APPS + (
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'django',
-        'HOST': 'localhost',
-        'USER': 'root',
-        'PASSWORD': 'root',
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': 'db.sqlite3'
+        # 'ENGINE': 'django.db.backends.mysql',
+        # 'NAME': 'django',
+        # 'HOST': 'localhost',
+        # 'USER': 'root',
+        # 'PASSWORD': 'root',
     }
 }
 
 REST_FRAMEWORK['DEFAULT_PERMISSION_CLASSES'] = [
-        'rest_framework.permissions.AllowAny',
-    ]
+    'rest_framework.permissions.AllowAny',
+]
 
 # DEBUG_TOOLBAR_PATCH_SETTINGS = False  #Bugfix
 
