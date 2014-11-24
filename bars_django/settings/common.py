@@ -97,7 +97,7 @@ JWT_AUTH = {
 
 # CORS headers
 
-CORS_ORIGIN_ALLOW_ALL = False
+CORS_ORIGIN_ALLOW_ALL = True
 
 
 # API app
