@@ -92,7 +92,7 @@ AUTHENTICATION_BACKENDS = ('bars_api.auth.AuthenticationBackend',)
 
 import datetime
 JWT_AUTH = {
-    'JWT_EXPIRATION_DELTA': datetime.timedelta(hours=7*24), ## Todo: temporary
+    'JWT_EXPIRATION_DELTA': datetime.timedelta(hours=7*24),  # Todo: temporary
 }
 
 # CORS headers
@@ -103,4 +103,3 @@ CORS_ORIGIN_ALLOW_ALL = True
 # API app
 
 AUTH_USER_MODEL = 'bars_api.User'
-

@@ -8,7 +8,7 @@ from bars_api.auth import User
 from bars_api import VirtualField
 
 
-## Bar
+# Bar
 class Bar(models.Model):
     id = models.CharField(max_length=50, primary_key=True)
     name = models.CharField(max_length=100)
@@ -17,12 +17,14 @@ class Bar(models.Model):
     def __unicode__(self):
         return self.id
 
+
 class BarSerializer(serializers.ModelSerializer):
     class Meta:
         model = Bar
     _type = VirtualField("Bar")
 
-## Account
+
+# Account
 class Account(models.Model):
     class Meta:
         unique_together = (("bar", "owner"))
@@ -32,12 +34,14 @@ class Account(models.Model):
     last_modified = models.DateTimeField(auto_now=True)
 
     def __unicode__(self):
-        return self.owner.name + " ("+self.bar.id+")"
+        return self.owner.name + " (" + self.bar.id + ")"
+
 
 class AccountSerializer(serializers.ModelSerializer):
     class Meta:
         model = Account
     _type = VirtualField("Account")
+
 
 class AccountViewSet(viewsets.ModelViewSet):
     queryset = Account.objects.all()
@@ -49,31 +53,34 @@ class AccountViewSet(viewsets.ModelViewSet):
         serializer = self.serializer_class(request.user.account_set.get(bar=Bar.objects.all()[0]))
         return Response(serializer.data)
 
-## Item
+
+# Item
 class Item(models.Model):
     bar = models.ForeignKey(Bar)
     name = models.CharField(max_length=100)
-    keywords = models.CharField(max_length=200) # Todo: length
+    keywords = models.CharField(max_length=200)  # Todo: length
     qty = models.DecimalField(max_digits=7, decimal_places=3)
     price = models.DecimalField(max_digits=7, decimal_places=3)
-    deleted = models.BooleanField(default = False)
+    deleted = models.BooleanField(default=False)
     last_modified = models.DateTimeField(auto_now=True)
 
     def __unicode__(self):
         return self.name
+
 
 class ItemSerializer(serializers.ModelSerializer):
     class Meta:
         model = Item
     _type = VirtualField("Item")
 
-## Transaction
+
+# Transaction
 class Transaction(models.Model):
     bar = models.ForeignKey(Bar)
     author = models.ForeignKey(User)
     type = models.CharField(max_length=25)
     timestamp = models.DateTimeField(auto_now_add=True)
-    canceled = models.BooleanField(default = False)
+    canceled = models.BooleanField(default=False)
     last_modified = models.DateTimeField(auto_now=True)
 
     # def clean(self):
@@ -116,11 +123,11 @@ class AccountOperation(models.Model):
     account = models.ForeignKey(Account)
     delta = models.DecimalField(max_digits=7, decimal_places=3)
 
+
 class ItemOperation(models.Model):
     transaction = models.ForeignKey(Transaction)
     item = models.ForeignKey(Item)
     delta = models.DecimalField(max_digits=7, decimal_places=3)
-
 
 
 class BaseTransactionSerializer(serializers.ModelSerializer):
@@ -130,17 +137,16 @@ class BaseTransactionSerializer(serializers.ModelSerializer):
 
     def to_native(self, transaction):
         fields = self.fields
-        self.fields = {k:v for k,v in self.fields.items() if k in ('id', 'bar', 'author', 'type', 'timestamp', 'last_modified', 'canceled')}
+        self.fields = {k: v for k, v in self.fields.items() if k in ('id', 'bar', 'author', 'type', 'timestamp', 'last_modified', 'canceled')}
         obj = super(BaseTransactionSerializer, self).to_native(transaction)
         self.fields = fields
         return obj
 
-
     def restore_object(self, attrs, instance=None):
         t = super(BaseTransactionSerializer, self).restore_object(attrs, instance)
         # Todo: add correct author/bar
-        t.author = User.objects.all()[0] # self.context['request'].user
-        t.bar = Bar.objects.all()[0] # self.context['request'].bar
+        t.author = User.objects.all()[0]  # self.context['request'].user
+        t.bar = Bar.objects.all()[0]  # self.context['request'].bar
         return t
 
     # def to_native(self, transaction):
@@ -200,7 +206,6 @@ class BaseTransactionSerializer(serializers.ModelSerializer):
     #         return False
 
 
-
 class BuyTransactionSerializer(BaseTransactionSerializer):
     item = serializers.PrimaryKeyRelatedField(queryset=Item.objects.all())
     qty = serializers.DecimalField(max_digits=7, decimal_places=3)
@@ -213,11 +218,12 @@ class BuyTransactionSerializer(BaseTransactionSerializer):
             delta=-t.qty)
         t.accountoperation_set.create(
             account=Account.objects.get(owner=t.author, bar=t.bar),
-            delta=-t.qty*t.item.price)
+            delta=-t.qty * t.item.price)
 
     def to_native(self, transaction):
         obj = super(BuyTransactionSerializer, self).to_native(transaction)
-        if transaction is None: return obj
+        if transaction is None:
+            return obj
 
         try:
             error = serializers.ValidationError("")
@@ -245,7 +251,6 @@ class BuyTransactionSerializer(BaseTransactionSerializer):
         return obj
 
 
-
 class GiveTransactionSerializer(BaseTransactionSerializer):
     account = serializers.PrimaryKeyRelatedField(queryset=Account.objects.all())
     amount = serializers.DecimalField(max_digits=7, decimal_places=3)
@@ -262,7 +267,8 @@ class GiveTransactionSerializer(BaseTransactionSerializer):
 
     def to_native(self, transaction):
         obj = super(GiveTransactionSerializer, self).to_native(transaction)
-        if transaction is None: return obj
+        if transaction is None:
+            return obj
 
         try:
             error = serializers.ValidationError("")
@@ -289,7 +295,6 @@ class GiveTransactionSerializer(BaseTransactionSerializer):
             obj["_type"] = "Transaction"
 
         return obj
-
 
 
 class TransactionSerializer(serializers.Serializer):
@@ -345,7 +350,7 @@ class TransactionViewSet(viewsets.ModelViewSet):
     @decorators.detail_route(methods=['post'])
     def cancel(self, request, pk=None):
         transaction = Transaction.objects.get(pk=pk)
-        transaction.canceled = True;
+        transaction.canceled = True
         transaction.save()
         serializer = self.serializer_class(transaction)
         return Response(serializer.data)
@@ -353,7 +358,7 @@ class TransactionViewSet(viewsets.ModelViewSet):
     @decorators.detail_route(methods=['post'])
     def restore(self, request, pk=None):
         transaction = Transaction.objects.get(pk=pk)
-        transaction.canceled = False;
+        transaction.canceled = False
         transaction.save()
         serializer = self.serializer_class(transaction)
         return Response(serializer.data)

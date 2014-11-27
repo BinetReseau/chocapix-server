@@ -24,12 +24,12 @@ class UserManager(BaseUserManager):
         user.save(using=self._db)
         return user
 
-## User
-class User(models.Model): # cannot inherit from AbstractBaseUser, need to override password field
+# User
+class User(models.Model):  # cannot inherit from AbstractBaseUser, need to override password field
     username = models.CharField(max_length=128, unique=True)
     password = models.CharField(max_length=128, unique=True)
-    full_name = models.CharField(max_length=128, blank = True)
-    pseudo = models.CharField(max_length=128, blank = True)
+    full_name = models.CharField(max_length=128, blank=True)
+    pseudo = models.CharField(max_length=128, blank=True)
 
     last_login = models.DateTimeField(default=timezone.now)
     last_modified = models.DateTimeField(auto_now=True)
