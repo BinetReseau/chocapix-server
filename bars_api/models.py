@@ -140,6 +140,12 @@ class ItemOperation(models.Model):
         self.item.save()
 
 
+class TransactionData(models.Model):
+    transaction = models.ForeignKey(Transaction)
+    label = models.CharField(max_length=128)
+    data = models.TextField()
+
+
 class BaseTransactionSerializer(serializers.ModelSerializer):
     class Meta:
         model = Transaction
@@ -150,6 +156,7 @@ class BaseTransactionSerializer(serializers.ModelSerializer):
         self.fields = {k: v for k, v in self.fields.items() if k in ('id', 'bar', 'author', 'type', 'timestamp', 'last_modified', 'canceled')}
         obj = super(BaseTransactionSerializer, self).to_native(transaction)
         self.fields = fields
+        obj["_type"] = "Transaction"
         return obj
 
     def restore_object(self, attrs, instance=None):
@@ -253,11 +260,10 @@ class BuyTransactionSerializer(BaseTransactionSerializer):
             obj["account"] = aop.account.id
 
         except serializers.ValidationError:
-            obj["_type"] = "Transaction"
-            # return obj
+            return obj
         else:
+            pass
             # obj["_type"] = transaction.type.title() + "Transaction"
-            obj["_type"] = "Transaction"
 
         return obj
 
@@ -299,11 +305,104 @@ class GiveTransactionSerializer(BaseTransactionSerializer):
             obj["moneyflow"] = to_op.delta
 
         except serializers.ValidationError:
-            obj["_type"] = "Transaction"
-            # return obj
+            return obj
         else:
+            pass
             # obj["_type"] = transaction.type.title() + "Transaction"
-            obj["_type"] = "Transaction"
+
+        return obj
+
+
+class ThrowTransactionSerializer(BaseTransactionSerializer):
+    item = serializers.PrimaryKeyRelatedField(queryset=Item.objects.all())
+    qty = serializers.DecimalField(max_digits=7, decimal_places=3)
+
+    def save_object(self, t, **kwargs):
+        super(ThrowTransactionSerializer, self).save_object(t, **kwargs)
+
+        # t.accountoperation_set.create(
+        #     account=Account.objects.get(owner=t.author, bar=t.bar),
+        #     delta=-t.amount)
+        t.itemoperation_set.create(
+            item=t.item,
+            delta=-t.qty)
+
+    def to_native(self, transaction):
+        obj = super(ThrowTransactionSerializer, self).to_native(transaction)
+        if transaction is None:
+            return obj
+
+        try:
+            error = serializers.ValidationError("")
+
+            if len(transaction.itemoperation_set.all()) != 1:
+                raise error
+            iop = transaction.itemoperation_set.all()[0]
+            obj["item"] = iop.item.id
+            obj["qty"] = abs(iop.delta)
+
+            # if len(transaction.accountoperation_set.all()) != 1:
+            #     raise error
+            # aop = transaction.accountoperation_set.all()[0]
+            # if aop.account != # bar.account:
+            #     raise error
+            # obj["moneyflow"] = -aop.delta
+            # obj["account"] = aop.account.id
+            obj["moneyflow"] = iop.delta * iop.item.price
+
+
+        except serializers.ValidationError:
+            return obj
+        else:
+            pass
+            # obj["_type"] = transaction.type.title() + "Transaction"
+
+        return obj
+
+
+class PunishTransactionSerializer(BaseTransactionSerializer):
+    account = serializers.PrimaryKeyRelatedField(queryset=Account.objects.all())
+    amount = serializers.DecimalField(max_digits=7, decimal_places=3)
+    motive = serializers.CharField()
+
+    def save_object(self, t, **kwargs):
+        super(PunishTransactionSerializer, self).save_object(t, **kwargs)
+
+        t.accountoperation_set.create(
+            account=t.account,
+            delta=-t.amount)
+        t.transactiondata_set.create(
+            label='motive',
+            data=t.motive)
+
+    def to_native(self, transaction):
+        obj = super(PunishTransactionSerializer, self).to_native(transaction)
+        if transaction is None:
+            return obj
+
+        try:
+            error = serializers.ValidationError("")
+
+            if len(transaction.accountoperation_set.all()) != 1:
+                raise error
+            aop = transaction.accountoperation_set.all()[0]
+            obj["account"] = aop.account.id
+            obj["amount"] = aop.delta
+
+            if len(transaction.transactiondata_set.all()) != 1:
+                raise error
+            data = transaction.transactiondata_set.all()[0]
+            if data.label != 'motive':
+                raise error
+            obj["motive"] = data.data
+            obj["moneyflow"] = -aop.delta
+
+
+        except serializers.ValidationError:
+            return obj
+        else:
+            pass
+            # obj["_type"] = transaction.type.title() + "Transaction"
 
         return obj
 
@@ -312,7 +411,9 @@ class TransactionSerializer(serializers.Serializer):
     serializers_class_map = {
         "": BaseTransactionSerializer,
         "buy": BuyTransactionSerializer,
-        "give": GiveTransactionSerializer}
+        "give": GiveTransactionSerializer,
+        "throw": ThrowTransactionSerializer,
+        "punish": PunishTransactionSerializer}
 
     def __init__(self, *args, **kwargs):
         super(TransactionSerializer, self).__init__(*args, **kwargs)
