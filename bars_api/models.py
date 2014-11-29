@@ -240,6 +240,7 @@ class BuyTransactionSerializer(BaseTransactionSerializer):
             if aop.account.owner != transaction.author:
                 raise error
             obj["moneyflow"] = -aop.delta
+            obj["account"] = aop.account.id
 
         except serializers.ValidationError:
             obj["_type"] = "Transaction"
