@@ -111,9 +111,15 @@ class AuthenticationBackend(object):
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ('id', '_type', 'username', 'full_name', 'pseudo', 'last_login', 'last_modified')
+        fields = ('id', '_type', 'username', 'full_name', 'pseudo', 'last_login', 'last_modified', 'password')
         write_only_fields = ('password',)
     _type = VirtualField("User")
+
+    def restore_object(self, attrs, instance=None):
+        user = super(UserSerializer, self).restore_object(attrs, instance)
+        if 'password' in attrs:
+            user.set_password(attrs['password'])
+        return user
 
 
 from rest_framework.response import Response
