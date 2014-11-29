@@ -123,11 +123,21 @@ class AccountOperation(models.Model):
     account = models.ForeignKey(Account)
     delta = models.DecimalField(max_digits=7, decimal_places=3)
 
+    def save(self, *args, **kwargs):
+        self.account.money += self.delta
+        self.account.save()
+        super(AccountOperation, self).save(*args, **kwargs)
+
 
 class ItemOperation(models.Model):
     transaction = models.ForeignKey(Transaction)
     item = models.ForeignKey(Item)
     delta = models.DecimalField(max_digits=7, decimal_places=3)
+
+    def save(self, *args, **kwargs):
+        super(ItemOperation, self).save(*args, **kwargs)
+        self.item.qty += self.delta
+        self.item.save()
 
 
 class BaseTransactionSerializer(serializers.ModelSerializer):
