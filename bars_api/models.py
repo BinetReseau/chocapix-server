@@ -34,7 +34,7 @@ class Account(models.Model):
     last_modified = models.DateTimeField(auto_now=True)
 
     def __unicode__(self):
-        return self.owner.name + " (" + self.bar.id + ")"
+        return self.owner.username + " (" + self.bar.id + ")"
 
 
 class AccountSerializer(serializers.ModelSerializer):
