@@ -155,7 +155,7 @@ class BaseTransactionSerializer(serializers.ModelSerializer):
     def restore_object(self, attrs, instance=None):
         t = super(BaseTransactionSerializer, self).restore_object(attrs, instance)
         # Todo: add correct author/bar
-        t.author = User.objects.all()[0]  # self.context['request'].user
+        t.author = self.context['request'].user
         t.bar = Bar.objects.all()[0]  # self.context['request'].bar
         return t
 
