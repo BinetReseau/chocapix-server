@@ -138,10 +138,11 @@ class AccountOperation(models.Model):
     delta = models.DecimalField(max_digits=7, decimal_places=3)
 
     def save(self, *args, **kwargs):
-        if not self.pk:
+        isNew = not self.pk
+        if isNew:
             self.prev_value = self.account.money
         super(AccountOperation, self).save(*args, **kwargs)
-        if not self.pk:
+        if isNew:
             self.account.money = self.prev_value + self.delta
             self.account.save()
 
@@ -153,10 +154,11 @@ class ItemOperation(models.Model):
     delta = models.DecimalField(max_digits=7, decimal_places=3)
 
     def save(self, *args, **kwargs):
-        if not self.pk:
+        isNew = not self.pk
+        if isNew:
             self.prev_value = self.item.qty
         super(ItemOperation, self).save(*args, **kwargs)
-        if not self.pk:
+        if isNew:
             self.item.qty = self.prev_value + self.delta
             self.item.save()
 
