@@ -47,6 +47,19 @@ class AccountViewSet(viewsets.ModelViewSet):
     queryset = Account.objects.all()
     serializer_class = AccountSerializer
 
+    def get_queryset(self):
+        queryset = Account.objects.all()
+
+        owner = self.request.QUERY_PARAMS.get('owner', None)
+        if owner is not None:
+            queryset = queryset.filter(owner=owner)
+
+        bar = self.request.QUERY_PARAMS.get('bar', None)
+        if bar is not None:
+            queryset = queryset.filter(bar=bar)
+
+        return queryset
+
     @decorators.list_route(methods=['get'])
     def me(self, request):
         # Todo: bar
