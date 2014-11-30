@@ -174,18 +174,23 @@ class BaseTransactionSerializer(serializers.ModelSerializer):
         model = Transaction
         read_only_fields = ('bar', 'author', 'timestamp', 'last_modified')
 
-    def to_native(self, transaction):
+    def to_native(self, t):
         fields = self.fields
         self.fields = {k: v for k, v in self.fields.items() if k in ('id', 'bar', 'author', 'type', 'timestamp', 'last_modified', 'canceled')}
-        obj = super(BaseTransactionSerializer, self).to_native(transaction)
+        obj = super(BaseTransactionSerializer, self).to_native(t)
         self.fields = fields
+        try:
+            author_account = Account.objects.get(owner=t.author, bar=t.bar)
+            obj["author_account"] = author_account.id
+        except:
+            pass
         obj["_type"] = "Transaction"
         return obj
 
     def restore_object(self, attrs, instance=None):
         t = super(BaseTransactionSerializer, self).restore_object(attrs, instance)
-        # Todo: add correct author/bar
         t.author = self.context['request'].user
+        # Todo: add correct bar
         t.bar = Bar.objects.all()[0]  # self.context['request'].bar
         return t
 
