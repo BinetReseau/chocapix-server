@@ -134,23 +134,31 @@ class Transaction(models.Model):
 class AccountOperation(models.Model):
     transaction = models.ForeignKey(Transaction)
     account = models.ForeignKey(Account)
+    prev_value = models.DecimalField(max_digits=7, decimal_places=3)
     delta = models.DecimalField(max_digits=7, decimal_places=3)
 
     def save(self, *args, **kwargs):
-        self.account.money += self.delta
-        self.account.save()
+        if not self.pk:
+            self.prev_value = self.account.money
         super(AccountOperation, self).save(*args, **kwargs)
+        if not self.pk:
+            self.account.money = self.prev_value + self.delta
+            self.account.save()
 
 
 class ItemOperation(models.Model):
     transaction = models.ForeignKey(Transaction)
     item = models.ForeignKey(Item)
+    prev_value = models.DecimalField(max_digits=7, decimal_places=3)
     delta = models.DecimalField(max_digits=7, decimal_places=3)
 
     def save(self, *args, **kwargs):
+        if not self.pk:
+            self.prev_value = self.item.qty
         super(ItemOperation, self).save(*args, **kwargs)
-        self.item.qty += self.delta
-        self.item.save()
+        if not self.pk:
+            self.item.qty = self.prev_value + self.delta
+            self.item.save()
 
 
 class TransactionData(models.Model):
