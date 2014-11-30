@@ -407,7 +407,7 @@ class PunishTransactionSerializer(BaseTransactionSerializer):
             if data.label != 'motive':
                 raise error
             obj["motive"] = data.data
-            obj["moneyflow"] = -aop.delta
+            obj["moneyflow"] = aop.delta
 
 
         except serializers.ValidationError:
