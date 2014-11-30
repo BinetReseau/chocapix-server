@@ -1,161 +1,38 @@
 from django.db import models
-from rest_framework import viewsets, routers, mixins, status
+from rest_framework import viewsets
 from rest_framework import serializers, decorators
 from rest_framework.response import Response
-from django.core.exceptions import ValidationError
 
 from bars_api.auth import User
-from bars_api import VirtualField
+from bars_api.models import VirtualField
+from bars_api.models.bar import Bar
+from bars_api.models.item import Item
+from bars_api.models.account import Account
 
 
-# Bar
-class Bar(models.Model):
-    id = models.CharField(max_length=50, primary_key=True)
-    name = models.CharField(max_length=100)
-    last_modified = models.DateTimeField(auto_now=True)
-
-    def __unicode__(self):
-        return self.id
-
-
-class BarSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Bar
-    _type = VirtualField("Bar")
-
-
-# Account
-class Account(models.Model):
-    class Meta:
-        unique_together = (("bar", "owner"))
-    bar = models.ForeignKey(Bar)
-    owner = models.ForeignKey(User)
-    money = models.DecimalField(max_digits=7, decimal_places=3)
-    last_modified = models.DateTimeField(auto_now=True)
-
-    def __unicode__(self):
-        return self.owner.username + " (" + self.bar.id + ")"
-
-
-class AccountSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Account
-    _type = VirtualField("Account")
-
-
-class AccountViewSet(viewsets.ModelViewSet):
-    queryset = Account.objects.all()
-    serializer_class = AccountSerializer
-
-    def get_queryset(self):
-        queryset = Account.objects.all()
-
-        owner = self.request.QUERY_PARAMS.get('owner', None)
-        if owner is not None:
-            queryset = queryset.filter(owner=owner)
-
-        bar = self.request.QUERY_PARAMS.get('bar', None)
-        if bar is not None:
-            queryset = queryset.filter(bar=bar)
-
-        return queryset
-
-    @decorators.list_route(methods=['get'])
-    def me(self, request):
-        # Todo: bar
-        serializer = self.serializer_class(request.user.account_set.get(bar=Bar.objects.all()[0]))
-        return Response(serializer.data)
-
-
-# Item
-class Item(models.Model):
-    bar = models.ForeignKey(Bar)
-    name = models.CharField(max_length=100)
-    keywords = models.CharField(max_length=200)  # Todo: length
-    qty = models.DecimalField(max_digits=7, decimal_places=3)
-
-    unit = models.CharField(max_length=100, blank=True)
-    unit_value = models.DecimalField(max_digits=12, decimal_places=6, default=1)
-    buy_unit = models.CharField(max_length=100, blank=True)
-    buy_unit_value = models.DecimalField(max_digits=12, decimal_places=6, default=1)
-
-    price = models.DecimalField(max_digits=7, decimal_places=3, default=1)
-    buy_price = models.DecimalField(max_digits=7, decimal_places=3, default=1)
-
-    deleted = models.BooleanField(default=False)
-    last_modified = models.DateTimeField(auto_now=True)
-
-    def __unicode__(self):
-        return self.name
-
-
-class ItemSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Item
-    _type = VirtualField("Item")
-
-
-# Transaction
 class Transaction(models.Model):
+    class Meta:
+        app_label = 'bars_api'
     bar = models.ForeignKey(Bar)
     author = models.ForeignKey(User)
     type = models.CharField(max_length=25)
     timestamp = models.DateTimeField(auto_now_add=True)
     canceled = models.BooleanField(default=False)
     last_modified = models.DateTimeField(auto_now=True)
-
-    # def clean(self):
-    #     error = ValidationError("Invalid '%s' transaction (id=%s)"%(self.type, self.id))
-    #     try:
-    #         if self.type in ["buy", "throw"]:
-    #             if len(self.itemoperation_set.all()) != 1:
-    #                 raise error
-
-    #         if self.type in ["throw"]:
-    #             if len(self.accountoperation_set.all()) != 0:
-    #                 raise error
-
-    #         if self.type in ["buy"]:
-    #             if len(self.accountoperation_set.all()) != 1:
-    #                 raise error
-    #             if self.accountoperation_set.all()[0].account.owner != self.author:
-    #                 raise error
-
-    #         if self.type in ["give"]:
-    #             if len(self.accountoperation_set.all()) != 2:
-    #                 raise error
-    #             from_account = self.accountoperation_set.all()[0]
-    #             to_account = self.accountoperation_set.all()[1]
-    #             if from_account.delta > 0:
-    #                 from_account, to_account = to_account, from_account
-    #             if from_account.delta != -to_account.delta:
-    #                 raise error
-    #             if from_account.owner != self.author:
-    #                 raise error
-
-    #         if self.type in ["appro", "inventory"]:
-    #             pass
-    #     except ValidationError:
-    #         self.type=""
+    _type = VirtualField("Transaction")
 
 
-class AccountOperation(models.Model):
+class TransactionData(models.Model):
+    class Meta:
+        app_label = 'bars_api'
     transaction = models.ForeignKey(Transaction)
-    account = models.ForeignKey(Account)
-    prev_value = models.DecimalField(max_digits=7, decimal_places=3)
-    delta = models.DecimalField(max_digits=7, decimal_places=3)
-
-    def save(self, *args, **kwargs):
-        isNew = not self.pk
-        if isNew:
-            self.prev_value = self.account.money
-        super(AccountOperation, self).save(*args, **kwargs)
-        if isNew:
-            self.account.money = self.prev_value + self.delta
-            self.account.save()
+    label = models.CharField(max_length=128)
+    data = models.TextField()
 
 
 class ItemOperation(models.Model):
+    class Meta:
+        app_label = 'bars_api'
     transaction = models.ForeignKey(Transaction)
     item = models.ForeignKey(Item)
     prev_value = models.DecimalField(max_digits=7, decimal_places=3)
@@ -171,10 +48,23 @@ class ItemOperation(models.Model):
             self.item.save()
 
 
-class TransactionData(models.Model):
+class AccountOperation(models.Model):
+    class Meta:
+        app_label = 'bars_api'
     transaction = models.ForeignKey(Transaction)
-    label = models.CharField(max_length=128)
-    data = models.TextField()
+    account = models.ForeignKey(Account)
+    prev_value = models.DecimalField(max_digits=7, decimal_places=3)
+    delta = models.DecimalField(max_digits=7, decimal_places=3)
+
+    def save(self, *args, **kwargs):
+        isNew = not self.pk
+        if isNew:
+            self.prev_value = self.account.money
+        super(AccountOperation, self).save(*args, **kwargs)
+        if isNew:
+            self.account.money = self.prev_value + self.delta
+            self.account.save()
+
 
 
 class BaseTransactionSerializer(serializers.ModelSerializer):
@@ -192,7 +82,6 @@ class BaseTransactionSerializer(serializers.ModelSerializer):
             obj["author_account"] = author_account.id
         except:
             pass
-        obj["_type"] = "Transaction"
         return obj
 
     def restore_object(self, attrs, instance=None):
@@ -201,62 +90,6 @@ class BaseTransactionSerializer(serializers.ModelSerializer):
         # Todo: add correct bar
         t.bar = Bar.objects.all()[0]  # self.context['request'].bar
         return t
-
-    # def to_native(self, transaction):
-    #     if transaction is None:
-    #         return super(TransactionSerializer, self).to_native(transaction)
-
-    #     # try:
-    #     #     transaction.clean()
-    #     # except ValidationError as e:
-    #     #     raise serializers.ValidationError(e.message_dict)
-    #     obj = super(TransactionSerializer, self).to_native(transaction)
-
-    #     try:
-    #         if transaction.type in ["buy", "throw"]:
-    #             if len(transaction.itemoperation_set.all()) != 1:
-    #                 raise serializers.ValidationError("")
-    #             iop = transaction.itemoperation_set.all()[0]
-    #             obj["item"] = iop.item.id
-    #             obj["qty"] = abs(iop.delta)
-
-    #         if transaction.type in ["throw"]:
-    #             if len(transaction.accountoperation_set.all()) != 0:
-    #                 raise serializers.ValidationError("")
-
-    #         if transaction.type in ["buy"]:
-    #             if len(transaction.accountoperation_set.all()) != 1:
-    #                 raise serializers.ValidationError("")
-    #             if transaction.accountoperation_set.all()[0].account.owner != transaction.author:
-    #                 raise serializers.ValidationError("")
-
-    #         if transaction.type in ["give"]:
-    #             if len(transaction.accountoperation_set.all()) != 2:
-    #                 raise serializers.ValidationError("")
-    #             from_account = transaction.accountoperation_set.all()[0]
-    #             to_account = transaction.accountoperation_set.all()[1]
-    #             if from_account.delta > 0:
-    #                 from_account, to_account = to_account, from_account
-    #             if from_account.delta != -to_account.delta:
-    #                 raise serializers.ValidationError("")
-    #             if from_account.owner != transaction.author:
-    #                 raise serializers.ValidationError("")
-    #             obj["to_account"] = to_account.id
-
-    #         if transaction.type in ["appro", "inventory"]:
-    #             pass
-
-    #     except serializers.ValidationError:
-    #         obj["type"] = ""
-    #         return obj
-
-    #     obj["type"] = transaction.type.title() + "Transaction"
-
-    #     return obj
-
-    # def validate(self, attrs):
-    #     if not super(serializers.ModelSerializer, self).validate(attrs):
-    #         return False
 
 
 class BuyTransactionSerializer(BaseTransactionSerializer):

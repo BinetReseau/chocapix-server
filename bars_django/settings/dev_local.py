@@ -17,11 +17,13 @@ DATABASES = {
         'NAME': 'db.sqlite3'
         # 'ENGINE': 'django.db.backends.mysql',
         # 'NAME': 'django',
-        # 'HOST': 'localhost',
+        # 'HOST': '127.0.0.1',
         # 'USER': 'root',
         # 'PASSWORD': 'root',
+        # 'PORT': 3306
     }
 }
+
 
 REST_FRAMEWORK['DEFAULT_PERMISSION_CLASSES'] = [
     'rest_framework.permissions.AllowAny',

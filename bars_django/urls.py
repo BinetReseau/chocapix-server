@@ -6,25 +6,16 @@ admin.autodiscover()
 
 from rest_framework import viewsets, routers, mixins
 # Todo: organize imports
-from bars_api.models import *
-from bars_api.auth import *
+from bars_api.models.bar import BarViewSet
+from bars_api.models.user import UserViewSet
+from bars_api.models.account import AccountViewSet
+from bars_api.models.transaction import TransactionViewSet
+from bars_api.models.item import ItemViewSet
 
 router = routers.DefaultRouter()
-for (name, x) in {
-    # 'user': (User, UserSerializer),
-    'bar': (Bar, BarSerializer),
-    # 'account': (Account, AccountSerializer),
-    'item': (Item, ItemSerializer),
-    # 'transaction': (Transaction, TransactionSerializer)
-        }.items():
-    router.register(
-        name,
-        type("ViewSet", (viewsets.ModelViewSet,),
-             {
-                 "queryset": x[0].objects.all(),
-                 "serializer_class": x[1]
-                 }))
 
+router.register('bar', BarViewSet)
+router.register('item', ItemViewSet)
 router.register('user', UserViewSet)
 router.register('account', AccountViewSet)
 router.register('transaction', TransactionViewSet)
