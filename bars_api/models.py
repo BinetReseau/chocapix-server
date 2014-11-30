@@ -73,7 +73,15 @@ class Item(models.Model):
     name = models.CharField(max_length=100)
     keywords = models.CharField(max_length=200)  # Todo: length
     qty = models.DecimalField(max_digits=7, decimal_places=3)
-    price = models.DecimalField(max_digits=7, decimal_places=3)
+
+    unit = models.CharField(max_length=100, blank=True)
+    unit_value = models.DecimalField(max_digits=12, decimal_places=6, default=1)
+    buy_unit = models.CharField(max_length=100, blank=True)
+    buy_unit_value = models.DecimalField(max_digits=12, decimal_places=6, default=1)
+
+    price = models.DecimalField(max_digits=7, decimal_places=3, default=1)
+    buy_price = models.DecimalField(max_digits=7, decimal_places=3, default=1)
+
     deleted = models.BooleanField(default=False)
     last_modified = models.DateTimeField(auto_now=True)
 
