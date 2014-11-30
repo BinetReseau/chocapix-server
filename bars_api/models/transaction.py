@@ -74,7 +74,9 @@ class BaseTransactionSerializer(serializers.ModelSerializer):
 
     def to_native(self, t):
         fields = self.fields
-        self.fields = {k: v for k, v in self.fields.items() if k in ('id', 'bar', 'author', 'type', 'timestamp', 'last_modified', 'canceled')}
+        self.fields = {k: v for k, v in self.fields.items() if k in
+                ('id', 'bar', 'author', 'type', 'timestamp',
+                 'last_modified', 'canceled', '_type')}
         obj = super(BaseTransactionSerializer, self).to_native(t)
         self.fields = fields
         try:
@@ -82,6 +84,7 @@ class BaseTransactionSerializer(serializers.ModelSerializer):
             obj["author_account"] = author_account.id
         except:
             pass
+        obj['_type'] = "Transaction"
         return obj
 
     def restore_object(self, attrs, instance=None):
