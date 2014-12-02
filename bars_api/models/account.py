@@ -13,7 +13,7 @@ class Account(models.Model):
         app_label = 'bars_api'
     bar = models.ForeignKey(Bar)
     owner = models.ForeignKey(User)
-    money = models.DecimalField(max_digits=7, decimal_places=3)
+    money = models.FloatField()
     last_modified = models.DateTimeField(auto_now=True)
 
     def __unicode__(self):

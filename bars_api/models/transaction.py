@@ -35,8 +35,8 @@ class ItemOperation(models.Model):
         app_label = 'bars_api'
     transaction = models.ForeignKey(Transaction)
     item = models.ForeignKey(Item)
-    prev_value = models.DecimalField(max_digits=7, decimal_places=3)
-    delta = models.DecimalField(max_digits=7, decimal_places=3)
+    prev_value = models.FloatField()
+    delta = models.FloatField()
 
     def save(self, *args, **kwargs):
         isNew = not self.pk
@@ -53,8 +53,8 @@ class AccountOperation(models.Model):
         app_label = 'bars_api'
     transaction = models.ForeignKey(Transaction)
     account = models.ForeignKey(Account)
-    prev_value = models.DecimalField(max_digits=7, decimal_places=3)
-    delta = models.DecimalField(max_digits=7, decimal_places=3)
+    prev_value = models.FloatField()
+    delta = models.FloatField()
 
     def save(self, *args, **kwargs):
         isNew = not self.pk
@@ -102,7 +102,7 @@ class BaseTransactionSerializer(serializers.ModelSerializer):
 
 class BuyTransactionSerializer(BaseTransactionSerializer):
     item = serializers.PrimaryKeyRelatedField(queryset=Item.objects.all())
-    qty = serializers.DecimalField(max_digits=7, decimal_places=3)
+    qty = serializers.FloatField()
 
     def save_object(self, t, **kwargs):
         super(BuyTransactionSerializer, self).save_object(t, **kwargs)
@@ -146,7 +146,7 @@ class BuyTransactionSerializer(BaseTransactionSerializer):
 
 class GiveTransactionSerializer(BaseTransactionSerializer):
     account = serializers.PrimaryKeyRelatedField(queryset=Account.objects.all())
-    amount = serializers.DecimalField(max_digits=7, decimal_places=3)
+    amount = serializers.FloatField()
 
     def save_object(self, t, **kwargs):
         super(GiveTransactionSerializer, self).save_object(t, **kwargs)
@@ -191,7 +191,7 @@ class GiveTransactionSerializer(BaseTransactionSerializer):
 
 class ThrowTransactionSerializer(BaseTransactionSerializer):
     item = serializers.PrimaryKeyRelatedField(queryset=Item.objects.all())
-    qty = serializers.DecimalField(max_digits=7, decimal_places=3)
+    qty = serializers.FloatField()
 
     def save_object(self, t, **kwargs):
         super(ThrowTransactionSerializer, self).save_object(t, **kwargs)
@@ -238,7 +238,7 @@ class ThrowTransactionSerializer(BaseTransactionSerializer):
 
 class PunishTransactionSerializer(BaseTransactionSerializer):
     account = serializers.PrimaryKeyRelatedField(queryset=Account.objects.all())
-    amount = serializers.DecimalField(max_digits=7, decimal_places=3)
+    amount = serializers.FloatField()
     motive = serializers.CharField()
 
     def save_object(self, t, **kwargs):
