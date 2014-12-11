@@ -72,13 +72,13 @@ class BaseTransactionSerializer(serializers.ModelSerializer):
         model = Transaction
         read_only_fields = ('bar', 'author', 'timestamp', 'last_modified')
 
-    def to_native(self, t):
+    def to_representation(self, t):
         fields = self.fields
-        self.fields = {k: v for k, v in self.fields.items() if k in
-                ('id', 'bar', 'author', 'type', 'timestamp',
-                 'last_modified', 'canceled', '_type')}
-        obj = super(BaseTransactionSerializer, self).to_native(t)
-        self.fields = fields
+        # self.fields = {k: v for k, v in self.fields.items() if k in
+        #         ('id', 'bar', 'author', 'type', 'timestamp',
+        #          'last_modified', 'canceled', '_type')}
+        obj = super(BaseTransactionSerializer, self).to_representation(t)
+        # self.fields = fields
         try:
             author_account = Account.objects.get(owner=t.author, bar=t.bar)
             obj["author_account"] = author_account.id
@@ -87,12 +87,17 @@ class BaseTransactionSerializer(serializers.ModelSerializer):
         obj['_type'] = "Transaction"
         return obj
 
-    def restore_object(self, attrs, instance=None):
-        t = super(BaseTransactionSerializer, self).restore_object(attrs, instance)
+    def create(self, attrs):
+        t = Transaction(**attrs)
         t.author = self.context['request'].user
         # Todo: add correct bar
         t.bar = Bar.objects.all()[0]  # self.context['request'].bar
+        t.save()
+        self.save_object(t)
         return t
+
+    def save_object(self, t, **kwargs):
+        pass
 
 
 class BuyTransactionSerializer(BaseTransactionSerializer):
@@ -109,8 +114,8 @@ class BuyTransactionSerializer(BaseTransactionSerializer):
             account=Account.objects.get(owner=t.author, bar=t.bar),
             delta=-t.qty * t.item.price)
 
-    def to_native(self, transaction):
-        obj = super(BuyTransactionSerializer, self).to_native(transaction)
+    def to_representation(self, transaction):
+        obj = BaseTransactionSerializer(transaction).data
         if transaction is None:
             return obj
 
@@ -153,8 +158,8 @@ class GiveTransactionSerializer(BaseTransactionSerializer):
             account=t.account,
             delta=t.amount)
 
-    def to_native(self, transaction):
-        obj = super(GiveTransactionSerializer, self).to_native(transaction)
+    def to_representation(self, transaction):
+        obj = BaseTransactionSerializer(transaction).data
         if transaction is None:
             return obj
 
@@ -198,8 +203,8 @@ class ThrowTransactionSerializer(BaseTransactionSerializer):
             item=t.item,
             delta=-t.qty)
 
-    def to_native(self, transaction):
-        obj = super(ThrowTransactionSerializer, self).to_native(transaction)
+    def to_representation(self, transaction):
+        obj = BaseTransactionSerializer(transaction).data
         if transaction is None:
             return obj
 
@@ -246,8 +251,8 @@ class PunishTransactionSerializer(BaseTransactionSerializer):
             label='motive',
             data=t.motive)
 
-    def to_native(self, transaction):
-        obj = super(PunishTransactionSerializer, self).to_native(transaction)
+    def to_representation(self, transaction):
+        obj = BaseTransactionSerializer(transaction).data
         if transaction is None:
             return obj
 
@@ -305,8 +310,8 @@ class TransactionSerializer(serializers.Serializer):
         else:
             return self.serializers_map[""]
 
-    def to_native(self, obj):
-        return self.get_serializer(obj).to_native(obj)
+    def to_representation(self, obj):
+        return self.get_serializer(obj).to_representation(obj)
 
     def from_native(self, data, files=None):
         s = self.get_serializer(data)
@@ -322,8 +327,12 @@ class TransactionSerializer(serializers.Serializer):
         self._errors = s._errors
         return ret
 
-    def save_object(self, obj, **kwargs):
-        self.get_serializer(obj).save_object(obj, **kwargs)
+    # def save_object(self, obj, **kwargs):
+    #     self.get_serializer(obj).save_object(obj, **kwargs)
+
+    def create(self, data):
+        s = self.get_serializer(data)
+        return s.create(data)
 
 
 class TransactionViewSet(viewsets.ModelViewSet):

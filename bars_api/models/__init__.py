@@ -1,22 +1,17 @@
 from rest_framework import fields
 
-class VirtualField(fields.Field):
+class VirtualField(fields.ReadOnlyField):
     type_name = 'VirtualField'
     type_label = 'virtual'
     label = 'virtual'
     source = ''
 
     def __init__(self, value):
+        super(VirtualField, self).__init__()
         self.value = value
 
-    # def validate(self, value):
-    #     pass
+    def get_attribute(self, instance):
+        return ''
 
-    def field_to_native(self, obj, field_name):
+    def to_representation(self, attr):
         return self.value
-
-    def field_from_native(self, data, files, field_name, into):
-        pass
-
-    # def from_native(self, value):
-    #     return value
