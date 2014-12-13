@@ -72,50 +72,50 @@ class BaseTransactionSerializer(serializers.ModelSerializer):
         model = Transaction
         read_only_fields = ('bar', 'author', 'timestamp', 'last_modified')
 
-    def to_representation(self, t):
-        fields = self.fields
-        # self.fields = {k: v for k, v in self.fields.items() if k in
-        #         ('id', 'bar', 'author', 'type', 'timestamp',
-        #          'last_modified', 'canceled', '_type')}
-        obj = super(BaseTransactionSerializer, self).to_representation(t)
-        # self.fields = fields
-        try:
-            author_account = Account.objects.get(owner=t.author, bar=t.bar)
-            obj["author_account"] = author_account.id
-        except:
-            pass
-        obj['_type'] = "Transaction"
-        return obj
+    def to_representation(self, transaction):
+        if 'ignore_type' in self.context or transaction.type == "":
+            obj = super(BaseTransactionSerializer, self).to_representation(transaction)
+            try:
+                author_account = Account.objects.get(owner=transaction.author, bar=transaction.bar)
+                obj["author_account"] = author_account.id
+            except:
+                pass
+            obj['_type'] = "Transaction"
 
-    def create(self, attrs):
+            return obj
+        else:
+            serializer = serializers_class_map[transaction.type](transaction)
+            return serializer.data
+
+    def create(self, data):
+        fields = Transaction._meta.get_all_field_names()
+        attrs = {k: v for k, v in data.items() if k in fields}
         t = Transaction(**attrs)
         t.author = self.context['request'].user
         # Todo: add correct bar
         t.bar = Bar.objects.all()[0]  # self.context['request'].bar
         t.save()
-        self.save_object(t)
         return t
-
-    def save_object(self, t, **kwargs):
-        pass
 
 
 class BuyTransactionSerializer(BaseTransactionSerializer):
     item = serializers.PrimaryKeyRelatedField(queryset=Item.objects.all())
     qty = serializers.FloatField()
 
-    def save_object(self, t, **kwargs):
-        super(BuyTransactionSerializer, self).save_object(t, **kwargs)
+    def create(self, data):
+        t = super(BuyTransactionSerializer, self).create(data)
 
         t.itemoperation_set.create(
-            item=t.item,
-            delta=-t.qty)
+            item=data['item'],
+            delta=-data['qty'])
         t.accountoperation_set.create(
             account=Account.objects.get(owner=t.author, bar=t.bar),
-            delta=-t.qty * t.item.price)
+            delta=-data['qty'] * data['item'].price)
+
+        return t
 
     def to_representation(self, transaction):
-        obj = BaseTransactionSerializer(transaction).data
+        obj = BaseTransactionSerializer(transaction, context={'ignore_type': True}).data
         if transaction is None:
             return obj
 
@@ -148,18 +148,20 @@ class GiveTransactionSerializer(BaseTransactionSerializer):
     account = serializers.PrimaryKeyRelatedField(queryset=Account.objects.all())
     amount = serializers.FloatField()
 
-    def save_object(self, t, **kwargs):
-        super(GiveTransactionSerializer, self).save_object(t, **kwargs)
+    def create(self, data):
+        t = super(GiveTransactionSerializer, self).create(data)
 
         t.accountoperation_set.create(
             account=Account.objects.get(owner=t.author, bar=t.bar),
-            delta=-t.amount)
+            delta=-data["amount"])
         t.accountoperation_set.create(
-            account=t.account,
-            delta=t.amount)
+            account=data["account"],
+            delta=data["amount"])
+
+        return t
 
     def to_representation(self, transaction):
-        obj = BaseTransactionSerializer(transaction).data
+        obj = BaseTransactionSerializer(transaction, context={'ignore_type': True}).data
         if transaction is None:
             return obj
 
@@ -193,18 +195,17 @@ class ThrowTransactionSerializer(BaseTransactionSerializer):
     item = serializers.PrimaryKeyRelatedField(queryset=Item.objects.all())
     qty = serializers.FloatField()
 
-    def save_object(self, t, **kwargs):
-        super(ThrowTransactionSerializer, self).save_object(t, **kwargs)
+    def create(self, data):
+        t = super(ThrowTransactionSerializer, self).create(data)
 
-        # t.accountoperation_set.create(
-        #     account=Account.objects.get(owner=t.author, bar=t.bar),
-        #     delta=-t.amount)
         t.itemoperation_set.create(
-            item=t.item,
-            delta=-t.qty)
+            item=data["item"],
+            delta=-data["qty"])
+
+        return t
 
     def to_representation(self, transaction):
-        obj = BaseTransactionSerializer(transaction).data
+        obj = BaseTransactionSerializer(transaction, context={'ignore_type': True}).data
         if transaction is None:
             return obj
 
@@ -241,18 +242,20 @@ class PunishTransactionSerializer(BaseTransactionSerializer):
     amount = serializers.FloatField()
     motive = serializers.CharField()
 
-    def save_object(self, t, **kwargs):
-        super(PunishTransactionSerializer, self).save_object(t, **kwargs)
+    def create(self, data):
+        t = super(ThrowTransactionSerializer, self).create(data)
 
         t.accountoperation_set.create(
-            account=t.account,
-            delta=-t.amount)
+            account=data["account"],
+            delta=-data["amount"])
         t.transactiondata_set.create(
             label='motive',
-            data=t.motive)
+            data=data["motive"])
+
+        return t
 
     def to_representation(self, transaction):
-        obj = BaseTransactionSerializer(transaction).data
+        obj = BaseTransactionSerializer(transaction, context={'ignore_type': True}).data
         if transaction is None:
             return obj
 
@@ -283,61 +286,22 @@ class PunishTransactionSerializer(BaseTransactionSerializer):
         return obj
 
 
-class TransactionSerializer(serializers.Serializer):
-    serializers_class_map = {
-        "": BaseTransactionSerializer,
-        "buy": BuyTransactionSerializer,
-        "give": GiveTransactionSerializer,
-        "throw": ThrowTransactionSerializer,
-        "punish": PunishTransactionSerializer}
-
-    def __init__(self, *args, **kwargs):
-        super(TransactionSerializer, self).__init__(*args, **kwargs)
-        self.serializers_map = {}
-        for key, serializer in self.serializers_class_map.items():
-            self.serializers_map[key] = serializer(*args, **kwargs)
-
-    def get_serializer(self, obj):
-        if obj is None:
-            type = ""
-        elif isinstance(obj, dict):
-            type = obj.get("type", "")
-        else:
-            type = obj.type or ""
-
-        if type in self.serializers_map:
-            return self.serializers_map[type]
-        else:
-            return self.serializers_map[""]
-
-    def to_representation(self, obj):
-        return self.get_serializer(obj).to_representation(obj)
-
-    def from_native(self, data, files=None):
-        s = self.get_serializer(data)
-        s._errors = self._errors
-        ret = self.get_serializer(data).from_native(data, files)
-        self._errors = s._errors
-        return ret
-
-    def restore_fields(self, data, files):
-        s = self.get_serializer(data)
-        s._errors = self._errors
-        ret = s.restore_fields(data, files)
-        self._errors = s._errors
-        return ret
-
-    # def save_object(self, obj, **kwargs):
-    #     self.get_serializer(obj).save_object(obj, **kwargs)
-
-    def create(self, data):
-        s = self.get_serializer(data)
-        return s.create(data)
-
+serializers_class_map = {
+    "": BaseTransactionSerializer,
+    "buy": BuyTransactionSerializer,
+    "give": GiveTransactionSerializer,
+    "throw": ThrowTransactionSerializer,
+    "punish": PunishTransactionSerializer}
 
 class TransactionViewSet(viewsets.ModelViewSet):
     queryset = Transaction.objects.all()
-    serializer_class = TransactionSerializer
+
+    def get_serializer_class(self):
+        data = self.request.data
+        if "type" in data:
+            return serializers_class_map[data["type"]]
+        else:
+            return serializers_class_map[""]
 
     @decorators.detail_route(methods=['post'])
     def cancel(self, request, pk=None):
