@@ -40,11 +40,12 @@ class ItemOperation(models.Model):
 
     def save(self, *args, **kwargs):
         if not self.pk:
-            self.prev_value = self.item.qty
             others = self.transaction.itemoperation_set.filter(item=self.item)
-            for ao in others:
-                self.prev_value += ao.delta
-            self.item.qty = self.prev_value + self.delta
+            delta = 0
+            for io in others:
+                delta += io.delta
+            self.prev_value = self.item.qty + delta
+            self.item.qty += self.delta + delta
             self.item.save()
         super(ItemOperation, self).save(*args, **kwargs)
 
@@ -62,11 +63,12 @@ class AccountOperation(models.Model):
 
     def save(self, *args, **kwargs):
         if not self.pk:
-            self.prev_value = self.account.money
             others = self.transaction.accountoperation_set.filter(account=self.account)
+            delta = 0
             for ao in others:
-                self.prev_value += ao.delta
-            self.account.money = self.prev_value + self.delta
+                delta += ao.delta
+            self.prev_value = self.account.money + delta
+            self.account.money += self.delta + delta
             self.account.save()
         super(AccountOperation, self).save(*args, **kwargs)
 
