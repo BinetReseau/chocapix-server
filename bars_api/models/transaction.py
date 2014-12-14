@@ -151,6 +151,105 @@ class BuyTransactionSerializer(BaseTransactionSerializer):
         return obj
 
 
+class ThrowTransactionSerializer(BaseTransactionSerializer):
+    item = serializers.PrimaryKeyRelatedField(queryset=Item.objects.all())
+    qty = serializers.FloatField()
+
+    def create(self, data):
+        t = super(ThrowTransactionSerializer, self).create(data)
+
+        t.itemoperation_set.create(
+            item=data["item"],
+            delta=-data["qty"])
+
+        return t
+
+    def to_representation(self, transaction):
+        obj = BaseTransactionSerializer(transaction, context={'ignore_type': True}).data
+        if transaction is None:
+            return obj
+
+        try:
+            error = serializers.ValidationError("")
+
+            if len(transaction.itemoperation_set.all()) != 1:
+                raise error
+            iop = transaction.itemoperation_set.all()[0]
+            obj["item"] = iop.item.id
+            obj["qty"] = abs(iop.delta)
+
+            # if len(transaction.accountoperation_set.all()) != 1:
+            #     raise error
+            # aop = transaction.accountoperation_set.all()[0]
+            # if aop.account != # bar.account:
+            #     raise error
+            # obj["moneyflow"] = -aop.delta
+            # obj["account"] = aop.account.id
+            obj["moneyflow"] = iop.delta * iop.item.price
+
+
+        except serializers.ValidationError:
+            return obj
+        else:
+            pass
+            # obj["_type"] = transaction.type.title() + "Transaction"
+
+        return obj
+
+
+class MealItemSerializer(serializers.Serializer):
+    item = serializers.PrimaryKeyRelatedField(queryset=Item.objects.all())
+    qty = serializers.FloatField()
+
+class MealTransactionSerializer(BaseTransactionSerializer):
+    items = MealItemSerializer(many=True)
+
+    def create(self, data):
+        t = super(MealTransactionSerializer, self).create(data)
+
+        total_price = 0
+        for i in data["items"]:
+            t.itemoperation_set.create(
+                item=i["item"],
+                delta=-i["qty"])
+            total_price += i["qty"] * i["item"].price
+        t.accountoperation_set.create(
+            account=Account.objects.get(owner=t.author, bar=t.bar),
+            delta=-total_price)
+
+        return t
+
+    def to_representation(self, transaction):
+        obj = BaseTransactionSerializer(transaction, context={'ignore_type': True}).data
+        if transaction is None:
+            return obj
+
+        try:
+            error = serializers.ValidationError("")
+
+            obj["items"] = []
+            for iop in transaction.itemoperation_set.all():
+                obj["items"].append({
+                    'item': iop.item.id,
+                    'qty': abs(iop.delta)
+                })
+
+            if len(transaction.accountoperation_set.all()) != 1:
+                raise error
+            aop = transaction.accountoperation_set.all()[0]
+            if aop.account.owner != transaction.author:
+                raise error
+            obj["moneyflow"] = -aop.delta
+
+        except serializers.ValidationError:
+            return obj
+        else:
+            pass
+            # obj["_type"] = transaction.type.title() + "Transaction"
+
+        return obj
+
+
 class GiveTransactionSerializer(BaseTransactionSerializer):
     account = serializers.PrimaryKeyRelatedField(queryset=Account.objects.all())
     amount = serializers.FloatField()
@@ -188,52 +287,6 @@ class GiveTransactionSerializer(BaseTransactionSerializer):
             obj["account"] = to_op.account.id
             obj["amount"] = to_op.delta
             obj["moneyflow"] = to_op.delta
-
-        except serializers.ValidationError:
-            return obj
-        else:
-            pass
-            # obj["_type"] = transaction.type.title() + "Transaction"
-
-        return obj
-
-
-class ThrowTransactionSerializer(BaseTransactionSerializer):
-    item = serializers.PrimaryKeyRelatedField(queryset=Item.objects.all())
-    qty = serializers.FloatField()
-
-    def create(self, data):
-        t = super(ThrowTransactionSerializer, self).create(data)
-
-        t.itemoperation_set.create(
-            item=data["item"],
-            delta=-data["qty"])
-
-        return t
-
-    def to_representation(self, transaction):
-        obj = BaseTransactionSerializer(transaction, context={'ignore_type': True}).data
-        if transaction is None:
-            return obj
-
-        try:
-            error = serializers.ValidationError("")
-
-            if len(transaction.itemoperation_set.all()) != 1:
-                raise error
-            iop = transaction.itemoperation_set.all()[0]
-            obj["item"] = iop.item.id
-            obj["qty"] = abs(iop.delta)
-
-            # if len(transaction.accountoperation_set.all()) != 1:
-            #     raise error
-            # aop = transaction.accountoperation_set.all()[0]
-            # if aop.account != # bar.account:
-            #     raise error
-            # obj["moneyflow"] = -aop.delta
-            # obj["account"] = aop.account.id
-            obj["moneyflow"] = iop.delta * iop.item.price
-
 
         except serializers.ValidationError:
             return obj
@@ -296,6 +349,7 @@ class PunishTransactionSerializer(BaseTransactionSerializer):
 serializers_class_map = {
     "": BaseTransactionSerializer,
     "buy": BuyTransactionSerializer,
+    "meal": MealTransactionSerializer,
     "give": GiveTransactionSerializer,
     "throw": ThrowTransactionSerializer,
     "punish": PunishTransactionSerializer}
