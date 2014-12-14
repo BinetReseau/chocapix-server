@@ -203,8 +203,13 @@ class MealItemSerializer(serializers.Serializer):
     item = serializers.PrimaryKeyRelatedField(queryset=Item.objects.all())
     qty = serializers.FloatField()
 
+class MealAccountSerializer(serializers.Serializer):
+    account = serializers.PrimaryKeyRelatedField(queryset=Account.objects.all())
+    ratio = serializers.FloatField()
+
 class MealTransactionSerializer(BaseTransactionSerializer):
     items = MealItemSerializer(many=True)
+    accounts = MealAccountSerializer(many=True)
 
     def create(self, data):
         t = super(MealTransactionSerializer, self).create(data)
@@ -215,9 +220,14 @@ class MealTransactionSerializer(BaseTransactionSerializer):
                 item=i["item"],
                 delta=-i["qty"])
             total_price += i["qty"] * i["item"].price
-        t.accountoperation_set.create(
-            account=Account.objects.get(owner=t.author, bar=t.bar),
-            delta=-total_price)
+
+        total_ratio = 0
+        for a in data["accounts"]:
+            total_ratio += a["ratio"]
+        for a in data["accounts"]:
+            t.accountoperation_set.create(
+                account=a["account"],
+                delta=-total_price * a["ratio"] / total_ratio)
 
         return t
 
@@ -226,28 +236,24 @@ class MealTransactionSerializer(BaseTransactionSerializer):
         if transaction is None:
             return obj
 
-        try:
-            error = serializers.ValidationError("")
+        obj["items"] = []
+        for iop in transaction.itemoperation_set.all():
+            obj["items"].append({
+                'item': iop.item.id,
+                'qty': abs(iop.delta)
+            })
 
-            obj["items"] = []
-            for iop in transaction.itemoperation_set.all():
-                obj["items"].append({
-                    'item': iop.item.id,
-                    'qty': abs(iop.delta)
-                })
+        total_price = 0
+        obj["accounts"] = []
+        for aop in transaction.accountoperation_set.all():
+            total_price += abs(aop.delta)
+        for aop in transaction.accountoperation_set.all():
+            obj["accounts"].append({
+                'account': aop.account.id,
+                'ratio': abs(aop.delta) / total_price
+            })
 
-            if len(transaction.accountoperation_set.all()) != 1:
-                raise error
-            aop = transaction.accountoperation_set.all()[0]
-            if aop.account.owner != transaction.author:
-                raise error
-            obj["moneyflow"] = -aop.delta
-
-        except serializers.ValidationError:
-            return obj
-        else:
-            pass
-            # obj["_type"] = transaction.type.title() + "Transaction"
+        obj["moneyflow"] = total_price
 
         return obj
 
