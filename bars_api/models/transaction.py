@@ -1,4 +1,5 @@
 from django.db import models
+from django.db.models import F
 from rest_framework import viewsets
 from rest_framework import serializers, decorators
 from rest_framework.response import Response
@@ -40,17 +41,26 @@ class ItemOperation(models.Model):
 
     def save(self, *args, **kwargs):
         if not self.pk:
-            others = self.transaction.itemoperation_set.filter(item=self.item)
-            delta = 0
-            for io in others:
-                delta += io.delta
-            self.prev_value = self.item.qty + delta
-            self.item.qty += self.delta + delta
-            self.item.save()
+            self.prev_value = self.item.qty
+            Item.objects.filter(pk=self.item.id).update(qty=F('qty') + self.delta)
         super(ItemOperation, self).save(*args, **kwargs)
 
     def __unicode__(self):
         return unicode(self.item) + "+=" + unicode(self.delta)
+
+    def repropagate(self):
+        olders = (ItemOperation.objects.select_related()
+                  .filter(item=self.item)
+                  .filter(transaction__timestamp__gte=self.transaction.timestamp)
+                  .order_by('transaction__timestamp'))
+        next_prev = self.prev_value
+        for iop in olders:
+            iop.prev_value = next_prev
+            if not iop.transaction.canceled:
+                next_prev += iop.delta
+            iop.save()
+        Item.objects.filter(pk=self.item.id).update(qty=next_prev)
+
 
 
 class AccountOperation(models.Model):
@@ -63,17 +73,25 @@ class AccountOperation(models.Model):
 
     def save(self, *args, **kwargs):
         if not self.pk:
-            others = self.transaction.accountoperation_set.filter(account=self.account)
-            delta = 0
-            for ao in others:
-                delta += ao.delta
-            self.prev_value = self.account.money + delta
-            self.account.money += self.delta + delta
-            self.account.save()
+            self.prev_value = self.account.money
+            Account.objects.filter(pk=self.account.id).update(money=F('money') + self.delta)
         super(AccountOperation, self).save(*args, **kwargs)
 
     def __unicode__(self):
         return unicode(self.account) + "+=" + unicode(self.delta)
+
+    def repropagate(self):
+        olders = (AccountOperation.objects.select_related()
+                  .filter(account=self.account)
+                  .filter(transaction__timestamp__gte=self.transaction.timestamp)
+                  .order_by('transaction__timestamp'))
+        next_prev = self.prev_value
+        for aop in olders:
+            aop.prev_value = next_prev
+            if not aop.transaction.canceled:
+                next_prev += aop.delta
+            aop.save()
+        Account.objects.filter(pk=self.account.id).update(money=next_prev)
 
 
 class BaseTransactionSerializer(serializers.ModelSerializer):
@@ -245,9 +263,10 @@ class MealTransactionSerializer(BaseTransactionSerializer):
 
         total_price = 0
         obj["accounts"] = []
-        for aop in transaction.accountoperation_set.all():
+        aops = transaction.accountoperation_set.all()
+        for aop in aops:
             total_price += abs(aop.delta)
-        for aop in transaction.accountoperation_set.all():
+        for aop in aops:
             obj["accounts"].append({
                 'account': aop.account.id,
                 'ratio': abs(aop.delta) / total_price
@@ -374,10 +393,17 @@ class TransactionViewSet(viewsets.ModelViewSet):
 
     @decorators.detail_route(methods=['post'])
     def cancel(self, request, pk=None):
-        transaction = Transaction.objects.get(pk=pk)
+        transaction = Transaction.objects.select_related().get(pk=pk)
         transaction.canceled = True
         transaction.save()
-        serializer = self.serializer_class(transaction)
+
+        for aop in transaction.accountoperation_set.all():
+            aop.repropagate()
+
+        for iop in transaction.itemoperation_set.all():
+            iop.repropagate()
+
+        serializer = self.get_serializer_class()(transaction)
         return Response(serializer.data)
 
     @decorators.detail_route(methods=['post'])
@@ -385,5 +411,12 @@ class TransactionViewSet(viewsets.ModelViewSet):
         transaction = Transaction.objects.get(pk=pk)
         transaction.canceled = False
         transaction.save()
-        serializer = self.serializer_class(transaction)
+
+        for aop in transaction.accountoperation_set.all():
+            aop.repropagate()
+
+        for iop in transaction.itemoperation_set.all():
+            iop.repropagate()
+
+        serializer = self.get_serializer_class()(transaction)
         return Response(serializer.data)
