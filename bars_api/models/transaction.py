@@ -39,13 +39,17 @@ class ItemOperation(models.Model):
     delta = models.FloatField()
 
     def save(self, *args, **kwargs):
-        isNew = not self.pk
-        if isNew:
+        if not self.pk:
             self.prev_value = self.item.qty
-        super(ItemOperation, self).save(*args, **kwargs)
-        if isNew:
+            others = self.transaction.itemoperation_set.filter(item=self.item)
+            for ao in others:
+                self.prev_value += ao.delta
             self.item.qty = self.prev_value + self.delta
             self.item.save()
+        super(ItemOperation, self).save(*args, **kwargs)
+
+    def __unicode__(self):
+        return unicode(self.item) + "+=" + unicode(self.delta)
 
 
 class AccountOperation(models.Model):
@@ -57,14 +61,17 @@ class AccountOperation(models.Model):
     delta = models.FloatField()
 
     def save(self, *args, **kwargs):
-        isNew = not self.pk
-        if isNew:
+        if not self.pk:
             self.prev_value = self.account.money
-        super(AccountOperation, self).save(*args, **kwargs)
-        if isNew:
+            others = self.transaction.accountoperation_set.filter(account=self.account)
+            for ao in others:
+                self.prev_value += ao.delta
             self.account.money = self.prev_value + self.delta
             self.account.save()
+        super(AccountOperation, self).save(*args, **kwargs)
 
+    def __unicode__(self):
+        return unicode(self.account) + "+=" + unicode(self.delta)
 
 
 class BaseTransactionSerializer(serializers.ModelSerializer):
