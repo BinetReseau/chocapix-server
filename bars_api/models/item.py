@@ -38,3 +38,8 @@ class ItemSerializer(serializers.ModelSerializer):
 class ItemViewSet(viewsets.ModelViewSet):
     queryset = Item.objects.all()
     serializer_class = ItemSerializer
+    filter_fields = {
+        'bar': ['exact'],
+        'qty': ['lte', 'gte'],
+        'deleted': ['exact']}
+    search_fields = ('name', 'keywords')
