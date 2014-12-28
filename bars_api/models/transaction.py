@@ -1,5 +1,5 @@
 from django.db import models
-from django.db.models import F
+from django.db.models import F, Q
 from rest_framework import viewsets
 from rest_framework import serializers, decorators
 from rest_framework.response import Response
@@ -390,6 +390,33 @@ class TransactionViewSet(viewsets.ModelViewSet):
             return serializers_class_map[data["type"]]
         else:
             return serializers_class_map[""]
+
+    def get_queryset(self):
+        queryset = Transaction.objects.all()
+
+        user = self.request.QUERY_PARAMS.get('user', None)
+        if user is not None:
+            queryset = queryset.filter(
+                Q(accountoperation__account__owner=user) |
+                Q(author=user)
+            )
+
+        account = self.request.QUERY_PARAMS.get('account', None)
+        if account is not None:
+            queryset = queryset.filter(
+                Q(accountoperation__account=account) |
+                Q(author__account=account)
+            )
+
+        item = self.request.QUERY_PARAMS.get('item', None)
+        if item is not None:
+            queryset = queryset.filter(itemoperation__item=item)
+
+        if user or account or item:
+            queryset = queryset.distinct()
+
+        return queryset
+
 
     @decorators.detail_route(methods=['post'])
     def cancel(self, request, pk=None):
