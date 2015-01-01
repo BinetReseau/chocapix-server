@@ -94,6 +94,9 @@ class AccountOperation(models.Model):
         Account.objects.filter(pk=self.account.id).update(money=next_prev)
 
 
+
+# ######################### Transaction Serializers ########################## #
+
 class BaseTransactionSerializer(serializers.ModelSerializer):
     class Meta:
         model = Transaction
@@ -412,8 +415,13 @@ class TransactionViewSet(viewsets.ModelViewSet):
         if item is not None:
             queryset = queryset.filter(itemoperation__item=item)
 
-        if user or account or item:
-            queryset = queryset.distinct()
+        queryset = queryset.order_by('-timestamp')
+        # queryset = queryset.order_by('-timestamp').distinct('timestamp')
+
+        page = int(self.request.QUERY_PARAMS.get('page', 0))
+        if page != 0:
+            page_size = int(self.request.QUERY_PARAMS.get('page_size', 10))
+            queryset = queryset[(page - 1) * page_size: page * page_size]
 
         return queryset
 
