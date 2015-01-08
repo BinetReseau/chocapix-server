@@ -231,6 +231,7 @@ class AccountRatioSerializer(serializers.Serializer):
 class MealTransactionSerializer(BaseTransactionSerializer):
     items = ItemQtySerializer(many=True)
     accounts = AccountRatioSerializer(many=True)
+    name = serializers.CharField()
 
     def create(self, data):
         t = super(MealTransactionSerializer, self).create(data)
@@ -250,6 +251,10 @@ class MealTransactionSerializer(BaseTransactionSerializer):
                 account=a["account"],
                 delta=-total_price * a["ratio"] / total_ratio)
 
+        t.transactiondata_set.create(
+            label='name',
+            data=data["name"])
+
         return t
 
     def to_representation(self, transaction):
@@ -257,25 +262,41 @@ class MealTransactionSerializer(BaseTransactionSerializer):
         if transaction is None:
             return obj
 
-        obj["items"] = []
-        for iop in transaction.itemoperation_set.all():
-            obj["items"].append({
-                'item': iop.item.id,
-                'qty': abs(iop.delta)
-            })
+        try:
+            error = serializers.ValidationError("")
 
-        total_price = 0
-        obj["accounts"] = []
-        aops = transaction.accountoperation_set.all()
-        for aop in aops:
-            total_price += abs(aop.delta)
-        for aop in aops:
-            obj["accounts"].append({
-                'account': aop.account.id,
-                'ratio': abs(aop.delta) / total_price
-            })
+            obj["items"] = []
+            for iop in transaction.itemoperation_set.all():
+                obj["items"].append({
+                    'item': iop.item.id,
+                    'qty': abs(iop.delta)
+                })
 
-        obj["moneyflow"] = total_price
+            total_price = 0
+            obj["accounts"] = []
+            aops = transaction.accountoperation_set.all()
+            for aop in aops:
+                total_price += abs(aop.delta)
+            for aop in aops:
+                obj["accounts"].append({
+                    'account': aop.account.id,
+                    'ratio': abs(aop.delta) / total_price
+                })
+
+            if len(transaction.transactiondata_set.all()) != 1:
+                raise error
+            data = transaction.transactiondata_set.all()[0]
+            if data.label != 'name':
+                raise error
+            obj[data.label] = data.data
+
+            obj["moneyflow"] = total_price
+
+        except serializers.ValidationError:
+            return obj
+        else:
+            pass
+            # obj["_type"] = transaction.type.title() + "Transaction"
 
         return obj
 
