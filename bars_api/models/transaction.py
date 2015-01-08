@@ -333,7 +333,7 @@ class PunishTransactionSerializer(BaseTransactionSerializer):
     motive = serializers.CharField()
 
     def create(self, data):
-        t = super(ThrowTransactionSerializer, self).create(data)
+        t = super(PunishTransactionSerializer, self).create(data)
 
         t.accountoperation_set.create(
             account=data["account"],
