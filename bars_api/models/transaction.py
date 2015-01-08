@@ -220,17 +220,17 @@ class ThrowTransactionSerializer(BaseTransactionSerializer):
         return obj
 
 
-class MealItemSerializer(serializers.Serializer):
+class ItemQtySerializer(serializers.Serializer):
     item = serializers.PrimaryKeyRelatedField(queryset=Item.objects.all())
     qty = serializers.FloatField()
 
-class MealAccountSerializer(serializers.Serializer):
+class AccountRatioSerializer(serializers.Serializer):
     account = serializers.PrimaryKeyRelatedField(queryset=Account.objects.all())
     ratio = serializers.FloatField()
 
 class MealTransactionSerializer(BaseTransactionSerializer):
-    items = MealItemSerializer(many=True)
-    accounts = MealAccountSerializer(many=True)
+    items = ItemQtySerializer(many=True)
+    accounts = AccountRatioSerializer(many=True)
 
     def create(self, data):
         t = super(MealTransactionSerializer, self).create(data)
@@ -278,6 +278,39 @@ class MealTransactionSerializer(BaseTransactionSerializer):
         obj["moneyflow"] = total_price
 
         return obj
+
+
+class ApproTransactionSerializer(BaseTransactionSerializer):
+    items = ItemQtySerializer(many=True)
+
+    def create(self, data):
+        t = super(ApproTransactionSerializer, self).create(data)
+
+        for i in data["items"]:
+            t.itemoperation_set.create(
+                item=i["item"],
+                delta=i["qty"])
+
+        return t
+
+    def to_representation(self, transaction):
+        obj = BaseTransactionSerializer(transaction, context={'ignore_type': True}).data
+        if transaction is None:
+            return obj
+
+        total_price = 0
+        obj["items"] = []
+        for iop in transaction.itemoperation_set.all():
+            obj["items"].append({
+                'item': iop.item.id,
+                'qty': abs(iop.delta)
+            })
+            total_price += iop.delta * iop.item
+
+        obj["moneyflow"] = total_price
+
+        return obj
+
 
 
 class GiveTransactionSerializer(BaseTransactionSerializer):
@@ -380,6 +413,7 @@ serializers_class_map = {
     "": BaseTransactionSerializer,
     "buy": BuyTransactionSerializer,
     "meal": MealTransactionSerializer,
+    "appro": ApproTransactionSerializer,
     "give": GiveTransactionSerializer,
     "throw": ThrowTransactionSerializer,
     "punish": PunishTransactionSerializer}
