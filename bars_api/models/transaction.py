@@ -326,7 +326,7 @@ class ApproTransactionSerializer(BaseTransactionSerializer):
                 'item': iop.item.id,
                 'qty': abs(iop.delta)
             })
-            total_price += iop.delta * iop.item
+            total_price += iop.delta * iop.item.buyPrice
 
         obj["moneyflow"] = total_price
 
