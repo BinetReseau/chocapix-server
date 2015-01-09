@@ -68,8 +68,8 @@ class AccountOperation(models.Model):
         app_label = 'bars_api'
     transaction = models.ForeignKey(Transaction)
     account = models.ForeignKey(Account)
-    prev_value = models.FloatField()
-    delta = models.FloatField()
+    prev_value = models.DecimalField(max_digits=8, decimal_places=3)
+    delta = models.DecimalField(max_digits=8, decimal_places=3)
 
     def save(self, *args, **kwargs):
         if not self.pk:
