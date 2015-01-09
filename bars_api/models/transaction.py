@@ -48,7 +48,7 @@ class ItemOperation(models.Model):
     def __unicode__(self):
         return unicode(self.item) + "+=" + unicode(self.delta)
 
-    def repropagate(self):
+    def propagate(self):
         olders = (ItemOperation.objects.select_related()
                   .filter(item=self.item)
                   .filter(transaction__timestamp__gte=self.transaction.timestamp)
@@ -85,7 +85,7 @@ class AccountOperation(models.Model):
     def __unicode__(self):
         return unicode(self.account) + "+=" + unicode(self.delta)
 
-    def repropagate(self):
+    def propagate(self):
         olders = (AccountOperation.objects.select_related()
                   .filter(account=self.account)
                   .filter(transaction__timestamp__gte=self.transaction.timestamp)
@@ -498,10 +498,10 @@ class TransactionViewSet(viewsets.ModelViewSet):
         transaction.save()
 
         for aop in transaction.accountoperation_set.all():
-            aop.repropagate()
+            aop.propagate()
 
         for iop in transaction.itemoperation_set.all():
-            iop.repropagate()
+            iop.propagate()
 
         serializer = self.get_serializer_class()(transaction)
         return Response(serializer.data)
@@ -513,10 +513,10 @@ class TransactionViewSet(viewsets.ModelViewSet):
         transaction.save()
 
         for aop in transaction.accountoperation_set.all():
-            aop.repropagate()
+            aop.propagate()
 
         for iop in transaction.itemoperation_set.all():
-            iop.repropagate()
+            iop.propagate()
 
         serializer = self.get_serializer_class()(transaction)
         return Response(serializer.data)
