@@ -23,6 +23,7 @@ class Item(models.Model):
     buy_price = models.FloatField(default=1)  # Todo: temporary
 
     deleted = models.BooleanField(default=False)
+    unavailable = models.BooleanField(default=False)
     last_modified = models.DateTimeField(auto_now=True)
 
     def __unicode__(self):
