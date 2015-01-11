@@ -53,12 +53,17 @@ class ItemOperation(models.Model):
                   .filter(item=self.item)
                   .filter(transaction__timestamp__gte=self.transaction.timestamp)
                   .order_by('transaction__timestamp'))
-        next_prev = self.prev_value
+            
+        next_prev = None
         for iop in olders:
-            iop.prev_value = next_prev
+            if next_prev is not None:
+                iop.prev_value = next_prev
+                iop.save()
+
+            next_prev = iop.prev_value
             if not iop.transaction.canceled:
                 next_prev += iop.delta
-            iop.save()
+
         Item.objects.filter(pk=self.item.id).update(qty=next_prev)
 
 
@@ -84,13 +89,18 @@ class AccountOperation(models.Model):
         olders = (AccountOperation.objects.select_related()
                   .filter(account=self.account)
                   .filter(transaction__timestamp__gte=self.transaction.timestamp)
-                  .order_by('transaction__timestamp'))
-        next_prev = self.prev_value
+                  .order_by('transaction__timestamp', 'pk'))
+
+        next_prev = None
         for aop in olders:
-            aop.prev_value = next_prev
+            if next_prev is not None:
+                aop.prev_value = next_prev
+                aop.save()
+
+            next_prev = aop.prev_value
             if not aop.transaction.canceled:
                 next_prev += aop.delta
-            aop.save()
+
         Account.objects.filter(pk=self.account.id).update(money=next_prev)
 
 
