@@ -149,6 +149,15 @@ class ItemQtySerializer(serializers.Serializer):
             raise ValidationError("Quantity must be positive")
         return value
 
+class AccountAmountSerializer(serializers.Serializer):
+    account = serializers.PrimaryKeyRelatedField(queryset=Account.objects.all())
+    amount = serializers.FloatField()
+
+    def validate_amount(self, value):
+        if value <= 0:
+            raise ValidationError("Amount must be positive")
+        return value
+
 class AccountRatioSerializer(serializers.Serializer):
     account = serializers.PrimaryKeyRelatedField(queryset=Account.objects.all())
     ratio = serializers.FloatField()
@@ -159,15 +168,7 @@ class AccountRatioSerializer(serializers.Serializer):
         return value
 
 
-class BuyTransactionSerializer(BaseTransactionSerializer):
-    item = serializers.PrimaryKeyRelatedField(queryset=Item.objects.all())
-    qty = serializers.FloatField()
-
-    def validate_qty(self, value):
-        if value <= 0:
-            raise ValidationError("Cannot buy a negative quantity")
-        return value
-
+class BuyTransactionSerializer(BaseTransactionSerializer, ItemQtySerializer):
     def create(self, data):
         t = super(BuyTransactionSerializer, self).create(data)
 
@@ -210,15 +211,7 @@ class BuyTransactionSerializer(BaseTransactionSerializer):
         return obj
 
 
-class ThrowTransactionSerializer(BaseTransactionSerializer):
-    item = serializers.PrimaryKeyRelatedField(queryset=Item.objects.all())
-    qty = serializers.FloatField()
-
-    def validate_qty(self, value):
-        if value <= 0:
-            raise ValidationError("Cannot buy a negative quantity")
-        return value
-
+class ThrowTransactionSerializer(BaseTransactionSerializer, ItemQtySerializer):
     def create(self, data):
         t = super(ThrowTransactionSerializer, self).create(data)
 
@@ -368,15 +361,7 @@ class ApproTransactionSerializer(BaseTransactionSerializer):
 
 
 
-class GiveTransactionSerializer(BaseTransactionSerializer):
-    account = serializers.PrimaryKeyRelatedField(queryset=Account.objects.all())
-    amount = serializers.FloatField()
-
-    def validate_amount(self, value):
-        if value <= 0:
-            raise ValidationError("Cannot give a negative amount")
-        return value
-
+class GiveTransactionSerializer(BaseTransactionSerializer, AccountAmountSerializer):
     def create(self, data):
         t = super(GiveTransactionSerializer, self).create(data)
 
@@ -420,15 +405,8 @@ class GiveTransactionSerializer(BaseTransactionSerializer):
         return obj
 
 
-class PunishTransactionSerializer(BaseTransactionSerializer):
-    account = serializers.PrimaryKeyRelatedField(queryset=Account.objects.all())
-    amount = serializers.FloatField()
+class PunishTransactionSerializer(BaseTransactionSerializer, AccountAmountSerializer):
     motive = serializers.CharField()
-
-    def validate_amount(self, value):
-        if value <= 0:
-            raise ValidationError("Cannot punish with a negative amount")
-        return value
 
     def create(self, data):
         t = super(PunishTransactionSerializer, self).create(data)
