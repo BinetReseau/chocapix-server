@@ -3,6 +3,7 @@ from django.db.models import F, Q
 from rest_framework import viewsets
 from rest_framework import serializers, decorators
 from rest_framework.response import Response
+from rest_framework.serializers import ValidationError
 
 from bars_api.auth import User
 from bars_api.models import VirtualField
@@ -53,7 +54,7 @@ class ItemOperation(models.Model):
                   .filter(item=self.item)
                   .filter(transaction__timestamp__gte=self.transaction.timestamp)
                   .order_by('transaction__timestamp'))
-            
+
         next_prev = None
         for iop in olders:
             if next_prev is not None:
@@ -125,6 +126,7 @@ class BaseTransactionSerializer(serializers.ModelSerializer):
             return obj
         else:
             serializer = serializers_class_map[transaction.type](transaction)
+            # serializer.is_valid(raise_exception=True)
             return serializer.data
 
     def create(self, data):
@@ -138,9 +140,33 @@ class BaseTransactionSerializer(serializers.ModelSerializer):
         return t
 
 
+class ItemQtySerializer(serializers.Serializer):
+    item = serializers.PrimaryKeyRelatedField(queryset=Item.objects.all())
+    qty = serializers.FloatField()
+
+    def validate_qty(self, value):
+        if value <= 0:
+            raise ValidationError("Quantity must be positive")
+        return value
+
+class AccountRatioSerializer(serializers.Serializer):
+    account = serializers.PrimaryKeyRelatedField(queryset=Account.objects.all())
+    ratio = serializers.FloatField()
+
+    def validate_ratio(self, value):
+        if value <= 0:
+            raise ValidationError("Ratio must be positive")
+        return value
+
+
 class BuyTransactionSerializer(BaseTransactionSerializer):
     item = serializers.PrimaryKeyRelatedField(queryset=Item.objects.all())
     qty = serializers.FloatField()
+
+    def validate_qty(self, value):
+        if value <= 0:
+            raise ValidationError("Cannot buy a negative quantity")
+        return value
 
     def create(self, data):
         t = super(BuyTransactionSerializer, self).create(data)
@@ -188,6 +214,11 @@ class ThrowTransactionSerializer(BaseTransactionSerializer):
     item = serializers.PrimaryKeyRelatedField(queryset=Item.objects.all())
     qty = serializers.FloatField()
 
+    def validate_qty(self, value):
+        if value <= 0:
+            raise ValidationError("Cannot buy a negative quantity")
+        return value
+
     def create(self, data):
         t = super(ThrowTransactionSerializer, self).create(data)
 
@@ -230,13 +261,6 @@ class ThrowTransactionSerializer(BaseTransactionSerializer):
         return obj
 
 
-class ItemQtySerializer(serializers.Serializer):
-    item = serializers.PrimaryKeyRelatedField(queryset=Item.objects.all())
-    qty = serializers.FloatField()
-
-class AccountRatioSerializer(serializers.Serializer):
-    account = serializers.PrimaryKeyRelatedField(queryset=Account.objects.all())
-    ratio = serializers.FloatField()
 
 class MealTransactionSerializer(BaseTransactionSerializer):
     items = ItemQtySerializer(many=True)
@@ -348,6 +372,11 @@ class GiveTransactionSerializer(BaseTransactionSerializer):
     account = serializers.PrimaryKeyRelatedField(queryset=Account.objects.all())
     amount = serializers.FloatField()
 
+    def validate_amount(self, value):
+        if value <= 0:
+            raise ValidationError("Cannot give a negative amount")
+        return value
+
     def create(self, data):
         t = super(GiveTransactionSerializer, self).create(data)
 
@@ -395,6 +424,11 @@ class PunishTransactionSerializer(BaseTransactionSerializer):
     account = serializers.PrimaryKeyRelatedField(queryset=Account.objects.all())
     amount = serializers.FloatField()
     motive = serializers.CharField()
+
+    def validate_amount(self, value):
+        if value <= 0:
+            raise ValidationError("Cannot punish with a negative amount")
+        return value
 
     def create(self, data):
         t = super(PunishTransactionSerializer, self).create(data)
