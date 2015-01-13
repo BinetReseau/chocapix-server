@@ -258,7 +258,7 @@ class ThrowTransactionSerializer(BaseTransactionSerializer, ItemQtySerializer):
 class MealTransactionSerializer(BaseTransactionSerializer):
     items = ItemQtySerializer(many=True)
     accounts = AccountRatioSerializer(many=True)
-    name = serializers.CharField()
+    name = serializers.CharField(allow_blank=True)
 
     def create(self, data):
         t = super(MealTransactionSerializer, self).create(data)
