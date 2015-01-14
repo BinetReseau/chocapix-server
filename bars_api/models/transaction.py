@@ -155,6 +155,7 @@ class BaseTransactionSerializer(serializers.ModelSerializer):
         fields = Transaction._meta.get_all_field_names()
         attrs = {k: v for k, v in data.items() if k in fields}
         t = Transaction(**attrs)
+        # t.author = User.objects.all()[0]
         t.author = self.context['request'].user
         # Todo: add correct bar
         t.bar = Bar.objects.all()[0]  # self.context['request'].bar
@@ -168,7 +169,7 @@ class ItemQtySerializer(serializers.Serializer):
     qty = serializers.FloatField()
 
     def validate_qty(self, value):
-        if value <= 0:
+        if value < 0:
             raise ValidationError("Quantity must be positive")
         return value
 
@@ -178,7 +179,7 @@ class AccountAmountSerializer(serializers.Serializer):
     amount = serializers.FloatField()
 
     def validate_amount(self, value):
-        if value <= 0:
+        if value < 0:
             raise ValidationError("Amount must be positive")
         return value
 
