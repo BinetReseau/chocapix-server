@@ -23,6 +23,12 @@ class Transaction(models.Model):
     last_modified = models.DateTimeField(auto_now=True)
     _type = VirtualField("Transaction")
 
+    def __unicode__(self):
+        return self.type + ": " \
+            + unicode(list(self.accountoperation_set.all())
+                      + list(self.itemoperation_set.all())
+                      + list(self.transactiondata_set.all()))
+
     def check_integrity(self):
         t = self.type
         iops = self.itemoperation_set.all()
@@ -46,6 +52,7 @@ class Transaction(models.Model):
         return True
 
 
+
 class TransactionData(models.Model):
     class Meta:
         app_label = 'bars_api'
@@ -54,76 +61,70 @@ class TransactionData(models.Model):
     data = models.TextField()
 
 
-class ItemOperation(models.Model):
+class BaseOperation(models.Model):
     class Meta:
-        app_label = 'bars_api'
+        abstract = True
     transaction = models.ForeignKey(Transaction)
-    item = models.ForeignKey(Item)
-    prev_value = models.FloatField()
-    delta = models.FloatField()
+    fixed = models.BooleanField(default=False)  # Wheter the operation was a delta or a fixed value
+    # prev_value = models.FloatField()
+    # delta = models.FloatField()
+
+    def __unicode__(self):
+        if self.fixed:
+            return unicode(self.target) + "=" + unicode(self.prev_value)
+        else:
+            return unicode(self.target) + "+=" + unicode(self.delta)
 
     def save(self, *args, **kwargs):
         if not self.pk:
-            self.prev_value = self.item.qty
-            Item.objects.filter(pk=self.item.id).update(qty=F('qty') + self.delta)
-        super(ItemOperation, self).save(*args, **kwargs)
+            target = self.op_model.objects.filter(pk=self.target.id)
 
-    def __unicode__(self):
-        return unicode(self.item) + "+=" + unicode(self.delta)
+            if self.fixed:
+                self.delta = self.prev_value - getattr(self.target, self.op_model_field)
+                target.update(**{self.op_model_field: self.prev_value})
+            else:
+                self.prev_value = getattr(self.target, self.op_model_field)
+                target.update(**{self.op_model_field: F(self.op_model_field) + self.delta})
 
-    def propagate(self):
-        olders = (ItemOperation.objects.select_related()
-                  .filter(item=self.item)
-                  .filter(transaction__timestamp__gte=self.transaction.timestamp)
-                  .order_by('transaction__timestamp'))
-
-        next_prev = None
-        for iop in olders:
-            if next_prev is not None:
-                iop.prev_value = next_prev
-                iop.save()
-
-            next_prev = iop.prev_value
-            if not iop.transaction.canceled:
-                next_prev += iop.delta
-
-        Item.objects.filter(pk=self.item.id).update(qty=next_prev)
-
-
-class AccountOperation(models.Model):
-    class Meta:
-        app_label = 'bars_api'
-    transaction = models.ForeignKey(Transaction)
-    account = models.ForeignKey(Account)
-    prev_value = models.DecimalField(max_digits=8, decimal_places=3)
-    delta = models.DecimalField(max_digits=8, decimal_places=3)
-
-    def save(self, *args, **kwargs):
-        if not self.pk:
-            self.prev_value = self.account.money
-            Account.objects.filter(pk=self.account.id).update(money=F('money') + self.delta)
-        super(AccountOperation, self).save(*args, **kwargs)
-
-    def __unicode__(self):
-        return unicode(self.account) + "+=" + unicode(self.delta)
+        super(BaseOperation, self).save(*args, **kwargs)
 
     def propagate(self):
-        olders = (AccountOperation.objects.select_related()
-                  .filter(account=self.account)
+        olders = (self.__class__.objects.select_related()
+                  .filter(target=self.target)
                   .filter(transaction__timestamp__gte=self.transaction.timestamp)
                   .order_by('transaction__timestamp', 'pk'))
 
         next_prev = None
-        for aop in olders:
-            if next_prev is not None:
-                aop.prev_value = next_prev
-                aop.save()
+        for op in olders:
+            if next_prev is not None and not op.fixed:
+                op.prev_value = next_prev
+                op.save()
 
-            next_prev = aop.prev_value
-            if not aop.transaction.canceled:
-                next_prev += aop.delta
+            next_prev = op.prev_value
+            if not op.transaction.canceled and not op.fixed:
+                next_prev += op.delta
 
-        Account.objects.filter(pk=self.account.id).update(money=next_prev)
+        self.op_model.objects.filter(pk=self.target.id).update(**{self.op_model_field: next_prev})
+
+class ItemOperation(BaseOperation):
+    class Meta:
+        app_label = 'bars_api'
+    target = models.ForeignKey(Item)
+    prev_value = models.FloatField()
+    delta = models.FloatField()
+
+    op_model = Item
+    op_model_field = 'qty'
+
+class AccountOperation(BaseOperation):
+    class Meta:
+        app_label = 'bars_api'
+    target = models.ForeignKey(Account)
+    prev_value = models.DecimalField(max_digits=8, decimal_places=3)
+    delta = models.DecimalField(max_digits=8, decimal_places=3)
+
+    op_model = Account
+    op_model_field = 'money'
 
 
 
@@ -161,6 +162,7 @@ class BaseTransactionSerializer(serializers.ModelSerializer):
         return t
 
 
+
 class ItemQtySerializer(serializers.Serializer):
     item = serializers.PrimaryKeyRelatedField(queryset=Item.objects.all())
     qty = serializers.FloatField()
@@ -170,6 +172,7 @@ class ItemQtySerializer(serializers.Serializer):
             raise ValidationError("Quantity must be positive")
         return value
 
+
 class AccountAmountSerializer(serializers.Serializer):
     account = serializers.PrimaryKeyRelatedField(queryset=Account.objects.all())
     amount = serializers.FloatField()
@@ -178,6 +181,7 @@ class AccountAmountSerializer(serializers.Serializer):
         if value <= 0:
             raise ValidationError("Amount must be positive")
         return value
+
 
 class AccountRatioSerializer(serializers.Serializer):
     account = serializers.PrimaryKeyRelatedField(queryset=Account.objects.all())
@@ -189,15 +193,16 @@ class AccountRatioSerializer(serializers.Serializer):
         return value
 
 
+
 class BuyTransactionSerializer(BaseTransactionSerializer, ItemQtySerializer):
     def create(self, data):
         t = super(BuyTransactionSerializer, self).create(data)
 
         t.itemoperation_set.create(
-            item=data['item'],
+            target=data['item'],
             delta=-data['qty'])
         t.accountoperation_set.create(
-            account=Account.objects.get(owner=t.author, bar=t.bar),
+            target=Account.objects.get(owner=t.author, bar=t.bar),
             delta=-data['qty'] * data['item'].price)
 
         return t
@@ -208,7 +213,7 @@ class BuyTransactionSerializer(BaseTransactionSerializer, ItemQtySerializer):
             return obj
 
         iop = transaction.itemoperation_set.all()[0]
-        obj["item"] = iop.item.id
+        obj["item"] = iop.target.id
         obj["qty"] = abs(iop.delta)
 
         aop = transaction.accountoperation_set.all()[0]
@@ -222,7 +227,7 @@ class ThrowTransactionSerializer(BaseTransactionSerializer, ItemQtySerializer):
         t = super(ThrowTransactionSerializer, self).create(data)
 
         t.itemoperation_set.create(
-            item=data["item"],
+            target=data["item"],
             delta=-data["qty"])
 
         return t
@@ -233,10 +238,72 @@ class ThrowTransactionSerializer(BaseTransactionSerializer, ItemQtySerializer):
             return obj
 
         iop = transaction.itemoperation_set.all()[0]
-        obj["item"] = iop.item.id
+        obj["item"] = iop.target.id
         obj["qty"] = abs(iop.delta)
 
-        obj["moneyflow"] = iop.delta * iop.item.price
+        obj["moneyflow"] = iop.delta * iop.target.price
+
+        return obj
+
+
+class GiveTransactionSerializer(BaseTransactionSerializer, AccountAmountSerializer):
+    def create(self, data):
+        t = super(GiveTransactionSerializer, self).create(data)
+
+        t.accountoperation_set.create(
+            target=Account.objects.get(owner=t.author, bar=t.bar),
+            delta=-data["amount"])
+        t.accountoperation_set.create(
+            target=data["account"],
+            delta=data["amount"])
+
+        return t
+
+    def to_representation(self, transaction):
+        obj = BaseTransactionSerializer(transaction, context={'ignore_type': True}).data
+        if transaction is None:
+            return obj
+
+        from_op = transaction.accountoperation_set.all()[0]
+        to_op = transaction.accountoperation_set.all()[1]
+        if to_op.target.owner == transaction.author:
+            from_op, to_op = to_op, from_op
+        obj["account"] = to_op.target.id
+        obj["amount"] = to_op.delta
+
+        obj["moneyflow"] = to_op.delta
+
+        return obj
+
+
+class PunishTransactionSerializer(BaseTransactionSerializer, AccountAmountSerializer):
+    motive = serializers.CharField()
+
+    def create(self, data):
+        t = super(PunishTransactionSerializer, self).create(data)
+
+        t.accountoperation_set.create(
+            target=data["account"],
+            delta=-data["amount"])
+        t.transactiondata_set.create(
+            label='motive',
+            data=data["motive"])
+
+        return t
+
+    def to_representation(self, transaction):
+        obj = BaseTransactionSerializer(transaction, context={'ignore_type': True}).data
+        if transaction is None:
+            return obj
+
+        aop = transaction.accountoperation_set.all()[0]
+        obj["account"] = aop.target.id
+        obj["amount"] = aop.delta
+
+        data = transaction.transactiondata_set.all()[0]
+        obj["motive"] = data.data
+
+        obj["moneyflow"] = aop.delta
 
         return obj
 
@@ -253,7 +320,7 @@ class MealTransactionSerializer(BaseTransactionSerializer):
         total_price = 0
         for i in data["items"]:
             t.itemoperation_set.create(
-                item=i["item"],
+                target=i["item"],
                 delta=-i["qty"])
             total_price += i["qty"] * i["item"].price
 
@@ -262,7 +329,7 @@ class MealTransactionSerializer(BaseTransactionSerializer):
             total_ratio += a["ratio"]
         for a in data["accounts"]:
             t.accountoperation_set.create(
-                account=a["account"],
+                target=a["account"],
                 delta=-total_price * a["ratio"] / total_ratio)
 
         t.transactiondata_set.create(
@@ -279,7 +346,7 @@ class MealTransactionSerializer(BaseTransactionSerializer):
         obj["items"] = []
         for iop in transaction.itemoperation_set.all():
             obj["items"].append({
-                'item': iop.item.id,
+                'item': iop.target.id,
                 'qty': abs(iop.delta)
             })
 
@@ -290,7 +357,7 @@ class MealTransactionSerializer(BaseTransactionSerializer):
             total_price += abs(aop.delta)
         for aop in aops:
             obj["accounts"].append({
-                'account': aop.account.id,
+                'account': aop.target.id,
                 'ratio': abs(aop.delta) / total_price
             })
 
@@ -310,7 +377,7 @@ class ApproTransactionSerializer(BaseTransactionSerializer):
 
         for i in data["items"]:
             t.itemoperation_set.create(
-                item=i["item"],
+                target=i["item"],
                 delta=i["qty"])
 
         return t
@@ -324,77 +391,15 @@ class ApproTransactionSerializer(BaseTransactionSerializer):
         obj["items"] = []
         for iop in transaction.itemoperation_set.all():
             obj["items"].append({
-                'item': iop.item.id,
+                'item': iop.target.id,
                 'qty': abs(iop.delta)
             })
-            total_price += iop.delta * iop.item.buy_price
+            total_price += iop.delta * iop.target.buy_price
 
         obj["moneyflow"] = total_price
 
         return obj
 
-
-
-class GiveTransactionSerializer(BaseTransactionSerializer, AccountAmountSerializer):
-    def create(self, data):
-        t = super(GiveTransactionSerializer, self).create(data)
-
-        t.accountoperation_set.create(
-            account=Account.objects.get(owner=t.author, bar=t.bar),
-            delta=-data["amount"])
-        t.accountoperation_set.create(
-            account=data["account"],
-            delta=data["amount"])
-
-        return t
-
-    def to_representation(self, transaction):
-        obj = BaseTransactionSerializer(transaction, context={'ignore_type': True}).data
-        if transaction is None:
-            return obj
-
-        from_op = transaction.accountoperation_set.all()[0]
-        to_op = transaction.accountoperation_set.all()[1]
-        if to_op.account.owner == transaction.author:
-            from_op, to_op = to_op, from_op
-        obj["account"] = to_op.account.id
-        obj["amount"] = to_op.delta
-
-        obj["moneyflow"] = to_op.delta
-
-        return obj
-
-
-class PunishTransactionSerializer(BaseTransactionSerializer, AccountAmountSerializer):
-    motive = serializers.CharField()
-
-    def create(self, data):
-        t = super(PunishTransactionSerializer, self).create(data)
-
-        t.accountoperation_set.create(
-            account=data["account"],
-            delta=-data["amount"])
-        t.transactiondata_set.create(
-            label='motive',
-            data=data["motive"])
-
-        return t
-
-    def to_representation(self, transaction):
-        obj = BaseTransactionSerializer(transaction, context={'ignore_type': True}).data
-        if transaction is None:
-            return obj
-
-        aop = transaction.accountoperation_set.all()[0]
-        obj["account"] = aop.account.id
-        obj["amount"] = aop.delta
-
-        data = transaction.transactiondata_set.all()[0]
-        obj["motive"] = data.data
-
-        obj["moneyflow"] = aop.delta
-
-        return obj
 
 
 serializers_class_map = {
@@ -422,20 +427,20 @@ class TransactionViewSet(viewsets.ModelViewSet):
         user = self.request.QUERY_PARAMS.get('user', None)
         if user is not None:
             queryset = queryset.filter(
-                Q(accountoperation__account__owner=user) |
+                Q(accountoperation__target__owner=user) |
                 Q(author=user)
             )
 
         account = self.request.QUERY_PARAMS.get('account', None)
         if account is not None:
             queryset = queryset.filter(
-                Q(accountoperation__account=account) |
+                Q(accountoperation__target=account) |
                 Q(author__account=account)
             )
 
         item = self.request.QUERY_PARAMS.get('item', None)
         if item is not None:
-            queryset = queryset.filter(itemoperation__item=item)
+            queryset = queryset.filter(itemoperation__target=item)
 
         queryset = queryset.order_by('-timestamp')
         # queryset = queryset.order_by('-timestamp').distinct('timestamp')
