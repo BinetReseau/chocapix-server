@@ -23,6 +23,28 @@ class Transaction(models.Model):
     last_modified = models.DateTimeField(auto_now=True)
     _type = VirtualField("Transaction")
 
+    def check_integrity(self):
+        t = self.type
+        iops = self.itemoperation_set.all()
+        aops = self.accountoperation_set.all()
+        data = self.transactiondata_set.all()
+
+        if t in ["buy", "throw"] and len(iops) != 1:
+            return False
+
+        if t in ["throw"] and len(aops) != 0:
+            return False
+        if t in ["buy", "throw", "appro"] and len(aops) != 1:
+            return False
+        if t in ["give", "punish"] and len(aops) != 2:
+            return False
+
+        if t in ["meal", "punish"] and len(data) != 1:
+            return False
+
+        # TODO: Check money flow, owners, signs, labels, ...
+        return True
+
 
 class TransactionData(models.Model):
     class Meta:
@@ -66,7 +88,6 @@ class ItemOperation(models.Model):
                 next_prev += iop.delta
 
         Item.objects.filter(pk=self.item.id).update(qty=next_prev)
-
 
 
 class AccountOperation(models.Model):
@@ -186,27 +207,12 @@ class BuyTransactionSerializer(BaseTransactionSerializer, ItemQtySerializer):
         if transaction is None:
             return obj
 
-        try:
-            error = serializers.ValidationError("")
+        iop = transaction.itemoperation_set.all()[0]
+        obj["item"] = iop.item.id
+        obj["qty"] = abs(iop.delta)
 
-            if len(transaction.itemoperation_set.all()) != 1:
-                raise error
-            iop = transaction.itemoperation_set.all()[0]
-            obj["item"] = iop.item.id
-            obj["qty"] = abs(iop.delta)
-
-            if len(transaction.accountoperation_set.all()) != 1:
-                raise error
-            aop = transaction.accountoperation_set.all()[0]
-            if aop.account.owner != transaction.author:
-                raise error
-            obj["moneyflow"] = -aop.delta
-
-        except serializers.ValidationError:
-            return obj
-        else:
-            pass
-            # obj["_type"] = transaction.type.title() + "Transaction"
+        aop = transaction.accountoperation_set.all()[0]
+        obj["moneyflow"] = -aop.delta
 
         return obj
 
@@ -226,30 +232,11 @@ class ThrowTransactionSerializer(BaseTransactionSerializer, ItemQtySerializer):
         if transaction is None:
             return obj
 
-        try:
-            error = serializers.ValidationError("")
+        iop = transaction.itemoperation_set.all()[0]
+        obj["item"] = iop.item.id
+        obj["qty"] = abs(iop.delta)
 
-            if len(transaction.itemoperation_set.all()) != 1:
-                raise error
-            iop = transaction.itemoperation_set.all()[0]
-            obj["item"] = iop.item.id
-            obj["qty"] = abs(iop.delta)
-
-            # if len(transaction.accountoperation_set.all()) != 1:
-            #     raise error
-            # aop = transaction.accountoperation_set.all()[0]
-            # if aop.account != # bar.account:
-            #     raise error
-            # obj["moneyflow"] = -aop.delta
-            # obj["account"] = aop.account.id
-            obj["moneyflow"] = iop.delta * iop.item.price
-
-
-        except serializers.ValidationError:
-            return obj
-        else:
-            pass
-            # obj["_type"] = transaction.type.title() + "Transaction"
+        obj["moneyflow"] = iop.delta * iop.item.price
 
         return obj
 
@@ -289,41 +276,28 @@ class MealTransactionSerializer(BaseTransactionSerializer):
         if transaction is None:
             return obj
 
-        try:
-            error = serializers.ValidationError("")
+        obj["items"] = []
+        for iop in transaction.itemoperation_set.all():
+            obj["items"].append({
+                'item': iop.item.id,
+                'qty': abs(iop.delta)
+            })
 
-            obj["items"] = []
-            for iop in transaction.itemoperation_set.all():
-                obj["items"].append({
-                    'item': iop.item.id,
-                    'qty': abs(iop.delta)
-                })
+        total_price = 0
+        obj["accounts"] = []
+        aops = transaction.accountoperation_set.all()
+        for aop in aops:
+            total_price += abs(aop.delta)
+        for aop in aops:
+            obj["accounts"].append({
+                'account': aop.account.id,
+                'ratio': abs(aop.delta) / total_price
+            })
 
-            total_price = 0
-            obj["accounts"] = []
-            aops = transaction.accountoperation_set.all()
-            for aop in aops:
-                total_price += abs(aop.delta)
-            for aop in aops:
-                obj["accounts"].append({
-                    'account': aop.account.id,
-                    'ratio': abs(aop.delta) / total_price
-                })
+        data = transaction.transactiondata_set.all()[0]
+        obj[data.label] = data.data
 
-            if len(transaction.transactiondata_set.all()) != 1:
-                raise error
-            data = transaction.transactiondata_set.all()[0]
-            if data.label != 'name':
-                raise error
-            obj[data.label] = data.data
-
-            obj["moneyflow"] = total_price
-
-        except serializers.ValidationError:
-            return obj
-        else:
-            pass
-            # obj["_type"] = transaction.type.title() + "Transaction"
+        obj["moneyflow"] = total_price
 
         return obj
 
@@ -379,28 +353,14 @@ class GiveTransactionSerializer(BaseTransactionSerializer, AccountAmountSerializ
         if transaction is None:
             return obj
 
-        try:
-            error = serializers.ValidationError("")
+        from_op = transaction.accountoperation_set.all()[0]
+        to_op = transaction.accountoperation_set.all()[1]
+        if to_op.account.owner == transaction.author:
+            from_op, to_op = to_op, from_op
+        obj["account"] = to_op.account.id
+        obj["amount"] = to_op.delta
 
-            if len(transaction.accountoperation_set.all()) != 2:
-                raise error
-            from_op = transaction.accountoperation_set.all()[0]
-            to_op = transaction.accountoperation_set.all()[1]
-            if from_op.account.owner != transaction.author:
-                from_op, to_op = to_op, from_op
-            if from_op.account.owner != transaction.author:
-                raise error
-            if from_op.delta >= 0 or from_op.delta != -to_op.delta:
-                raise error
-            obj["account"] = to_op.account.id
-            obj["amount"] = to_op.delta
-            obj["moneyflow"] = to_op.delta
-
-        except serializers.ValidationError:
-            return obj
-        else:
-            pass
-            # obj["_type"] = transaction.type.title() + "Transaction"
+        obj["moneyflow"] = to_op.delta
 
         return obj
 
@@ -425,29 +385,14 @@ class PunishTransactionSerializer(BaseTransactionSerializer, AccountAmountSerial
         if transaction is None:
             return obj
 
-        try:
-            error = serializers.ValidationError("")
+        aop = transaction.accountoperation_set.all()[0]
+        obj["account"] = aop.account.id
+        obj["amount"] = aop.delta
 
-            if len(transaction.accountoperation_set.all()) != 1:
-                raise error
-            aop = transaction.accountoperation_set.all()[0]
-            obj["account"] = aop.account.id
-            obj["amount"] = aop.delta
+        data = transaction.transactiondata_set.all()[0]
+        obj["motive"] = data.data
 
-            if len(transaction.transactiondata_set.all()) != 1:
-                raise error
-            data = transaction.transactiondata_set.all()[0]
-            if data.label != 'motive':
-                raise error
-            obj["motive"] = data.data
-            obj["moneyflow"] = aop.delta
-
-
-        except serializers.ValidationError:
-            return obj
-        else:
-            pass
-            # obj["_type"] = transaction.type.title() + "Transaction"
+        obj["moneyflow"] = aop.delta
 
         return obj
 
