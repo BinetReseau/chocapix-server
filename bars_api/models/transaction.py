@@ -149,7 +149,10 @@ class BaseTransactionSerializer(serializers.ModelSerializer):
         else:
             serializer = serializers_class_map[transaction.type](transaction)
             # serializer.is_valid(raise_exception=True)
-            return serializer.data
+            try:
+                return serializer.data
+            except:
+                return
 
     def create(self, data):
         fields = Transaction._meta.get_all_field_names()
