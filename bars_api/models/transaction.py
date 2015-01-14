@@ -478,6 +478,10 @@ class TransactionViewSet(viewsets.ModelViewSet):
         if item is not None:
             queryset = queryset.filter(itemoperation__target=item)
 
+        type = self.request.QUERY_PARAMS.get('type', None)
+        if type is not None:
+            queryset = queryset.filter(type=type)
+
         queryset = queryset.order_by('-timestamp')
         # queryset = queryset.order_by('-timestamp').distinct('timestamp')
 
