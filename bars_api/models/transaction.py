@@ -401,15 +401,50 @@ class ApproTransactionSerializer(BaseTransactionSerializer):
         return obj
 
 
+class InventoryTransactionSerializer(BaseTransactionSerializer):
+    items = ItemQtySerializer(many=True)
+
+    def create(self, data):
+        t = super(InventoryTransactionSerializer, self).create(data)
+
+        for i in data["items"]:
+            t.itemoperation_set.create(
+                target=i["item"],
+                prev_value=i["qty"],
+                fixed=True)
+
+        return t
+
+    def to_representation(self, transaction):
+        obj = BaseTransactionSerializer(transaction, context={'ignore_type': True}).data
+        if transaction is None:
+            return obj
+
+        total_price = 0
+        obj["items"] = []
+        for iop in transaction.itemoperation_set.all():
+            obj["items"].append({
+                'item': iop.target.id,
+                'qty': iop.delta
+            })
+            total_price += iop.delta * iop.target.buy_price
+
+        obj["moneyflow"] = total_price
+
+        return obj
+
+
+
 
 serializers_class_map = {
     "": BaseTransactionSerializer,
     "buy": BuyTransactionSerializer,
+    "throw": ThrowTransactionSerializer,
+    "give": GiveTransactionSerializer,
+    "punish": PunishTransactionSerializer,
     "meal": MealTransactionSerializer,
     "appro": ApproTransactionSerializer,
-    "give": GiveTransactionSerializer,
-    "throw": ThrowTransactionSerializer,
-    "punish": PunishTransactionSerializer}
+    "inventory": InventoryTransactionSerializer}
 
 class TransactionViewSet(viewsets.ModelViewSet):
     queryset = Transaction.objects.all()
