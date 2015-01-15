@@ -463,6 +463,10 @@ class TransactionViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         queryset = Transaction.objects.all()
 
+        bar = self.request.QUERY_PARAMS.get('bar', None)
+        if bar is not None:
+            queryset = queryset.filter(bar=bar)
+
         user = self.request.QUERY_PARAMS.get('user', None)
         if user is not None:
             queryset = queryset.filter(
