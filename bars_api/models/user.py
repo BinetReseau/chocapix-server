@@ -1,5 +1,5 @@
 from django.db import models
-from django.contrib.auth.models import BaseUserManager
+from django.contrib.auth.models import BaseUserManager, _user_has_module_perms, _user_has_perm
 from django.utils import timezone
 from rest_framework import viewsets, serializers, decorators
 from rest_framework.response import Response
@@ -35,6 +35,8 @@ class User(models.Model):
 
     last_login = models.DateTimeField(default=timezone.now)
     last_modified = models.DateTimeField(auto_now=True)
+
+    is_superuser = models.BooleanField(default=False)
 
     objects = UserManager()
 
@@ -73,6 +75,19 @@ class User(models.Model):
         return self.password == make_password("")
 
 
+    def has_perm(self, perm, obj=None):
+        if self.is_active and self.is_superuser:
+            return True
+
+        return _user_has_perm(self, perm, obj)
+
+    def has_module_perms(self, app_label):
+        if self.is_active and self.is_superuser:
+            return True
+
+        return _user_has_module_perms(self, app_label)
+
+
     def get_short_name(self):
         return self.username
 
@@ -80,15 +95,9 @@ class User(models.Model):
         return self.full_name
 
 
-    def has_perm(self, perm, obj=None):
-        return True
-
-    def has_module_perms(self, app_label):
-        return True
-
     @property
     def is_staff(self):
-        return True
+        return False
 
 
 class UserSerializer(serializers.ModelSerializer):
