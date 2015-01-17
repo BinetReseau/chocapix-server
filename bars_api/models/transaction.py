@@ -177,6 +177,15 @@ class ItemQtySerializer(serializers.Serializer):
         return value
 
 
+class ItemQtyPriceSerializer(ItemQtySerializer):
+    price = serializers.FloatField(required=False)
+
+    def validate_price(self, value):
+        if value is not None and value < 0:
+            raise ValidationError("Price must be positive")
+        return value
+
+
 class AccountAmountSerializer(serializers.Serializer):
     account = serializers.PrimaryKeyRelatedField(queryset=Account.objects.all())
     amount = serializers.FloatField()
@@ -374,14 +383,20 @@ class MealTransactionSerializer(BaseTransactionSerializer):
 
 
 class ApproTransactionSerializer(BaseTransactionSerializer):
-    items = ItemQtySerializer(many=True)
+    items = ItemQtyPriceSerializer(many=True)
 
     def create(self, data):
         t = super(ApproTransactionSerializer, self).create(data)
 
         for i in data["items"]:
+            item = i["item"]  # Prevent bad concurrency errors
+            if "price" in i:
+                item = Item.objects.get(pk=item)
+                item.buy_price = i["price"] / i["qty"]
+                item.save()
+
             t.itemoperation_set.create(
-                target=i["item"],
+                target=item,
                 delta=i["qty"])
 
         return t
