@@ -34,6 +34,7 @@ INSTALLED_APPS = (
     'rest_framework',
     'corsheaders',
     'bars_api',
+    'permission',
 )
 
 
@@ -91,11 +92,14 @@ REST_FRAMEWORK = {
         'rest_framework.filters.SearchFilter')
 }
 
-AUTHENTICATION_BACKENDS = ('bars_api.auth.AuthenticationBackend',)
+AUTHENTICATION_BACKENDS = (
+    'bars_api.auth.AuthenticationBackend',
+    'permission.backends.PermissionBackend',
+)
 
 import datetime
 JWT_AUTH = {
-    'JWT_EXPIRATION_DELTA': datetime.timedelta(hours=7*24),  # Todo: temporary
+    'JWT_EXPIRATION_DELTA': datetime.timedelta(hours=7 * 24),  # Todo: temporary
 }
 
 # CORS headers

@@ -1,4 +1,5 @@
 djangorestframework
 django-cors-headers
+django-permission
 django-filter
 markdown

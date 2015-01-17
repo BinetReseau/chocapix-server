@@ -158,8 +158,8 @@ class BaseTransactionSerializer(serializers.ModelSerializer):
         fields = Transaction._meta.get_all_field_names()
         attrs = {k: v for k, v in data.items() if k in fields}
         t = Transaction(**attrs)
-        # t.author = User.objects.all()[0]
-        t.author = self.context['request'].user
+        t.author = User.objects.all()[0]
+        # t.author = self.context['request'].user
         # Todo: add correct bar
         t.bar = Bar.objects.all()[0]  # self.context['request'].bar
         t.save()
