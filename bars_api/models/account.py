@@ -1,4 +1,5 @@
 from django.db import models
+from django.http import Http404
 from rest_framework import viewsets
 from rest_framework import serializers, decorators
 from rest_framework.response import Response
@@ -36,6 +37,8 @@ class AccountViewSet(viewsets.ModelViewSet):
 
     @decorators.list_route(methods=['get'])
     def me(self, request):
-        # Todo: bar
-        serializer = self.serializer_class(request.user.account_set.get(bar=Bar.objects.all()[0]))
+        bar = request.QUERY_PARAMS.get('bar', None)
+        if bar is None:
+            raise Http404
+        serializer = self.serializer_class(request.user.account_set.get(bar=bar))
         return Response(serializer.data)
