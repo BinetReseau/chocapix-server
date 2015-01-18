@@ -10,6 +10,7 @@ permission.autodiscover()
 from bars_api.models.bar import BarViewSet
 from bars_api.models.user import UserViewSet
 from bars_api.models.account import AccountViewSet
+from bars_api.models.role import RoleViewSet
 from bars_api.models.item import ItemViewSet
 from bars_api.models.news import NewsViewSet
 from bars_api.models.transaction import TransactionViewSet
@@ -20,6 +21,7 @@ router = routers.DefaultRouter()
 router.register('bar', BarViewSet)
 router.register('user', UserViewSet)
 router.register('account', AccountViewSet)
+router.register('role', RoleViewSet)
 router.register('item', ItemViewSet)
 router.register('news', NewsViewSet)
 router.register('transaction', TransactionViewSet)
