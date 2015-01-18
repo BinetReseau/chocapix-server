@@ -17,7 +17,7 @@ class Role(models.Model):
     last_modified = models.DateTimeField(auto_now=True)
 
     def get_permissions(self):
-        return []  # TODO
+        return ['bars_api.create_buytransaction', 'bars_api.change_transaction']  # TODO
 
     def __unicode__(self):
         return self.user.username + " : " + self.name + " (" + self.bar.id + ")"

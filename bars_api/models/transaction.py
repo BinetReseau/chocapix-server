@@ -1,5 +1,6 @@
 from django.db import models
-from django.db.models import F, Q
+from django.db.models import Q
+from django.http import Http404
 from rest_framework import viewsets
 from rest_framework import serializers, decorators
 from rest_framework.response import Response
@@ -155,15 +156,23 @@ class BaseTransactionSerializer(serializers.ModelSerializer):
                 return
 
     def create(self, data):
-        fields = Transaction._meta.get_all_field_names()
-        attrs = {k: v for k, v in data.items() if k in fields}
-        t = Transaction(**attrs)
-        t.author = User.objects.all()[0]
-        # t.author = self.context['request'].user
-        # Todo: add correct bar
-        t.bar = Bar.objects.all()[0]  # self.context['request'].bar
-        t.save()
-        return t
+        request = self.context['request']
+        bar = request.QUERY_PARAMS.get('bar', None)
+        if bar is None:
+            raise Http404()
+        bar = Bar.objects.get(pk=bar)
+        if request.user.has_perm('bars_api.create_' + data["type"] + 'transaction', bar):
+            fields = Transaction._meta.get_all_field_names()
+            attrs = {k: v for k, v in data.items() if k in fields}
+            t = Transaction(**attrs)
+            # t.author = User.objects.all()[0]
+            t.author = request.user
+            t.bar = bar
+            t.save()
+            return t
+
+        else:
+            raise exceptions.PermissionDenied()
 
 
 
