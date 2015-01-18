@@ -1,5 +1,4 @@
 from django.db import models
-from django.http import Http404
 from rest_framework import viewsets
 from rest_framework import serializers, decorators
 from rest_framework.response import Response
@@ -7,6 +6,7 @@ from rest_framework.response import Response
 from bars_api.models import VirtualField
 from bars_api.models.bar import Bar
 from bars_api.models.user import User
+
 
 class Account(models.Model):
     class Meta:
@@ -39,6 +39,7 @@ class AccountViewSet(viewsets.ModelViewSet):
     def me(self, request):
         bar = request.QUERY_PARAMS.get('bar', None)
         if bar is None:
-            raise Http404
-        serializer = self.serializer_class(request.user.account_set.get(bar=bar))
+            serializer = self.serializer_class(request.user.account_set.all())
+        else:
+            serializer = self.serializer_class(request.user.account_set.get(bar=bar))
         return Response(serializer.data)

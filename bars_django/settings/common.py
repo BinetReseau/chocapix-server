@@ -52,6 +52,7 @@ ROOT_URLCONF = 'bars_django.urls'
 
 WSGI_APPLICATION = 'bars_django.wsgi.application'
 
+ATOMIC_REQUESTS = True
 
 # Internationalization
 
