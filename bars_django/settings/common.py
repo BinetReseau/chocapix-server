@@ -95,6 +95,7 @@ REST_FRAMEWORK = {
 
 AUTHENTICATION_BACKENDS = (
     'bars_api.auth.AuthenticationBackend',
+    'bars_api.perms.BarPermissionBackend',
     'permission.backends.PermissionBackend',
 )
 
