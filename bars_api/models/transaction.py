@@ -388,9 +388,8 @@ class ApproTransactionSerializer(BaseTransactionSerializer):
         t = super(ApproTransactionSerializer, self).create(data)
 
         for i in data["items"]:
-            item = i["item"]  # Prevent bad concurrency errors
+            item = i["item"]
             if "price" in i:
-                item = Item.objects.get(pk=item)
                 item.buy_price = i["price"] / i["qty"]
                 item.save()
 
