@@ -51,6 +51,7 @@ ROOT_URLCONF = 'bars_django.urls'
 
 WSGI_APPLICATION = 'bars_django.wsgi.application'
 
+ATOMIC_REQUESTS = True
 
 # Internationalization
 
@@ -95,7 +96,7 @@ AUTHENTICATION_BACKENDS = ('bars_api.auth.AuthenticationBackend',)
 
 import datetime
 JWT_AUTH = {
-    'JWT_EXPIRATION_DELTA': datetime.timedelta(hours=7*24),  # Todo: temporary
+    'JWT_EXPIRATION_DELTA': datetime.timedelta(hours=7 * 24),  # Todo: temporary
 }
 
 # CORS headers
