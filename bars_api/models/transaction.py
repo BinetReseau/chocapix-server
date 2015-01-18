@@ -444,7 +444,7 @@ class InventoryTransactionSerializer(BaseTransactionSerializer):
                 'item': iop.target.id,
                 'qty': iop.delta
             })
-            total_price += iop.delta * iop.target.buy_price
+            total_price += iop.delta * iop.target.price
 
         obj["moneyflow"] = total_price
 
