@@ -40,7 +40,7 @@ class Transaction(models.Model):
 
         if t in ["throw"] and len(aops) != 0:
             return False
-        if t in ["buy", "throw", "appro"] and len(aops) != 1:
+        if t in ["buy", "throw", "appro", "inventory"] and len(aops) != 1:
             return False
         if t in ["give", "punish"] and len(aops) != 2:
             return False
@@ -65,44 +65,47 @@ class BaseOperation(models.Model):
     class Meta:
         abstract = True
     transaction = models.ForeignKey(Transaction)
-    fixed = models.BooleanField(default=False)  # Wheter the operation was a delta or a fixed value
-    # prev_value = models.FloatField()
-    # delta = models.FloatField()
+    prev_value = models.FloatField()
+    fixed = models.BooleanField(default=False)  # Whether the operation was a delta or a fixed value
+    delta = models.FloatField()  # Fixed if not self.fixed
+    next_value = models.FloatField()  # Fixed if self.fixed
 
     def __unicode__(self):
         if self.fixed:
-            return unicode(self.target) + "=" + unicode(self.prev_value)
+            return unicode(self.target) + "=" + unicode(self.next_value)
         else:
             return unicode(self.target) + "+=" + unicode(self.delta)
 
     def save(self, *args, **kwargs):
         if not self.pk:
-            target = self.op_model.objects.filter(pk=self.target.id)
+            self.prev_value = getattr(self.target, self.op_model_field)
 
-            if self.fixed:
-                self.delta = self.prev_value - getattr(self.target, self.op_model_field)
-                target.update(**{self.op_model_field: self.prev_value})
-            else:
-                self.prev_value = getattr(self.target, self.op_model_field)
-                target.update(**{self.op_model_field: F(self.op_model_field) + self.delta})
+        if self.fixed:
+            self.delta = self.next_value - self.prev_value
+        else:
+            self.next_value = self.prev_value + self.delta
+
+        if not self.pk:
+            self.op_model.objects.filter(pk=self.target.id).update(**{self.op_model_field: self.next_value})
 
         super(BaseOperation, self).save(*args, **kwargs)
 
     def propagate(self):
-        olders = (self.__class__.objects.select_related()
-                  .filter(target=self.target)
-                  .filter(transaction__timestamp__gte=self.transaction.timestamp)
-                  .order_by('transaction__timestamp', 'pk'))
+        olders_or_self = (self.__class__.objects.select_related()
+                          .filter(target=self.target)
+                          .filter(transaction__timestamp__gte=self.transaction.timestamp)
+                          .order_by('transaction__timestamp', 'pk'))
 
         next_prev = None
-        for op in olders:
-            if next_prev is not None and not op.fixed:
+        for op in olders_or_self:
+            if next_prev is not None:
                 op.prev_value = next_prev
                 op.save()
 
-            next_prev = op.prev_value
-            if not op.transaction.canceled and not op.fixed:
-                next_prev += op.delta
+            if op.transaction.canceled:
+                next_prev = op.prev_value
+            else:
+                next_prev = op.next_value
 
         self.op_model.objects.filter(pk=self.target.id).update(**{self.op_model_field: next_prev})
 
@@ -110,8 +113,6 @@ class ItemOperation(BaseOperation):
     class Meta:
         app_label = 'bars_api'
     target = models.ForeignKey(Item)
-    prev_value = models.FloatField()
-    delta = models.FloatField()
 
     op_model = Item
     op_model_field = 'qty'
@@ -120,8 +121,6 @@ class AccountOperation(BaseOperation):
     class Meta:
         app_label = 'bars_api'
     target = models.ForeignKey(Account)
-    prev_value = models.DecimalField(max_digits=8, decimal_places=3)
-    delta = models.DecimalField(max_digits=8, decimal_places=3)
 
     op_model = Account
     op_model_field = 'money'
@@ -429,7 +428,7 @@ class InventoryTransactionSerializer(BaseTransactionSerializer):
         for i in data["items"]:
             t.itemoperation_set.create(
                 target=i["item"],
-                prev_value=i["qty"],
+                next_value=i["qty"],
                 fixed=True)
 
         return t
