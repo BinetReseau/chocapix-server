@@ -1,6 +1,5 @@
 from django.db import models
-from django.db.models import Q
-from django.db.transaction import commit_on_success
+from django.db.models import F, Q
 from rest_framework import viewsets
 from rest_framework import serializers, decorators
 from rest_framework.response import Response
@@ -91,7 +90,6 @@ class BaseOperation(models.Model):
 
         super(BaseOperation, self).save(*args, **kwargs)
 
-    @commit_on_success
     def propagate(self):
         olders_or_self = (self.__class__.objects.select_related()
                           .filter(target=self.target)
@@ -209,7 +207,6 @@ class AccountRatioSerializer(serializers.Serializer):
 
 
 class BuyTransactionSerializer(BaseTransactionSerializer, ItemQtySerializer):
-    @commit_on_success
     def create(self, data):
         t = super(BuyTransactionSerializer, self).create(data)
 
@@ -238,7 +235,6 @@ class BuyTransactionSerializer(BaseTransactionSerializer, ItemQtySerializer):
 
 
 class ThrowTransactionSerializer(BaseTransactionSerializer, ItemQtySerializer):
-    @commit_on_success
     def create(self, data):
         t = super(ThrowTransactionSerializer, self).create(data)
 
@@ -263,7 +259,6 @@ class ThrowTransactionSerializer(BaseTransactionSerializer, ItemQtySerializer):
 
 
 class GiveTransactionSerializer(BaseTransactionSerializer, AccountAmountSerializer):
-    @commit_on_success
     def create(self, data):
         t = super(GiveTransactionSerializer, self).create(data)
 
@@ -296,7 +291,6 @@ class GiveTransactionSerializer(BaseTransactionSerializer, AccountAmountSerializ
 class PunishTransactionSerializer(BaseTransactionSerializer, AccountAmountSerializer):
     motive = serializers.CharField()
 
-    @commit_on_success
     def create(self, data):
         t = super(PunishTransactionSerializer, self).create(data)
 
@@ -332,7 +326,6 @@ class MealTransactionSerializer(BaseTransactionSerializer):
     accounts = AccountRatioSerializer(many=True)
     name = serializers.CharField(allow_blank=True)
 
-    @commit_on_success
     def create(self, data):
         t = super(MealTransactionSerializer, self).create(data)
 
@@ -391,7 +384,6 @@ class MealTransactionSerializer(BaseTransactionSerializer):
 class ApproTransactionSerializer(BaseTransactionSerializer):
     items = ItemQtyPriceSerializer(many=True)
 
-    @commit_on_success
     def create(self, data):
         t = super(ApproTransactionSerializer, self).create(data)
 
@@ -430,7 +422,6 @@ class ApproTransactionSerializer(BaseTransactionSerializer):
 class InventoryTransactionSerializer(BaseTransactionSerializer):
     items = ItemQtySerializer(many=True)
 
-    @commit_on_success
     def create(self, data):
         t = super(InventoryTransactionSerializer, self).create(data)
 
@@ -523,7 +514,6 @@ class TransactionViewSet(viewsets.ModelViewSet):
         return queryset
 
 
-    @commit_on_success
     @decorators.detail_route(methods=['post'])
     def cancel(self, request, pk=None):
         transaction = Transaction.objects.select_related().get(pk=pk)
@@ -539,7 +529,6 @@ class TransactionViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer_class()(transaction)
         return Response(serializer.data)
 
-    @commit_on_success
     @decorators.detail_route(methods=['post'])
     def restore(self, request, pk=None):
         transaction = Transaction.objects.get(pk=pk)
