@@ -8,6 +8,42 @@ from bars_api.models.bar import Bar
 from bars_api.models.user import User
 
 
+role_map = {}
+role_map['customer'] = [
+    'bars_api.create_buytransaction',
+    'bars_api.create_throwtransaction',
+    'bars_api.create_givetransaction',
+    'bars_api.create_mealtransaction',
+]
+role_map['newsmanager'] = [
+    'bars_api.create_news',
+    'bars_api.change_news',
+    'bars_api.delete_news',
+]
+role_map['appromanager'] = [
+    'bars_api.create_approtransaction',
+    'bars_api.create_item',
+    'bars_api.change_item',
+    # 'bars_api.delete_item',
+]
+role_map['inventorymanager'] = role_map['appromanager'] + [
+    'bars_api.create_inventorytransaction',
+]
+role_map['staff'] = role_map['inventorymanager'] + [
+    'bars_api.create_punishtransaction',
+    'bars_api.change_transaction',
+]
+role_map['admin'] = role_map['staff'] + role_map['newsmanager'] + [
+    'bars_api.create_role',
+    'bars_api.change_role',
+    'bars_api.delete_role',
+    'bars_api.create_account',
+    'bars_api.change_account',
+    'bars_api.delete_account',
+]
+
+
+
 class Role(models.Model):
     class Meta:
         app_label = 'bars_api'
@@ -17,7 +53,7 @@ class Role(models.Model):
     last_modified = models.DateTimeField(auto_now=True)
 
     def get_permissions(self):
-        return ['bars_api.create_buytransaction', 'bars_api.change_transaction']  # TODO
+        return role_map[self.name]
 
     def __unicode__(self):
         return self.user.username + " : " + self.name + " (" + self.bar.id + ")"
