@@ -81,6 +81,12 @@ class User(models.Model):
 
         return _user_has_perm(self, perm, obj)
 
+    def has_perms(self, perm_list, obj=None):
+        for perm in perm_list:
+            if not self.has_perm(perm, obj):
+                return False
+        return True
+
     def has_module_perms(self, app_label):
         if self.is_active and self.is_superuser:
             return True

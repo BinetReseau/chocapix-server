@@ -16,5 +16,3 @@ class AuthenticationBackend(object):
             return User.objects.get(pk=user_id)
         except User.DoesNotExist:
             return None
-
-    # def has_perm(self, user_obj, perm, obj=None):

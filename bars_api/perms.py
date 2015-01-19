@@ -54,6 +54,36 @@ class BarPermissionBackend(object):
 
         return False
 
+# Django restframework module
+class BarPermissions(DjangoObjectPermissions):
+    Bar = None  # Prevent circular imports
+
+    # Already handled by BarRolePermissionLogic
+    # def has_object_permission(self, request, view, obj):
+
+    def has_permission(self, request, view):
+        if self.Bar is None:
+            self.Bar = get_model('bars_api', 'Bar')
+
+        bar = request.QUERY_PARAMS.get('bar', None)
+        if bar is not None:
+            bar = self.Bar.objects.get(pk=bar)
+            model_cls = getattr(view, 'model', None)
+            queryset = getattr(view, 'queryset', None)
+
+            if model_cls is None and queryset is not None:
+                model_cls = queryset.model
+
+            assert model_cls, ('Cannot apply permissions on a view that'
+                               ' does not have `.model` or `.queryset` property.')
+
+            perms = self.get_required_permissions(request.method, model_cls)
+
+            for perm in perms:
+                if request.user.has_perm(perm, bar):
+                    return True
+
+        return super(DjangoObjectPermissions, self).has_permission(request, view)
 
 
 # ## Per-object permissions
