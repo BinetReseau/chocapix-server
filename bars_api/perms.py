@@ -1,6 +1,7 @@
+from django.db.models.loading import get_model
+from rest_framework.permissions import DjangoObjectPermissions
 from permission.utils.field_lookup import field_lookup
 from permission.logics import PermissionLogic, AuthorPermissionLogic
-from bars_api.models.role import Role
 
 # For reference
 perms_list = [
@@ -37,17 +38,22 @@ perms_list = [
     'bars_api.delete_news',
 ]
 
-# ## Per-bar permissions
 
+# ## Per-bar permissions
+# Django model permissions
 class BarPermissionBackend(object):
+    Role = None  # Prevent circular imports
+
     def has_perm(self, user, perm, bar=None):
+        if self.Role is None:
+            self.Role = get_model('bars_api', 'Role')
         if not user.is_authenticated():
             return False
 
         if bar is None:
             return True
         elif user.is_active:
-            roles = Role.objects.filter(user=user, bar=bar)
+            roles = self.Role.objects.filter(user=user, bar=bar)
             for r in roles:
                 if perm in r.get_permissions():
                     return True
@@ -87,12 +93,16 @@ class BarPermissions(DjangoObjectPermissions):
 
 
 # ## Per-object permissions
-
+# Django permissions module
 class BarRolePermissionLogic(PermissionLogic):
+    Role = None  # Prevent circular imports
+
     def __init__(self, field_name=None):
         self.field_name = field_name or 'bar'
 
     def has_perm(self, user, perm, obj=None):
+        if self.Role is None:
+            self.Role = get_model('bars_api', 'Role')
         if not user.is_authenticated():
             return False
 
@@ -102,7 +112,7 @@ class BarRolePermissionLogic(PermissionLogic):
             bar = field_lookup(obj, self.field_name)
             if bar is None:
                 return False
-            roles = Role.objects.filter(user=user, bar=bar)
+            roles = self.Role.objects.filter(user=user, bar=bar)
             for r in roles:
                 if perm in r.get_permissions():
                     return True
