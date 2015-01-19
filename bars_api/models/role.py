@@ -53,7 +53,7 @@ class Role(models.Model):
     last_modified = models.DateTimeField(auto_now=True)
 
     def get_permissions(self):
-        return role_map[self.name]
+        return role_map[self.name] if self.name in role_map else []
 
     def __unicode__(self):
         return self.user.username + " : " + self.name + " (" + self.bar.id + ")"
