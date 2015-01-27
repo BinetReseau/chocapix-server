@@ -1,4 +1,9 @@
+django
 djangorestframework
+djangorestframework-jwt
 django-cors-headers
 django-filter
 markdown
+
+django-extensions
+werkzeug
