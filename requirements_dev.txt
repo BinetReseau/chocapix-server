@@ -1,7 +1,0 @@
-djangorestframework
-django-cors-headers
-django-filter
-markdown
-
-django-extensions
-werkzeug
