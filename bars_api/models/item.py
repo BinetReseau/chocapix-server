@@ -4,6 +4,7 @@ from rest_framework import serializers
 
 from bars_api.models import VirtualField
 from bars_api.models.bar import Bar
+from bars_api.perms import PerBarPermissionsOrAnonReadOnly
 
 
 class Item(models.Model):
@@ -11,8 +12,8 @@ class Item(models.Model):
         app_label = 'bars_api'
     bar = models.ForeignKey(Bar)
     name = models.CharField(max_length=100)
-    keywords = models.CharField(max_length=200)  # Todo: length
-    qty = models.FloatField()
+    keywords = models.CharField(max_length=200, blank=True)  # Todo: length
+    qty = models.FloatField(default=0)
 
     unit = models.CharField(max_length=100, blank=True)
     unit_value = models.FloatField(default=1)
@@ -44,3 +45,4 @@ class ItemViewSet(viewsets.ModelViewSet):
         'qty': ['lte', 'gte'],
         'deleted': ['exact']}
     search_fields = ('name', 'keywords')
+    permission_classes = (PerBarPermissionsOrAnonReadOnly,)

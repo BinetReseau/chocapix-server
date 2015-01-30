@@ -12,6 +12,7 @@ from bars_api.models import VirtualField
 from bars_api.models.bar import Bar
 from bars_api.models.item import Item
 from bars_api.models.account import Account
+from bars_api.perms import PerBarPermissionsOrAnonReadOnly
 
 
 class Transaction(models.Model):
@@ -476,6 +477,7 @@ serializers_class_map = {
 
 class TransactionViewSet(viewsets.ModelViewSet):
     queryset = Transaction.objects.all()
+    permission_classes = (PerBarPermissionsOrAnonReadOnly,)
 
     def get_serializer_class(self):
         data = self.request.data

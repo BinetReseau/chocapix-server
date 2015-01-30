@@ -51,7 +51,7 @@ class BarPermissionBackend(object):
             return False
 
         if bar is None:
-            return True
+            return False
         elif user.is_active:
             roles = self.Role.objects.filter(user=user, bar=bar)
             for r in roles:
@@ -61,13 +61,16 @@ class BarPermissionBackend(object):
         return False
 
 # Django restframework module
-class BarPermissions(DjangoObjectPermissions):
+class PerBarPermissionsOrAnonReadOnly(DjangoObjectPermissions):
     Bar = None  # Prevent circular imports
 
     # Already handled by BarRolePermissionLogic
     # def has_object_permission(self, request, view, obj):
 
     def has_permission(self, request, view):
+        if request.method in ('GET', 'OPTIONS', 'HEAD'):
+            return True
+
         if self.Bar is None:
             self.Bar = get_model('bars_api', 'Bar')
 
@@ -107,7 +110,7 @@ class BarRolePermissionLogic(PermissionLogic):
             return False
 
         if obj is None:
-            return True
+            return False
         elif user.is_active:
             bar = field_lookup(obj, self.field_name)
             if bar is None:
@@ -116,7 +119,8 @@ class BarRolePermissionLogic(PermissionLogic):
             for r in roles:
                 if perm in r.get_permissions():
                     return True
-            return False
+
+        return False
 
 
 PERMISSION_LOGICS = (

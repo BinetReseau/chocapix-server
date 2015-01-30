@@ -22,6 +22,7 @@ role_map['newsmanager'] = [
 ]
 role_map['appromanager'] = [
     'bars_api.create_approtransaction',
+    'bars_api.add_item',
     'bars_api.create_item',
     'bars_api.change_item',
     # 'bars_api.delete_item',
