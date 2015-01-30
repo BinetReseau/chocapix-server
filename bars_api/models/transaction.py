@@ -5,7 +5,7 @@ from rest_framework import serializers, decorators
 from rest_framework.response import Response
 from rest_framework.serializers import ValidationError
 
-from bars_api.auth import User
+from bars_api.models.user import User
 from bars_api.models import VirtualField
 from bars_api.models.bar import Bar
 from bars_api.models.item import Item

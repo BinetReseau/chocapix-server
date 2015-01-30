@@ -33,6 +33,7 @@ class User(models.Model):
     full_name = models.CharField(max_length=128, blank=True)
     pseudo = models.CharField(max_length=128, blank=True)
 
+    is_active = models.BooleanField(default=True)
     last_login = models.DateTimeField(default=timezone.now)
     last_modified = models.DateTimeField(auto_now=True)
 
@@ -40,7 +41,6 @@ class User(models.Model):
 
     USERNAME_FIELD = 'username'
     REQUIRED_FIELDS = []
-    is_active = True
 
 
     def get_username(self):

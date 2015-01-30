@@ -4,7 +4,7 @@ from django.test.utils import override_settings
 
 class BackendTests(TestCase):
     def setUp(self):
-        from bars_api.auth import User
+        from bars_api.models.user import User
         User.objects.create_user("admin", "admin")
 
     def test_authentication(self):

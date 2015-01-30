@@ -92,7 +92,7 @@ REST_FRAMEWORK = {
         'rest_framework.filters.SearchFilter')
 }
 
-AUTHENTICATION_BACKENDS = ('bars_api.auth.AuthenticationBackend',)
+AUTHENTICATION_BACKENDS = ('django.contrib.auth.backends.ModelBackend',)
 
 import datetime
 JWT_AUTH = {
