@@ -35,6 +35,7 @@ class User(AbstractBaseUser):
 
     USERNAME_FIELD = 'username'
     REQUIRED_FIELDS = []
+    email = ''
 
     def get_short_name(self):
         return self.username
