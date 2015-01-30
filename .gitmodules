@@ -1,3 +1,0 @@
-[submodule "django_rest_framework_jwt"]
-	path = django_rest_framework_jwt
-	url = git@github.com:Nadrieril/django-rest-framework-jwt.git
