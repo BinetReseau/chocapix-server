@@ -10,35 +10,34 @@ from bars_api.models.user import User
 
 role_map = {}
 role_map['customer'] = [
-    'bars_api.create_buytransaction',
-    'bars_api.create_throwtransaction',
-    'bars_api.create_givetransaction',
-    'bars_api.create_mealtransaction',
+    'bars_api.add_buytransaction',
+    'bars_api.add_throwtransaction',
+    'bars_api.add_givetransaction',
+    'bars_api.add_mealtransaction',
 ]
 role_map['newsmanager'] = [
-    'bars_api.create_news',
+    'bars_api.add_news',
     'bars_api.change_news',
     'bars_api.delete_news',
 ]
 role_map['appromanager'] = [
-    'bars_api.create_approtransaction',
+    'bars_api.add_approtransaction',
     'bars_api.add_item',
-    'bars_api.create_item',
     'bars_api.change_item',
     # 'bars_api.delete_item',
 ]
 role_map['inventorymanager'] = role_map['appromanager'] + [
-    'bars_api.create_inventorytransaction',
+    'bars_api.add_inventorytransaction',
 ]
 role_map['staff'] = role_map['inventorymanager'] + [
-    'bars_api.create_punishtransaction',
+    'bars_api.add_punishtransaction',
     'bars_api.change_transaction',
 ]
 role_map['admin'] = role_map['staff'] + role_map['newsmanager'] + [
-    'bars_api.create_role',
+    'bars_api.add_role',
     'bars_api.change_role',
     'bars_api.delete_role',
-    'bars_api.create_account',
+    'bars_api.add_account',
     'bars_api.change_account',
     'bars_api.delete_account',
 ]

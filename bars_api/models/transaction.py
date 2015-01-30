@@ -162,7 +162,7 @@ class BaseTransactionSerializer(serializers.ModelSerializer):
         if bar is None:
             raise Http404()
         bar = Bar.objects.get(pk=bar)
-        if request.user.has_perm('bars_api.create_' + data["type"] + 'transaction', bar):
+        if request.user.has_perm('bars_api.add_' + data["type"] + 'transaction', bar):
             fields = Transaction._meta.get_all_field_names()
             attrs = {k: v for k, v in data.items() if k in fields}
             t = Transaction(**attrs)
