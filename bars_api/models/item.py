@@ -40,9 +40,9 @@ class ItemSerializer(serializers.ModelSerializer):
 class ItemViewSet(viewsets.ModelViewSet):
     queryset = Item.objects.all()
     serializer_class = ItemSerializer
+    permission_classes = (PerBarPermissionsOrAnonReadOnly,)
     filter_fields = {
         'bar': ['exact'],
         'qty': ['lte', 'gte'],
         'deleted': ['exact']}
     search_fields = ('name', 'keywords')
-    permission_classes = (PerBarPermissionsOrAnonReadOnly,)

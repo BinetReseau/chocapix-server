@@ -6,6 +6,7 @@ from rest_framework.response import Response
 from bars_api.models import VirtualField
 from bars_api.models.bar import Bar
 from bars_api.models.user import User
+from bars_api.perms import PerBarPermissionsOrAnonReadOnly
 
 
 class Account(models.Model):
@@ -30,6 +31,7 @@ class AccountSerializer(serializers.ModelSerializer):
 class AccountViewSet(viewsets.ModelViewSet):
     queryset = Account.objects.all()
     serializer_class = AccountSerializer
+    permission_classes = (PerBarPermissionsOrAnonReadOnly,)
     filter_fields = {
         'owner': ['exact'],
         'bar': ['exact'],

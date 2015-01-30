@@ -6,6 +6,7 @@ from rest_framework.response import Response
 from bars_api.models import VirtualField
 from bars_api.models.bar import Bar
 from bars_api.models.user import User
+from bars_api.perms import PerBarPermissionsOrAnonReadOnly
 
 
 role_map = {}
@@ -70,6 +71,7 @@ class RoleSerializer(serializers.ModelSerializer):
 class RoleViewSet(viewsets.ModelViewSet):
     queryset = Role.objects.all()
     serializer_class = RoleSerializer
+    permission_classes = (PerBarPermissionsOrAnonReadOnly,)
     filter_fields = {
         'user': ['exact'],
         'bar': ['exact'],
