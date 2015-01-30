@@ -11,6 +11,7 @@ from bars_api.perms import PerBarPermissionsOrAnonReadOnly
 
 role_map = {}
 role_map['customer'] = [
+    'bars_api.add_transaction',
     'bars_api.add_buytransaction',
     'bars_api.add_throwtransaction',
     'bars_api.add_givetransaction',
@@ -22,15 +23,18 @@ role_map['newsmanager'] = [
     'bars_api.delete_news',
 ]
 role_map['appromanager'] = [
+    'bars_api.add_transaction',
     'bars_api.add_approtransaction',
     'bars_api.add_item',
     'bars_api.change_item',
     # 'bars_api.delete_item',
 ]
 role_map['inventorymanager'] = role_map['appromanager'] + [
+    'bars_api.add_transaction',
     'bars_api.add_inventorytransaction',
 ]
 role_map['staff'] = role_map['inventorymanager'] + [
+    'bars_api.add_transaction',
     'bars_api.add_punishtransaction',
     'bars_api.change_transaction',
 ]

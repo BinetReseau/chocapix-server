@@ -526,7 +526,7 @@ class TransactionViewSet(viewsets.ModelViewSet):
         return queryset
 
 
-    @decorators.detail_route(methods=['post'])
+    @decorators.detail_route(methods=['put'])
     def cancel(self, request, pk=None):
         transaction = Transaction.objects.select_related().get(pk=pk)
         if request.user.has_perm('bars_api.change_transaction', transaction):
@@ -545,7 +545,7 @@ class TransactionViewSet(viewsets.ModelViewSet):
         else:
             raise exceptions.PermissionDenied()
 
-    @decorators.detail_route(methods=['post'])
+    @decorators.detail_route(methods=['put'])
     def restore(self, request, pk=None):
         transaction = Transaction.objects.get(pk=pk)
         if request.user.has_perm('bars_api.change_transaction', transaction):

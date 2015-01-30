@@ -38,32 +38,22 @@ perms_list = [
     'bars_api.delete_news',
 ]
 
+Role = None  # Prevent circular imports
+Bar = None
+def _has_perm_in_bar(user, perm, bar):
+    global Role
+    if Role is None:
+        Role = get_model('bars_api', 'Role')
+
+    roles = Role.objects.filter(user=user, bar=bar)
+    for r in roles:
+        if perm in r.get_permissions():
+            return True
+    return False
 
 # ## Per-bar permissions
-# Django model permissions
-class BarPermissionBackend(object):
-    Role = None  # Prevent circular imports
-
-    def has_perm(self, user, perm, bar=None):
-        if self.Role is None:
-            self.Role = get_model('bars_api', 'Role')
-        if not user.is_authenticated():
-            return False
-
-        if bar is None:
-            return False
-        elif user.is_active:
-            roles = self.Role.objects.filter(user=user, bar=bar)
-            for r in roles:
-                if perm in r.get_permissions():
-                    return True
-
-        return False
-
 # Django restframework module
 class PerBarPermissionsOrAnonReadOnly(DjangoObjectPermissions):
-    Bar = None  # Prevent circular imports
-
     # Already handled by BarRolePermissionLogic
     # def has_object_permission(self, request, view, obj):
 
@@ -71,12 +61,13 @@ class PerBarPermissionsOrAnonReadOnly(DjangoObjectPermissions):
         if request.method in ('GET', 'OPTIONS', 'HEAD'):
             return True
 
-        if self.Bar is None:
-            self.Bar = get_model('bars_api', 'Bar')
+        global Bar
+        if Bar is None:
+            Bar = get_model('bars_api', 'Bar')
 
         bar = request.QUERY_PARAMS.get('bar', None)
         if bar is not None:
-            bar = self.Bar.objects.get(pk=bar)
+            bar = Bar.objects.get(pk=bar)
             model_cls = getattr(view, 'model', None)
             queryset = getattr(view, 'queryset', None)
 
@@ -88,6 +79,7 @@ class PerBarPermissionsOrAnonReadOnly(DjangoObjectPermissions):
 
             perms = self.get_required_permissions(request.method, model_cls)
 
+            print "Rest: " + unicode(perms) + "@" + unicode(bar)
             for perm in perms:
                 if request.user.has_perm(perm, bar):
                     return True
@@ -95,30 +87,42 @@ class PerBarPermissionsOrAnonReadOnly(DjangoObjectPermissions):
         return super(DjangoObjectPermissions, self).has_permission(request, view)
 
 
+# Django model permissions
+class BarPermissionBackend(object):
+    def has_perm(self, user, perm, obj=None):
+        global Bar
+        if Bar is None:
+            Bar = get_model('bars_api', 'Bar')
+        if not user.is_authenticated():
+            return False
+
+        print "Backend: " + perm + "@" + unicode(obj)
+        if obj is None:
+            return False
+        elif user.is_active and isinstance(obj, Bar):
+            return _has_perm_in_bar(user, perm, obj)
+
+        return False
+
+
 # ## Per-object permissions
 # Django permissions module
 class BarRolePermissionLogic(PermissionLogic):
-    Role = None  # Prevent circular imports
-
     def __init__(self, field_name=None):
         self.field_name = field_name or 'bar'
 
     def has_perm(self, user, perm, obj=None):
-        if self.Role is None:
-            self.Role = get_model('bars_api', 'Role')
         if not user.is_authenticated():
             return False
 
         if obj is None:
-            return False
+            method = perm.split(".")[1].split("_")[0]
+            return method in ('change', 'delete')
         elif user.is_active:
             bar = field_lookup(obj, self.field_name)
             if bar is None:
                 return False
-            roles = self.Role.objects.filter(user=user, bar=bar)
-            for r in roles:
-                if perm in r.get_permissions():
-                    return True
+            return _has_perm_in_bar(user, perm, bar)
 
         return False
 
