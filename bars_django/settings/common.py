@@ -79,9 +79,9 @@ REST_FRAMEWORK = {
         'rest_framework.serializers.HyperlinkedModelSerializer',
 
     'DEFAULT_PERMISSION_CLASSES': [
-        'rest_framework.permissions.AllowAny',
+        # 'rest_framework.permissions.AllowAny',
         # 'bars_api.perms.PerBarPermissionsOrAnonReadOnly',
-        # 'rest_framework.permissions.DjangoObjectPermissions',
+        'rest_framework.permissions.DjangoObjectPermissions',
         # 'rest_framework.permissions.DjangoModelPermissionsOrAnonReadOnly',
     ],
     'DEFAULT_AUTHENTICATION_CLASSES': (
