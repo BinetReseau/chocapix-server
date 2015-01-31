@@ -69,11 +69,9 @@ class TransactionPermsTests(APITestCase):
         self.bar = Bar.objects.create(id='natationjone')
 
         self.user = User.objects.create(username='nadrieril', password='1')
-        Role.objects.create(name='customer', bar=self.bar, user=self.user)
         Account.objects.create(bar=self.bar, owner=self.user)
 
         self.user2 = User.objects.create(username='ntag', password='2')
-        Role.objects.create(name='customer', bar=self.bar, user=self.user2)
         Account.objects.create(bar=self.bar, owner=self.user2)
 
         self.user3 = User.objects.create(username='tizot', password='3')
