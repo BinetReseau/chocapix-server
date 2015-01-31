@@ -11,12 +11,6 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.AddField(
-            model_name='user',
-            name='is_active',
-            field=models.BooleanField(default=True),
-            preserve_default=True,
-        ),
         migrations.AlterField(
             model_name='account',
             name='money',

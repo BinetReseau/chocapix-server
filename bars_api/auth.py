@@ -1,13 +1,11 @@
-from bars_api.models.user import User, make_password
-
+from bars_api.models.user import User
 
 class AuthenticationBackend(object):
-    def authenticate(self, password=None):
-        if password is None:
-            return None
-        encoded_password = make_password(password)
+    def authenticate(self, username=None, password=None):
         try:
-            return User.objects.get(password=encoded_password)
+            user = User.objects.get(username=username)
+            if user.check_password(password):
+                return user
         except User.DoesNotExist:
             return None
 
