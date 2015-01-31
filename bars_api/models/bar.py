@@ -1,7 +1,5 @@
 from django.db import models
-from rest_framework import viewsets
-from rest_framework import serializers
-
+from rest_framework import viewsets, serializers
 from bars_api.models import VirtualField
 
 

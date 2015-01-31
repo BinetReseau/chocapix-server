@@ -5,6 +5,7 @@ from rest_framework import serializers
 from bars_api.models import VirtualField
 from bars_api.models.bar import Bar
 from bars_api.models.user import User
+from bars_api.perms import PerBarPermissionsOrAnonReadOnly
 
 
 class News(models.Model):
@@ -33,6 +34,7 @@ class NewsSerializer(serializers.ModelSerializer):
 class NewsViewSet(viewsets.ModelViewSet):
     queryset = News.objects.all()
     serializer_class = NewsSerializer
+    permission_classes = (PerBarPermissionsOrAnonReadOnly,)
     filter_fields = {
         'bar': ['exact'],
         'timestamp': ['lte', 'gte'],

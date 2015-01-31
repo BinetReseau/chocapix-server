@@ -33,6 +33,7 @@ INSTALLED_APPS = (
     'django.contrib.messages',
     'rest_framework',
     'corsheaders',
+    'permission',
     'bars_api',
 )
 
@@ -78,26 +79,39 @@ REST_FRAMEWORK = {
         'rest_framework.serializers.HyperlinkedModelSerializer',
 
     'DEFAULT_PERMISSION_CLASSES': [
-        # 'rest_framework.permissions.IsAuthenticated',
-        'rest_framework.permissions.DjangoModelPermissionsOrAnonReadOnly',
         # 'rest_framework.permissions.AllowAny',
+        # 'bars_api.perms.PerBarPermissionsOrAnonReadOnly',
+        'rest_framework.permissions.DjangoObjectPermissions',
+        # 'rest_framework.permissions.DjangoModelPermissionsOrAnonReadOnly',
     ],
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_jwt.authentication.JSONWebTokenAuthentication',
-        'rest_framework.authentication.SessionAuthentication',
-        'rest_framework.authentication.BasicAuthentication',
+        'rest_framework.authentication.SessionAuthentication',  # TODO: remove
+        'rest_framework.authentication.BasicAuthentication',  # TODO: remove
     ),
     'DEFAULT_FILTER_BACKENDS': (
         'rest_framework.filters.DjangoFilterBackend',
-        'rest_framework.filters.SearchFilter')
+        'rest_framework.filters.SearchFilter'
+    )
 }
 
-AUTHENTICATION_BACKENDS = ('bars_api.auth.AuthenticationBackend',)
+AUTHENTICATION_BACKENDS = (
+    'bars_api.auth.AuthenticationBackend',
+    'bars_api.perms.BarPermissionBackend',
+    'permission.backends.PermissionBackend',
+)
 
 import datetime
 JWT_AUTH = {
     'JWT_EXPIRATION_DELTA': datetime.timedelta(hours=7 * 24),  # Todo: temporary
 }
+
+# Permissions
+
+PERMISSION_CHECK_PERMISSION_PRESENCE = False
+PERMISSION_DEFAULT_APL_ANY_PERMISSION = False
+PERMISSION_DEFAULT_APL_CHANGE_PERMISSION = True
+PERMISSION_DEFAULT_APL_DELETE_PERMISSION = False
 
 # CORS headers
 

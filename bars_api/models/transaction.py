@@ -1,15 +1,18 @@
 from django.db import models
-from django.db.models import F, Q
+from django.db.models import Q
+from django.http import Http404
 from rest_framework import viewsets
 from rest_framework import serializers, decorators
 from rest_framework.response import Response
 from rest_framework.serializers import ValidationError
+from rest_framework import exceptions
 
 from bars_api.models.user import User
 from bars_api.models import VirtualField
 from bars_api.models.bar import Bar
 from bars_api.models.item import Item
 from bars_api.models.account import Account
+from bars_api.perms import PerBarPermissionsOrAnonReadOnly
 
 
 class Transaction(models.Model):
@@ -154,15 +157,23 @@ class BaseTransactionSerializer(serializers.ModelSerializer):
                 return
 
     def create(self, data):
-        fields = Transaction._meta.get_all_field_names()
-        attrs = {k: v for k, v in data.items() if k in fields}
-        t = Transaction(**attrs)
-        # t.author = User.objects.all()[0]
-        t.author = self.context['request'].user
-        # Todo: add correct bar
-        t.bar = Bar.objects.all()[0]  # self.context['request'].bar
-        t.save()
-        return t
+        request = self.context['request']
+        bar = request.QUERY_PARAMS.get('bar', None)
+        if bar is None:
+            raise Http404()
+        bar = Bar.objects.get(pk=bar)
+        if request.user.has_perm('bars_api.add_' + data["type"] + 'transaction', bar):
+            fields = Transaction._meta.get_all_field_names()
+            attrs = {k: v for k, v in data.items() if k in fields}
+            t = Transaction(**attrs)
+            # t.author = User.objects.all()[0]
+            t.author = request.user
+            t.bar = bar
+            t.save()
+            return t
+
+        else:
+            raise exceptions.PermissionDenied()
 
 
 
@@ -465,6 +476,7 @@ serializers_class_map = {
 
 class TransactionViewSet(viewsets.ModelViewSet):
     queryset = Transaction.objects.all()
+    permission_classes = (PerBarPermissionsOrAnonReadOnly,)
 
     def get_serializer_class(self):
         data = self.request.data
@@ -513,32 +525,40 @@ class TransactionViewSet(viewsets.ModelViewSet):
         return queryset
 
 
-    @decorators.detail_route(methods=['post'])
+    @decorators.detail_route(methods=['put'])
     def cancel(self, request, pk=None):
         transaction = Transaction.objects.select_related().get(pk=pk)
-        transaction.canceled = True
-        transaction.save()
+        if request.user.has_perm('bars_api.change_transaction', transaction):
+            transaction.canceled = True
+            transaction.save()
 
-        for aop in transaction.accountoperation_set.all():
-            aop.propagate()
+            for aop in transaction.accountoperation_set.all():
+                aop.propagate()
 
-        for iop in transaction.itemoperation_set.all():
-            iop.propagate()
+            for iop in transaction.itemoperation_set.all():
+                iop.propagate()
 
-        serializer = self.get_serializer_class()(transaction)
-        return Response(serializer.data)
+            serializer = self.get_serializer_class()(transaction)
+            return Response(serializer.data)
 
-    @decorators.detail_route(methods=['post'])
+        else:
+            raise exceptions.PermissionDenied()
+
+    @decorators.detail_route(methods=['put'])
     def restore(self, request, pk=None):
         transaction = Transaction.objects.get(pk=pk)
-        transaction.canceled = False
-        transaction.save()
+        if request.user.has_perm('bars_api.change_transaction', transaction):
+            transaction.canceled = False
+            transaction.save()
 
-        for aop in transaction.accountoperation_set.all():
-            aop.propagate()
+            for aop in transaction.accountoperation_set.all():
+                aop.propagate()
 
-        for iop in transaction.itemoperation_set.all():
-            iop.propagate()
+            for iop in transaction.itemoperation_set.all():
+                iop.propagate()
 
-        serializer = self.get_serializer_class()(transaction)
-        return Response(serializer.data)
+            serializer = self.get_serializer_class()(transaction)
+            return Response(serializer.data)
+
+        else:
+            raise exceptions.PermissionDenied()
