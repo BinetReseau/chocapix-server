@@ -46,13 +46,13 @@ role_map['admin'] = role_map['staff'] + role_map['newsmanager'] + [
     'bars_api.change_account',
     'bars_api.delete_account',
 ]
-
+role_list = list(role_map.keys())
 
 
 class Role(models.Model):
     class Meta:
         app_label = 'bars_api'
-    name = models.CharField(max_length=127)
+    name = models.CharField(max_length=127, choices=zip(role_list, role_list))
     bar = models.ForeignKey(Bar)
     user = models.ForeignKey(User)
     last_modified = models.DateTimeField(auto_now=True)
