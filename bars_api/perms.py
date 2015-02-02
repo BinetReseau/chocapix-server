@@ -89,6 +89,9 @@ class PerBarPermissionsOrAnonReadOnly(DjangoObjectPermissions):
 
 # Django model permissions
 class BarPermissionBackend(object):
+    def authenticate(self, *args, **kwargs):
+        return None
+
     def has_perm(self, user, perm, obj=None):
         global Bar
         if Bar is None:
