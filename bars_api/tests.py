@@ -102,6 +102,99 @@ class ItemTests(APITestCase):
         self.assertEqual(response.status_code, 200)
 
 
+
+class AccountTests(APITestCase):
+    def setUp(self):
+        self.bar = Bar.objects.create(id='natationjone')
+        Bar.objects.create(id='avironjone')
+
+        self.user = User.objects.create(username='nadrieril')
+        self.user2 = User.objects.create(username='ntag')
+
+        Role.objects.create(name='admin', bar=self.bar, user=self.user2)
+        self.user2 = User.objects.get(username='ntag')
+
+        self.create_data = {'owner': 2}
+        self.account = Account.objects.create(owner=self.user, bar=self.bar)
+        self.update_data = self.client.get('/account/1/').data
+        self.update_data['money'] = 100
+
+
+    def test_get_account(self):
+        response = self.client.get('/account/')
+        self.assertEqual(len(response.data), 1)
+        self.assertEqual(response.data[0]['money'], self.account.money)
+
+
+    def test_create_account(self):
+        # Unauthenticated
+        response = self.client.post('/account/?bar=natationjone', self.create_data)
+        self.assertEqual(response.status_code, 401)
+
+    def test_create_account1(self):
+        # Wrong permissions
+        self.client.force_authenticate(user=self.user)
+        response = self.client.post('/account/?bar=natationjone', self.create_data)
+        self.assertEqual(response.status_code, 403)
+
+    def test_create_account2(self):
+        # Correct permissions
+        self.client.force_authenticate(user=self.user2)
+        response = self.client.post('/account/?bar=natationjone', self.create_data)
+        self.assertEqual(response.status_code, 201)
+
+    def test_create_account3(self):
+        # Wrong bar
+        self.client.force_authenticate(user=self.user2)
+        response = self.client.post('/account/?bar=avironjone', self.create_data)
+        self.assertEqual(response.status_code, 403)
+
+    def test_create_account4(self):
+        # Non-existing bar
+        self.client.force_authenticate(user=self.user2)
+        response = self.client.post('/account/?bar=rugbyrouje', self.create_data)
+        self.assertEqual(response.status_code, 404)
+
+
+    def test_change_account(self):
+        # Unauthenticated
+        response = self.client.put('/account/1/?bar=natationjone', self.update_data)
+        self.assertEqual(response.status_code, 401)
+
+    def test_change_account2(self):
+        # Wrong permissions
+        self.client.force_authenticate(user=self.user)
+        response = self.client.put('/account/1/?bar=natationjone', self.update_data)
+        self.assertEqual(response.status_code, 403)
+
+    def test_change_account3(self):
+        # No bar
+        self.client.force_authenticate(user=self.user)
+        response = self.client.put('/account/1/', self.update_data)
+        self.assertEqual(response.status_code, 403)
+
+    def test_change_account4(self):
+        # Correct permissions
+        self.client.force_authenticate(user=self.user2)
+        response = self.client.put('/account/1/?bar=natationjone', self.update_data)
+        self.assertEqual(response.status_code, 200)
+
+    def test_change_account5(self):
+        # Wrong bar
+        self.client.force_authenticate(user=self.user2)
+        response = self.client.put('/account/1/?bar=avironjone', self.update_data)
+        self.assertEqual(response.status_code, 404)
+
+    def test_change_account6(self):
+        # No bar
+        self.client.force_authenticate(user=self.user2)
+        response = self.client.put('/account/1/', self.update_data)
+        self.assertEqual(response.status_code, 200)
+
+
+
+
+
 class TransactionTests(APITestCase):
     def setUp(self):
         self.bar = Bar.objects.create(id='natationjone')

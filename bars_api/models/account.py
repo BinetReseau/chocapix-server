@@ -2,6 +2,7 @@ from django.db import models
 from rest_framework import viewsets
 from rest_framework import serializers, decorators
 from rest_framework.response import Response
+from rest_framework.validators import UniqueTogetherValidator
 
 from bars_api.models import VirtualField
 from bars_api.models.bar import Bar
@@ -32,7 +33,24 @@ class Account(models.Model):
 class AccountSerializer(serializers.ModelSerializer):
     class Meta:
         model = Account
+        read_only_fields = ('bar', 'money', 'last_modified')
+        extra_kwargs = {'bar': {'required': False}}
     _type = VirtualField("Account")
+
+    def get_validators(self):
+        validators = super(AccountSerializer, self).get_validators()
+        return filter(lambda v:not isinstance(v, UniqueTogetherValidator), validators)
+
+    def create(self, data):
+        request = self.context['request']
+        bar = request.QUERY_PARAMS.get('bar', None)
+        bar = Bar.objects.get(pk=bar)
+
+        account = Account(**data)
+        account.money = 0
+        account.bar = bar
+        account.save()
+        return account
 
 
 class AccountViewSet(viewsets.ModelViewSet):
