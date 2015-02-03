@@ -1,4 +1,5 @@
 from django.db import models
+from django.http import Http404
 from rest_framework import viewsets
 from rest_framework import serializers
 
@@ -34,7 +35,22 @@ class Item(models.Model):
 class ItemSerializer(serializers.ModelSerializer):
     class Meta:
         model = Item
+        read_only_fields = ('bar', 'qty', 'last_modified')
     _type = VirtualField("Item")
+
+    def create(self, data):
+        request = self.context['request']
+        bar = request.QUERY_PARAMS.get('bar', None)
+        try:
+            bar = Bar.objects.get(pk=bar)
+
+            item = Item(**data)
+            item.qty = 0
+            item.bar = bar
+            item.save()
+            return item
+        except:
+            raise Http404("Unknown bar " + bar)
 
 
 class ItemViewSet(viewsets.ModelViewSet):

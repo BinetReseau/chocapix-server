@@ -8,21 +8,27 @@ from bars_api.models.account import Account
 from bars_api.models.transaction import Transaction
 
 
+def reload_user(client, user):  # Avoid permission caching
+    user = User.objects.get(pk=user.pk)
+    client.force_authenticate(user=user)
+
+
 class ItemTests(APITestCase):
-    def test_get_item(self):
-        response = self.client.get('/item/')
-        self.assertEqual(response.data, [])
-
-
-class ItemPermsTests(APITestCase):
     def setUp(self):
         self.user = User.objects.create(username='nadrieril')
         self.bar = Bar.objects.create(id='natationjone')
         Bar.objects.create(id='avironjone')
-        Item.objects.create(name='Chocolat', bar=self.bar, price=1)
+        self.item = Item.objects.create(name='Chocolat', bar=self.bar, price=1)
+
+
+    def test_get_item(self):
+        response = self.client.get('/item/')
+        self.assertEqual(len(response.data), 1)
+        self.assertEqual(response.data[0]['name'], self.item.name)
+
 
     def test_create_item(self):
-        data = {'name': 'test', 'qty': 0, 'bar': 'natationjone', 'price': 1}
+        data = {'name': 'test', 'price': 1}
 
         # Unauthenticated
         response = self.client.post('/item/?bar=natationjone', data)
@@ -35,11 +41,20 @@ class ItemPermsTests(APITestCase):
 
         # Correct permissions
         Role.objects.create(name='appromanager', bar=self.bar, user=self.user)
+        reload_user(self.client, self.user)
         response = self.client.post('/item/?bar=natationjone', data)
         self.assertEqual(response.status_code, 201)
 
         # Wrong bar
         response = self.client.post('/item/?bar=avironjone', data)
+        self.assertEqual(response.status_code, 403)
+
+        # Non-existing bar
+        response = self.client.post('/item/?bar=rugbyrouje', data)
+        self.assertEqual(response.status_code, 404)
+
+        # No bar
+        response = self.client.post('/item/', data)
         self.assertEqual(response.status_code, 403)
 
 
@@ -58,13 +73,12 @@ class ItemPermsTests(APITestCase):
 
         # Correct permissions
         Role.objects.create(name='appromanager', bar=self.bar, user=self.user)
-        user = User.objects.get(username='nadrieril')
-        self.client.force_authenticate(user=user)  # Avoid permission caching
+        reload_user(self.client, self.user)
         response = self.client.put('/item/1/?bar=natationjone', data)
         self.assertEqual(response.status_code, 200)
 
 
-class TransactionPermsTests(APITestCase):
+class TransactionTests(APITestCase):
     def setUp(self):
         self.bar = Bar.objects.create(id='natationjone')
 
