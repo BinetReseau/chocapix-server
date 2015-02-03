@@ -3,6 +3,9 @@ from rest_framework.permissions import DjangoObjectPermissions
 from permission.utils.field_lookup import field_lookup
 from permission.logics import PermissionLogic, AuthorPermissionLogic
 
+from bars_api.models.bar import Bar
+from bars_api.models.role import Role
+
 # For reference
 perms_list = [
     'bars_api.add_buytransaction',
@@ -38,13 +41,7 @@ perms_list = [
     'bars_api.delete_news',
 ]
 
-Role = None  # Prevent circular imports
-Bar = None
 def _has_perm_in_bar(user, perm, bar):
-    global Role
-    if Role is None:
-        Role = get_model('bars_api', 'Role')
-
     roles = Role.objects.filter(user=user, bar=bar)
     for r in roles:
         if perm in r.get_permissions():
@@ -60,10 +57,6 @@ class PerBarPermissionsOrAnonReadOnly(DjangoObjectPermissions):
     def has_permission(self, request, view):
         if request.method in ('GET', 'OPTIONS', 'HEAD'):
             return True
-
-        global Bar
-        if Bar is None:
-            Bar = get_model('bars_api', 'Bar')
 
         bar = request.QUERY_PARAMS.get('bar', None)
         if bar is not None:
@@ -93,9 +86,6 @@ class BarPermissionBackend(object):
         return None
 
     def has_perm(self, user, perm, obj=None):
-        global Bar
-        if Bar is None:
-            Bar = get_model('bars_api', 'Bar')
         if not user.is_authenticated():
             return False
 
