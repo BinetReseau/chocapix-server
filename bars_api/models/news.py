@@ -1,6 +1,8 @@
 from django.db import models
-from rest_framework import viewsets
+from rest_framework import exceptions
 from rest_framework import serializers
+from rest_framework import viewsets
+from django.http import Http404
 
 from bars_api.models import VirtualField
 from bars_api.models.bar import Bar
@@ -29,6 +31,22 @@ class NewsSerializer(serializers.ModelSerializer):
     class Meta:
         model = News
     _type = VirtualField("News")
+
+    def create(self, data):
+        request = self.context['request']
+        bar = request.QUERY_PARAMS.get('bar', None)
+        if bar is None:
+            raise Http404()
+
+        bar = Bar.objects.get(pk=bar)
+        if request.user.has_perm('bars_api.add_news', bar):
+            n = News(**data)
+            n.author = request.user
+            n.bar = bar
+            n.save()
+            return n
+        else:
+            raise exceptions.PermissionDenied()
 
 
 class NewsViewSet(viewsets.ModelViewSet):
