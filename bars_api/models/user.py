@@ -72,11 +72,11 @@ class UserSerializer(serializers.ModelSerializer):
         write_only_fields = ('password',)
     _type = VirtualField("User")
 
-    def restore_object(self, attrs, instance=None):
-        user = super(UserSerializer, self).restore_object(attrs, instance)
-        if 'password' in attrs:
-            user.set_password(attrs['password'])
-        return user
+    # def restore_object(self, attrs, instance=None):
+    #     user = super(UserSerializer, self).restore_object(attrs, instance)
+    #     if 'password' in attrs:
+    #         user.set_password(attrs['password'])
+    #     return user
 
 
 class UserViewSet(viewsets.ModelViewSet):
