@@ -73,7 +73,7 @@ class PerBarPermissionsOrAnonReadOnly(DjangoObjectPermissions):
 
                 perms = self.get_required_permissions(request.method, model_cls)
 
-                print "Rest: ", perms, bar
+                # print "Rest: ", perms, bar
                 for perm in perms:
                     if request.user.has_perm(perm, bar):
                         return True
@@ -92,7 +92,7 @@ class BarPermissionBackend(object):
         if not user.is_authenticated():
             return False
 
-        print "Backend: ", perm, obj
+        # print "Backend: ", perm, obj
         if obj is None:
             return False
         elif user.is_active and isinstance(obj, Bar):
@@ -111,7 +111,7 @@ class BarRolePermissionLogic(PermissionLogic):
         if not user.is_authenticated():
             return False
 
-        print "Logic: ", perm, obj
+        # print "Logic: ", perm, obj
         if obj is None:
             method = perm.split(".")[1].split("_")[0]
             return method in ('change', 'delete')
