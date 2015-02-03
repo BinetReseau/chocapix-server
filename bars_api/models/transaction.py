@@ -269,6 +269,30 @@ class ThrowTransactionSerializer(BaseTransactionSerializer, ItemQtySerializer):
         return obj
 
 
+class DepositTransactionSerializer(BaseTransactionSerializer, AccountAmountSerializer):
+    def create(self, data):
+        t = super(DepositTransactionSerializer, self).create(data)
+
+        t.accountoperation_set.create(
+            target=data["account"],
+            delta=data["amount"])
+
+        return t
+
+    def to_representation(self, transaction):
+        obj = BaseTransactionSerializer(transaction, context={'ignore_type': True}).data
+        if transaction is None:
+            return obj
+
+        aop = transaction.accountoperation_set.all()[0]
+        obj["account"] = aop.target.id
+        obj["amount"] = aop.delta
+
+        obj["moneyflow"] = aop.delta
+
+        return obj
+
+
 class GiveTransactionSerializer(BaseTransactionSerializer, AccountAmountSerializer):
     def create(self, data):
         t = super(GiveTransactionSerializer, self).create(data)
@@ -468,6 +492,7 @@ serializers_class_map = {
     "": BaseTransactionSerializer,
     "buy": BuyTransactionSerializer,
     "throw": ThrowTransactionSerializer,
+    "deposit": DepositTransactionSerializer,
     "give": GiveTransactionSerializer,
     "punish": PunishTransactionSerializer,
     "meal": MealTransactionSerializer,

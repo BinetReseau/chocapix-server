@@ -34,6 +34,7 @@ role_map['inventorymanager'] = role_map['appromanager'] + [
 ]
 role_map['staff'] = role_map['inventorymanager'] + [
     'bars_api.add_transaction',
+    'bars_api.add_deposittransaction',
     'bars_api.add_punishtransaction',
     'bars_api.change_transaction',
 ]
