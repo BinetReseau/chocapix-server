@@ -5,9 +5,9 @@ from rest_framework import viewsets
 from django.http import Http404
 
 from bars_api.models import VirtualField
-from bars_api.models.bar import Bar
-from bars_api.models.user import User
-from bars_api.perms import PerBarPermissionsOrAnonReadOnly
+from bars_core.models.bar import Bar
+from bars_core.models.user import User
+from bars_core.perms import PerBarPermissionsOrAnonReadOnly
 
 
 class News(models.Model):

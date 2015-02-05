@@ -5,10 +5,10 @@ from rest_framework.response import Response
 from rest_framework.validators import UniqueTogetherValidator
 
 from bars_api.models import VirtualField
-from bars_api.models.bar import Bar
-from bars_api.models.user import User
-from bars_api.models.role import Role
-from bars_api.perms import PerBarPermissionsOrAnonReadOnly
+from bars_core.models.bar import Bar
+from bars_core.models.user import User
+from bars_core.models.role import Role
+from bars_core.perms import PerBarPermissionsOrAnonReadOnly
 
 
 class Account(models.Model):

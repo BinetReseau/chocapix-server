@@ -7,13 +7,13 @@ admin.autodiscover()
 import permission
 permission.autodiscover()
 
-from bars_api.models.bar import BarViewSet
-from bars_api.models.user import UserViewSet
-from bars_api.models.account import AccountViewSet
-from bars_api.models.role import RoleViewSet
-from bars_api.models.item import ItemViewSet
-from bars_api.models.news import NewsViewSet
-from bars_api.models.transaction import TransactionViewSet
+from bars_core.models.bar import BarViewSet
+from bars_core.models.user import UserViewSet
+from bars_base.models.account import AccountViewSet
+from bars_core.models.role import RoleViewSet
+from bars_base.models.item import ItemViewSet
+from bars_news.models import NewsViewSet
+from bars_transactions.views import TransactionViewSet
 
 
 router = routers.DefaultRouter()

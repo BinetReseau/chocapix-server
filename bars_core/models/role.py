@@ -4,8 +4,8 @@ from rest_framework import serializers, decorators
 from rest_framework.response import Response
 
 from bars_api.models import VirtualField
-from bars_api.models.bar import Bar
-from bars_api.models.user import User
+from bars_core.models.bar import Bar
+from bars_core.models.user import User
 
 
 role_map = {}
@@ -71,7 +71,7 @@ class RoleSerializer(serializers.ModelSerializer):
     perms = serializers.ListField(child=serializers.CharField(max_length=127), read_only=True, source='get_permissions')
 
 
-from bars_api.perms import PerBarPermissionsOrAnonReadOnly
+from bars_core.perms import PerBarPermissionsOrAnonReadOnly
 
 class RoleViewSet(viewsets.ModelViewSet):
     queryset = Role.objects.all()

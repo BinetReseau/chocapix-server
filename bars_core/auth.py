@@ -1,4 +1,4 @@
-from bars_api.models.user import User
+from bars_core.models.user import User
 
 class AuthenticationBackend(object):
     def authenticate(self, username=None, password=None):

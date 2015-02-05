@@ -1,10 +1,8 @@
 from django.http import Http404
 from rest_framework.permissions import DjangoObjectPermissions
 from permission.utils.field_lookup import field_lookup
-from permission.logics import PermissionLogic, AuthorPermissionLogic
+from permission.logics import PermissionLogic
 
-from bars_api.models.bar import Bar
-from bars_api.models.role import Role
 
 # For reference
 perms_list = [
@@ -41,13 +39,6 @@ perms_list = [
     'bars_api.delete_news',
 ]
 
-def _has_perm_in_bar(user, perm, bar):
-    roles = Role.objects.filter(user=user, bar=bar)
-    for r in roles:
-        if perm in r.get_permissions():
-            return True
-    return False
-
 # ## Per-bar permissions
 # Django restframework module
 class PerBarPermissionsOrAnonReadOnly(DjangoObjectPermissions):
@@ -82,6 +73,16 @@ class PerBarPermissionsOrAnonReadOnly(DjangoObjectPermissions):
 
         return super(DjangoObjectPermissions, self).has_permission(request, view)
 
+
+from bars_core.models.bar import Bar
+from bars_core.models.role import Role
+
+def _has_perm_in_bar(user, perm, bar):
+    roles = Role.objects.filter(user=user, bar=bar)
+    for r in roles:
+        if perm in r.get_permissions():
+            return True
+    return False
 
 # Django model permissions
 class BarPermissionBackend(object):
@@ -125,10 +126,5 @@ class BarRolePermissionLogic(PermissionLogic):
 
 
 PERMISSION_LOGICS = (
-    ('bars_api.Account', BarRolePermissionLogic()),
-    ('bars_api.Item', BarRolePermissionLogic()),
-    # ('bars_api.News', BarRolePermissionLogic()),
     ('bars_api.Role', BarRolePermissionLogic()),
-    ('bars_api.Transaction', BarRolePermissionLogic()),
-    ('bars_api.Transaction', AuthorPermissionLogic(field_name='author')),
 )
