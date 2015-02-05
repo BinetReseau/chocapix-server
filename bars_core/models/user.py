@@ -1,6 +1,5 @@
 from django.db import models
 from django.contrib.auth.models import BaseUserManager, AbstractBaseUser, _user_has_module_perms, _user_has_perm
-from django.utils import timezone
 from rest_framework import viewsets, serializers, decorators
 from rest_framework.response import Response
 

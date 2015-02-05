@@ -3,11 +3,10 @@ from rest_framework import serializers
 from rest_framework.serializers import ValidationError
 from rest_framework import exceptions
 
-from bars_core.models.user import User
 from bars_core.models.bar import Bar
 from bars_base.models.item import Item
 from bars_base.models.account import Account
-from bars_transactions.models import Transaction, AccountOperation, ItemOperation
+from bars_transactions.models import Transaction
 
 
 class BaseTransactionSerializer(serializers.ModelSerializer):

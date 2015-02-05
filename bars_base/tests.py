@@ -5,7 +5,6 @@ from bars_core.models.role import Role
 from bars_core.models.bar import Bar
 from bars_base.models.item import Item
 from bars_base.models.account import Account
-from bars_transactions.models import Transaction
 
 
 def reload_user(client, user):  # Avoid permission caching
