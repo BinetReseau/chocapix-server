@@ -4,41 +4,6 @@ from permission.utils.field_lookup import field_lookup
 from permission.logics import PermissionLogic
 
 
-# For reference
-perms_list = [
-    'bars_api.add_buytransaction',
-    'bars_api.add_throwtransaction',
-    'bars_api.add_givetransaction',
-    'bars_api.add_punishtransaction',
-    'bars_api.add_mealtransaction',
-    'bars_api.add_approtransaction',
-    'bars_api.add_inventorytransaction',
-
-    # 'bars_api.add_bar',
-    # 'bars_api.add_user',
-    'bars_core.add_role',
-    'bars_base.add_account',
-    'bars_base.add_item',
-    # 'bars_api.add_transaction',
-    'bars_api.add_news',
-
-    # 'bars_api.change_bar',
-    # 'bars_api.change_user',
-    'bars_core.change_role',
-    'bars_base.change_account',
-    'bars_base.change_item',
-    'bars_api.change_transaction',
-    'bars_api.change_news',
-
-    # 'bars_api.delete_bar',
-    # 'bars_api.delete_user',
-    'bars_core.delete_role',
-    'bars_base.delete_account',
-    'bars_base.delete_item',
-    'bars_api.delete_transaction',
-    'bars_api.delete_news',
-]
-
 # ## Per-bar permissions
 # Django restframework module
 class PerBarPermissionsOrAnonReadOnly(DjangoObjectPermissions):
