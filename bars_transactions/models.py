@@ -1,7 +1,7 @@
 from django.db import models
 
 from bars_core.models.user import User
-from bars_api.models import VirtualField
+from bars_django.utils import VirtualField
 from bars_core.models.bar import Bar
 from bars_base.models.item import Item
 from bars_base.models.account import Account

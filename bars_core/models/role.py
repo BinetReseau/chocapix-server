@@ -3,7 +3,7 @@ from rest_framework import viewsets
 from rest_framework import serializers, decorators
 from rest_framework.response import Response
 
-from bars_api.models import VirtualField
+from bars_django.utils import VirtualField
 from bars_core.models.bar import Bar
 from bars_core.models.user import User
 

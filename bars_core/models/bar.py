@@ -1,6 +1,6 @@
 from django.db import models
 from rest_framework import viewsets, serializers
-from bars_api.models import VirtualField
+from bars_django.utils import VirtualField
 
 
 class Bar(models.Model):

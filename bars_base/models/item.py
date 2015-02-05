@@ -3,7 +3,7 @@ from django.http import Http404
 from rest_framework import viewsets
 from rest_framework import serializers
 
-from bars_api.models import VirtualField
+from bars_django.utils import VirtualField
 from bars_core.models.bar import Bar
 from bars_core.perms import PerBarPermissionsOrAnonReadOnly
 

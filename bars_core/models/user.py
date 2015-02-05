@@ -4,7 +4,7 @@ from django.utils import timezone
 from rest_framework import viewsets, serializers, decorators
 from rest_framework.response import Response
 
-from bars_api.models import VirtualField
+from bars_django.utils import VirtualField
 
 
 class UserManager(BaseUserManager):
