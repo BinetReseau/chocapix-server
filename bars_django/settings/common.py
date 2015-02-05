@@ -125,4 +125,4 @@ CORS_ORIGIN_ALLOW_ALL = True
 
 # API app
 
-AUTH_USER_MODEL = 'bars_api.User'
+AUTH_USER_MODEL = 'bars_core.User'

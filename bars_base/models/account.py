@@ -14,7 +14,7 @@ from bars_core.perms import PerBarPermissionsOrAnonReadOnly
 class Account(models.Model):
     class Meta:
         unique_together = (("bar", "owner"))
-        app_label = 'bars_api'
+        app_label = 'bars_base'
     bar = models.ForeignKey(Bar)
     owner = models.ForeignKey(User)
     money = models.FloatField(default=0)

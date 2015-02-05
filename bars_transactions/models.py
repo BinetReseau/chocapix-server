@@ -9,7 +9,7 @@ from bars_base.models.account import Account
 
 class Transaction(models.Model):
     class Meta:
-        app_label = 'bars_api'
+        app_label = 'bars_transactions'
     bar = models.ForeignKey(Bar)
     author = models.ForeignKey(User)
     type = models.CharField(max_length=25)
@@ -50,7 +50,7 @@ class Transaction(models.Model):
 
 class TransactionData(models.Model):
     class Meta:
-        app_label = 'bars_api'
+        app_label = 'bars_transactions'
     transaction = models.ForeignKey(Transaction)
     label = models.CharField(max_length=128)
     data = models.TextField()
@@ -106,7 +106,7 @@ class BaseOperation(models.Model):
 
 class ItemOperation(BaseOperation):
     class Meta:
-        app_label = 'bars_api'
+        app_label = 'bars_transactions'
     target = models.ForeignKey(Item)
 
     op_model = Item
@@ -114,7 +114,7 @@ class ItemOperation(BaseOperation):
 
 class AccountOperation(BaseOperation):
     class Meta:
-        app_label = 'bars_api'
+        app_label = 'bars_transactions'
     target = models.ForeignKey(Account)
 
     op_model = Account

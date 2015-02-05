@@ -2,6 +2,6 @@ from permission.logics import AuthorPermissionLogic
 from bars_core.perms import BarRolePermissionLogic
 
 PERMISSION_LOGICS = (
-    ('bars_api.Transaction', BarRolePermissionLogic()),
-    ('bars_api.Transaction', AuthorPermissionLogic(field_name='author')),
+    ('bars_transactions.Transaction', BarRolePermissionLogic()),
+    ('bars_transactions.Transaction', AuthorPermissionLogic(field_name='author')),
 )

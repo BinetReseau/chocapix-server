@@ -60,7 +60,7 @@ class TransactionViewSet(viewsets.ModelViewSet):
     @decorators.detail_route(methods=['put'])
     def cancel(self, request, pk=None):
         transaction = Transaction.objects.select_related().get(pk=pk)
-        if request.user.has_perm('bars_api.change_transaction', transaction):
+        if request.user.has_perm('bars_transactions.change_transaction', transaction):
             transaction.canceled = True
             transaction.save()
 
@@ -79,7 +79,7 @@ class TransactionViewSet(viewsets.ModelViewSet):
     @decorators.detail_route(methods=['put'])
     def restore(self, request, pk=None):
         transaction = Transaction.objects.get(pk=pk)
-        if request.user.has_perm('bars_api.change_transaction', transaction):
+        if request.user.has_perm('bars_transactions.change_transaction', transaction):
             transaction.canceled = False
             transaction.save()
 

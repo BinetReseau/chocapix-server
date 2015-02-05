@@ -23,7 +23,7 @@ class UserManager(BaseUserManager):
 
 class User(AbstractBaseUser):
     class Meta:
-        app_label = 'bars_api'
+        app_label = 'bars_core'
     username = models.CharField(max_length=128, unique=True)
     full_name = models.CharField(max_length=128, blank=True)
     pseudo = models.CharField(max_length=128, blank=True)

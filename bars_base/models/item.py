@@ -10,7 +10,7 @@ from bars_core.perms import PerBarPermissionsOrAnonReadOnly
 
 class Item(models.Model):
     class Meta:
-        app_label = 'bars_api'
+        app_label = 'bars_base'
     bar = models.ForeignKey(Bar)
     name = models.CharField(max_length=100)
     keywords = models.CharField(max_length=200, blank=True)  # Todo: length

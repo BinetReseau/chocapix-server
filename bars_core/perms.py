@@ -16,25 +16,25 @@ perms_list = [
 
     # 'bars_api.add_bar',
     # 'bars_api.add_user',
-    'bars_api.add_role',
-    'bars_api.add_account',
-    'bars_api.add_item',
+    'bars_core.add_role',
+    'bars_base.add_account',
+    'bars_base.add_item',
     # 'bars_api.add_transaction',
     'bars_api.add_news',
 
     # 'bars_api.change_bar',
     # 'bars_api.change_user',
-    'bars_api.change_role',
-    'bars_api.change_account',
-    'bars_api.change_item',
+    'bars_core.change_role',
+    'bars_base.change_account',
+    'bars_base.change_item',
     'bars_api.change_transaction',
     'bars_api.change_news',
 
     # 'bars_api.delete_bar',
     # 'bars_api.delete_user',
-    'bars_api.delete_role',
-    'bars_api.delete_account',
-    'bars_api.delete_item',
+    'bars_core.delete_role',
+    'bars_base.delete_account',
+    'bars_base.delete_item',
     'bars_api.delete_transaction',
     'bars_api.delete_news',
 ]
@@ -126,5 +126,5 @@ class BarRolePermissionLogic(PermissionLogic):
 
 
 PERMISSION_LOGICS = (
-    ('bars_api.Role', BarRolePermissionLogic()),
+    ('bars_core.Role', BarRolePermissionLogic()),
 )

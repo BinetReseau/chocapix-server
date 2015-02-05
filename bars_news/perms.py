@@ -1,5 +1,5 @@
 from bars_core.perms import BarRolePermissionLogic
 
 PERMISSION_LOGICS = (
-    ('bars_api.News', BarRolePermissionLogic()),
+    ('bars_news.News', BarRolePermissionLogic()),
 )
