@@ -34,7 +34,11 @@ INSTALLED_APPS = (
     'rest_framework',
     'corsheaders',
     'permission',
-    'bars_api',
+
+    'bars_core',
+    'bars_base',
+    'bars_transactions',
+    'bars_news',
 )
 
 
@@ -80,7 +84,7 @@ REST_FRAMEWORK = {
 
     'DEFAULT_PERMISSION_CLASSES': [
         # 'rest_framework.permissions.AllowAny',
-        # 'bars_api.perms.PerBarPermissionsOrAnonReadOnly',
+        # 'bars_core.perms.PerBarPermissionsOrAnonReadOnly',
         'rest_framework.permissions.DjangoObjectPermissions',
         # 'rest_framework.permissions.DjangoModelPermissionsOrAnonReadOnly',
     ],
@@ -96,8 +100,8 @@ REST_FRAMEWORK = {
 }
 
 AUTHENTICATION_BACKENDS = (
-    'bars_api.auth.AuthenticationBackend',
-    'bars_api.perms.BarPermissionBackend',
+    'bars_core.auth.AuthenticationBackend',
+    'bars_core.perms.BarPermissionBackend',
     'permission.backends.PermissionBackend',
 )
 
@@ -120,4 +124,4 @@ CORS_ORIGIN_ALLOW_ALL = True
 
 # API app
 
-AUTH_USER_MODEL = 'bars_api.User'
+AUTH_USER_MODEL = 'bars_core.User'

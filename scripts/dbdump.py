@@ -130,7 +130,7 @@ def run():
 def import_data():
     # Processing model: Bar
 
-    from bars_api.models.bar import Bar
+    from bars_core.models.bar import Bar
 
     bars_api_bar_1 = Bar()
     bars_api_bar_1.id = u'avironjone'
@@ -149,7 +149,7 @@ def import_data():
 
     # Processing model: User
 
-    from bars_api.models.user import User
+    from bars_core.models.user import User
 
     bars_api_user_1 = User()
     bars_api_user_1.username = u'nadri'
@@ -182,7 +182,7 @@ def import_data():
 
     # Processing model: Account
 
-    from bars_api.models.account import Account
+    from bars_base.models.account import Account
 
     bars_api_account_1 = Account()
     bars_api_account_1.bar = bars_api_bar_1
@@ -211,7 +211,7 @@ def import_data():
 
     # Processing model: Item
 
-    from bars_api.models.item import Item
+    from bars_base.models.item import Item
 
     bars_api_item_1 = Item()
     bars_api_item_1.bar = bars_api_bar_1
@@ -443,7 +443,7 @@ def import_data():
 
     # Processing model: News
 
-    from bars_api.models.news import News
+    from bars_news.models import News
 
     bars_api_news_1 = News()
     bars_api_news_1.bar = bars_api_bar_1
@@ -463,9 +463,9 @@ def import_data():
 
     # Processing model: Transaction
 
-    from bars_api.models.transaction import Transaction
-    from bars_api.models.transaction import AccountOperation
-    from bars_api.models.transaction import ItemOperation
+    from bars_transactions.models import Transaction
+    from bars_transactions.models import AccountOperation
+    from bars_transactions.models import ItemOperation
 
     for i in range(30):
         t = Transaction()

@@ -1,10 +1,9 @@
 from django.db import models
 from django.contrib.auth.models import BaseUserManager, AbstractBaseUser, _user_has_module_perms, _user_has_perm
-from django.utils import timezone
 from rest_framework import viewsets, serializers, decorators
 from rest_framework.response import Response
 
-from bars_api.models import VirtualField
+from bars_django.utils import VirtualField
 
 
 class UserManager(BaseUserManager):
@@ -23,7 +22,7 @@ class UserManager(BaseUserManager):
 
 class User(AbstractBaseUser):
     class Meta:
-        app_label = 'bars_api'
+        app_label = 'bars_core'
     username = models.CharField(max_length=128, unique=True)
     full_name = models.CharField(max_length=128, blank=True)
     pseudo = models.CharField(max_length=128, blank=True)

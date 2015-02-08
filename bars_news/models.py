@@ -4,15 +4,15 @@ from rest_framework import serializers
 from rest_framework import viewsets
 from django.http import Http404
 
-from bars_api.models import VirtualField
-from bars_api.models.bar import Bar
-from bars_api.models.user import User
-from bars_api.perms import PerBarPermissionsOrAnonReadOnly
+from bars_django.utils import VirtualField
+from bars_core.models.bar import Bar
+from bars_core.models.user import User
+from bars_core.perms import PerBarPermissionsOrAnonReadOnly
 
 
 class News(models.Model):
     class Meta:
-        app_label = 'bars_api'
+        app_label = 'bars_news'
     bar = models.ForeignKey(Bar)
     author = models.ForeignKey(User)
     name = models.CharField(max_length=100)
@@ -39,7 +39,7 @@ class NewsSerializer(serializers.ModelSerializer):
             raise Http404()
 
         bar = Bar.objects.get(pk=bar)
-        if request.user.has_perm('bars_api.add_news', bar):
+        if request.user.has_perm('bars_news.add_news', bar):
             n = News(**data)
             n.author = request.user
             n.bar = bar

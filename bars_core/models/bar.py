@@ -1,11 +1,11 @@
 from django.db import models
 from rest_framework import viewsets, serializers
-from bars_api.models import VirtualField
+from bars_django.utils import VirtualField
 
 
 class Bar(models.Model):
     class Meta:
-        app_label = 'bars_api'
+        app_label = 'bars_core'
     id = models.CharField(max_length=50, primary_key=True)
     name = models.CharField(max_length=100)
     last_modified = models.DateTimeField(auto_now=True)
