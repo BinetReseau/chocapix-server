@@ -1,6 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import BaseUserManager, AbstractBaseUser, _user_has_module_perms, _user_has_perm
-from rest_framework import viewsets, serializers, decorators
+from rest_framework import viewsets, serializers, decorators, exceptions
 from rest_framework.response import Response
 
 from bars_django.utils import VirtualField
@@ -86,3 +86,17 @@ class UserViewSet(viewsets.ModelViewSet):
     def me(self, request):
         serializer = self.serializer_class(request.user)
         return Response(serializer.data)
+
+    @decorators.list_route(methods=['put'])
+    def change_password(self, request):
+        user = request.user
+        if not user:
+            return Response('', 401)  # TODO: raise correct exception
+
+        data = request.data
+        if not user.check_password(data['old_password']):
+            raise exceptions.PermissionDenied()
+
+        user.set_password(data['password'])
+        user.save()
+        return Response('Password changed', 200)

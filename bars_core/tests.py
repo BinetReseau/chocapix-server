@@ -18,6 +18,12 @@ class LoginTests(APITestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data['username'], "admin")
 
+    def test_wrong_login(self):
+        data = {'username': 'admin', 'password': 'sdgez'}
+        response = self.client.post('/api-token-auth/', data, format='json')
+
+        self.assertEqual(response.status_code, 400)
+
 
 class UserTests(APITestCase):
     def setUp(self):
@@ -26,6 +32,19 @@ class UserTests(APITestCase):
         serializer = UserSerializer(self.user)
         self.data = serializer.data
         self.user_url = '/user/%d/' % self.user.id
+
+
+    def test_get_user_not_authed(self):
+        # Not authenticated
+        response = self.client.get(self.user_url)
+        self.assertEqual(response.status_code, 401)
+
+    def test_get_user_authed(self):
+        # Authenticated
+        self.client.force_authenticate(user=self.admin)
+        response = self.client.get(self.user_url)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data, self.data)
 
 
     def test_change_user_not_authed(self):
@@ -43,3 +62,21 @@ class UserTests(APITestCase):
 
         response2 = self.client.get(self.user_url)
         self.assertEqual(response2.data['full_name'], self.data['full_name'])
+
+
+    def test_change_password(self):
+        self.client.force_authenticate(user=self.user)
+        self.assertEqual(self.user.check_password('password'), True)
+
+        data = {'old_password': 'password', 'password': '123456'}
+        response = self.client.put('/user/change_password/', data)
+        self.assertEqual(response.status_code, 200)
+
+        user_reloaded = User.objects.get(pk=self.user.pk)
+        self.assertEqual(user_reloaded.check_password('123456'), True)
+
+    def test_change_password_wrong_password(self):
+        self.client.force_authenticate(user=self.user)
+        data = {'old_password': 'wrong_password', 'password': '123456'}
+        response = self.client.put('/user/change_password/', data)
+        self.assertEqual(response.status_code, 403)
