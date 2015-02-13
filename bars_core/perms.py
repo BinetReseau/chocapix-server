@@ -1,7 +1,7 @@
 from django.http import Http404
 from rest_framework.permissions import DjangoObjectPermissions
 from permission.utils.field_lookup import field_lookup
-from permission.logics import PermissionLogic
+from permission.logics import PermissionLogic, OneselfPermissionLogic
 
 
 # ## Per-bar permissions
@@ -91,5 +91,6 @@ class BarRolePermissionLogic(PermissionLogic):
 
 
 PERMISSION_LOGICS = (
+    ('bars_core.User', OneselfPermissionLogic()),
     ('bars_core.Role', BarRolePermissionLogic()),
 )
