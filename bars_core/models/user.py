@@ -1,6 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import BaseUserManager, AbstractBaseUser, _user_has_module_perms, _user_has_perm
-from rest_framework import viewsets, serializers, decorators
+from rest_framework import viewsets, serializers, decorators, exceptions
 from rest_framework.response import Response
 
 from bars_django.utils import VirtualField
@@ -15,7 +15,8 @@ class UserManager(BaseUserManager):
 
     def create_superuser(self, username, password):
         user = self.create_user(username, password)
-        user.is_admin = True
+        user.is_superuser = True
+        user.is_staff = True
         user.save(using=self._db)
         return user
 
@@ -31,6 +32,7 @@ class User(AbstractBaseUser):
     last_modified = models.DateTimeField(auto_now=True)
 
     is_superuser = models.BooleanField(default=False)
+    is_staff = models.BooleanField(default=False)
 
     objects = UserManager()
 
@@ -67,8 +69,8 @@ class User(AbstractBaseUser):
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ('id', '_type', 'username', 'full_name', 'pseudo', 'last_login', 'last_modified', 'password')
-        write_only_fields = ('password',)
+        fields = ('id', '_type', 'username', 'full_name', 'pseudo', 'last_login', 'last_modified')
+        read_only_fields = ('id', '_type', 'last_login', 'last_modified')
     _type = VirtualField("User")
 
     # def restore_object(self, attrs, instance=None):
@@ -86,3 +88,15 @@ class UserViewSet(viewsets.ModelViewSet):
     def me(self, request):
         serializer = self.serializer_class(request.user)
         return Response(serializer.data)
+
+    @decorators.list_route(methods=['put'])
+    def change_password(self, request):
+        user = request.user
+
+        data = request.data
+        if not user.check_password(data['old_password']):
+            raise exceptions.PermissionDenied()
+
+        user.set_password(data['password'])
+        user.save()
+        return Response('Password changed', 200)

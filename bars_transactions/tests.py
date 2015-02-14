@@ -25,8 +25,8 @@ class TransactionTests(APITestCase):
         Item.objects.create(name='Chocolat', bar=self.bar, price=1)
 
         self.client.force_authenticate(user=self.user)
-        transaction = {'type':'buy', 'item':1, 'qty':1}
-        self.client.post('/transaction/?bar=natationjone', transaction)
+        Transaction.objects.create(bar=self.bar, author=self.user)
+
 
     def test_cancel_transaction(self):
         response = self.client.put('/transaction/1/cancel/?bar=natationjone', {})
@@ -34,15 +34,30 @@ class TransactionTests(APITestCase):
         transaction = Transaction.objects.get(pk=1)
         self.assertEqual(transaction.canceled, True)
 
+    def test_restore_transaction(self):
         response = self.client.put('/transaction/1/restore/?bar=natationjone', {})
         self.assertEqual(response.status_code, 200)
         transaction = Transaction.objects.get(pk=1)
         self.assertEqual(transaction.canceled, False)
 
+    def test_cancel_transaction_wrong_user(self):
         self.client.force_authenticate(user=self.user2)
         response = self.client.put('/transaction/1/cancel/?bar=natationjone', {})
         self.assertEqual(response.status_code, 403)
 
+    def test_cancel_transaction_staff(self):
         self.client.force_authenticate(user=self.user3)
         response = self.client.put('/transaction/1/cancel/?bar=natationjone', {})
         self.assertEqual(response.status_code, 200)
+
+
+    def test_create_buytransaction(self):
+        data = {'type':'buy', 'item':1, 'qty':1}
+        start_qty = Item.objects.get(id=1).qty
+
+        self.client.force_authenticate(user=self.user)
+        response = self.client.post('/transaction/?bar=natationjone', data)
+        self.assertEqual(response.status_code, 201)
+
+        end_qty = Item.objects.get(id=1).qty
+        self.assertEqual(end_qty, start_qty - 1)

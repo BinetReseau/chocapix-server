@@ -30,6 +30,8 @@ class News(models.Model):
 class NewsSerializer(serializers.ModelSerializer):
     class Meta:
         model = News
+        extra_kwargs = {'bar': {'required': False},
+                        'author': {'required': False}}
     _type = VirtualField("News")
 
     def create(self, data):
