@@ -1,7 +1,7 @@
 from rest_framework.test import APITestCase
 from bars_core.models.user import User, UserSerializer
 
-class LoginTests(APITestCase):
+class BackendTests(APITestCase):
     def setUp(self):
         User.objects.create_user("admin", "admin")
 
@@ -19,8 +19,14 @@ class LoginTests(APITestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data['username'], "admin")
 
-    def test_wrong_login(self):
+    def test_login_wrong_password(self):
         data = {'username': 'admin', 'password': 'sdgez'}
+        response = self.client.post('/api-token-auth/', data, format='json')
+
+        self.assertEqual(response.status_code, 400)
+
+    def test_login_wrong_user(self):
+        data = {'username': 'not_admin', 'password': 'admin'}
         response = self.client.post('/api-token-auth/', data, format='json')
 
         self.assertEqual(response.status_code, 400)
@@ -74,14 +80,14 @@ class UserTests(APITestCase):
 
     def test_change_password(self):
         self.client.force_authenticate(user=self.user)
-        self.assertEqual(self.user.check_password('password'), True)
+        self.assertTrue(self.user.check_password('password'))
 
         data = {'old_password': 'password', 'password': '123456'}
         response = self.client.put('/user/change_password/', data)
         self.assertEqual(response.status_code, 200)
 
         user_reloaded = User.objects.get(pk=self.user.pk)
-        self.assertEqual(user_reloaded.check_password('123456'), True)
+        self.assertTrue(user_reloaded.check_password('123456'))
 
     def test_change_password_wrong_password(self):
         self.client.force_authenticate(user=self.user)

@@ -92,8 +92,6 @@ class UserViewSet(viewsets.ModelViewSet):
     @decorators.list_route(methods=['put'])
     def change_password(self, request):
         user = request.user
-        if not user:
-            return Response('', 401)  # TODO: raise correct exception
 
         data = request.data
         if not user.check_password(data['old_password']):
