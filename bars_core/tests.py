@@ -5,6 +5,7 @@ class LoginTests(APITestCase):
     def setUp(self):
         User.objects.create_user("admin", "admin")
 
+
     def test_login(self):
         data = {'username': 'admin', 'password': 'admin'}
         response = self.client.post('/api-token-auth/', data, format='json')
@@ -23,6 +24,13 @@ class LoginTests(APITestCase):
         response = self.client.post('/api-token-auth/', data, format='json')
 
         self.assertEqual(response.status_code, 400)
+
+
+    def test_add_superuser(self):
+        u = User.objects.create_superuser("su", "su")
+        self.assertTrue(u.is_superuser)
+        self.assertTrue(u.is_staff)
+
 
 
 class UserTests(APITestCase):

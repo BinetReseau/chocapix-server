@@ -15,7 +15,8 @@ class UserManager(BaseUserManager):
 
     def create_superuser(self, username, password):
         user = self.create_user(username, password)
-        user.is_admin = True
+        user.is_superuser = True
+        user.is_staff = True
         user.save(using=self._db)
         return user
 
@@ -31,6 +32,7 @@ class User(AbstractBaseUser):
     last_modified = models.DateTimeField(auto_now=True)
 
     is_superuser = models.BooleanField(default=False)
+    is_staff = models.BooleanField(default=False)
 
     objects = UserManager()
 
