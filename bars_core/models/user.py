@@ -70,7 +70,7 @@ class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ('id', '_type', 'username', 'full_name', 'pseudo', 'last_login', 'last_modified')
-        read_only_fields = ('id', '_type', 'last_login', 'last_modified')
+        read_only_fields = ('id', '_type', 'full_name', 'last_login', 'last_modified')
     _type = VirtualField("User")
 
     # def restore_object(self, attrs, instance=None):
