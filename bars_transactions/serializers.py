@@ -172,9 +172,9 @@ class DepositTransactionSerializer(BaseTransactionSerializer, AccountAmountSeria
 
 class GiveTransactionSerializer(BaseTransactionSerializer, AccountAmountSerializer):
     def validate_account(self, account):
-        print repr(account)
         if self.context['request'].user == account.owner:
             raise serializers.ValidationError("Cannot give money to yourself")
+        return account
 
     def create(self, data):
         t = super(GiveTransactionSerializer, self).create(data)
