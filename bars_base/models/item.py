@@ -12,16 +12,19 @@ class Item(models.Model):
         app_label = 'bars_base'
     bar = models.ForeignKey(Bar)
     name = models.CharField(max_length=100)
+    name_plural = models.CharField(max_length=100)
     keywords = models.CharField(max_length=200, blank=True)  # Todo: length
     qty = models.FloatField(default=0)
 
-    unit = models.CharField(max_length=100, blank=True)
+    unit_name = models.CharField(max_length=100, blank=True)
+    unit_name_plural = models.CharField(max_length=100, blank=True)
     unit_value = models.FloatField(default=1)
-    buy_unit = models.CharField(max_length=100, blank=True)
+    buy_unit_name = models.CharField(max_length=100, blank=True)
+    buy_unit_name_plural = models.CharField(max_length=100, blank=True)
     buy_unit_value = models.FloatField(default=1)
 
     price = models.FloatField()
-    buy_price = models.FloatField(default=1)  # Todo: temporary
+    buy_price = models.FloatField(default=1)
 
     deleted = models.BooleanField(default=False)
     unavailable = models.BooleanField(default=False)
