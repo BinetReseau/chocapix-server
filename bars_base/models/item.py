@@ -12,7 +12,7 @@ class Item(models.Model):
         app_label = 'bars_base'
     bar = models.ForeignKey(Bar)
     name = models.CharField(max_length=100)
-    name_plural = models.CharField(max_length=100)
+    name_plural = models.CharField(max_length=100, blank=True)
     keywords = models.CharField(max_length=200, blank=True)  # Todo: length
     qty = models.FloatField(default=0)
 
