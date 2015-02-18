@@ -11,4 +11,9 @@ notifications:
   irc:
     channels:
       - "irc.rezosup.org#bars"
+    template:
+      - "%{repository_name}/%{branch} %{commit} %{author}: %{message}"
+    on_success: change
+    on_failure: always
+    use_notice: true
     skip_join: true
