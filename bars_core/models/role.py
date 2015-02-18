@@ -21,30 +21,44 @@ role_map['newsmanager'] = [
     'bars_news.change_news',
     'bars_news.delete_news',
 ]
-role_map['appromanager'] = [
+role_map['inventorymanager'] = [
+    'bars_transactions.add_transaction',
+    'bars_transactions.add_inventorytransaction',
+]
+role_map['policeman'] = [
+    'bars_transactions.add_transaction',
+    'bars_transactions.add_punishtransaction',
+]
+role_map['accountmanager'] = [
+    'bars_base.add_account',
+    'bars_base.change_account',
+]
+role_map['appromanager'] = role_map['inventorymanager'] + [
     'bars_transactions.add_transaction',
     'bars_transactions.add_approtransaction',
     'bars_base.add_item',
     'bars_base.change_item',
-    # 'bars_base.delete_item',
 ]
-role_map['inventorymanager'] = role_map['appromanager'] + [
-    'bars_transactions.add_transaction',
-    'bars_transactions.add_inventorytransaction',
+
+role_map['moneymanager'] = \
+    role_map['appromanager'] + \
+    role_map['inventorymanager'] + [
+        'bars_transactions.add_transaction',
+        'bars_transactions.add_deposittransaction',
 ]
-role_map['staff'] = role_map['inventorymanager'] + [
-    'bars_transactions.add_transaction',
-    'bars_transactions.add_deposittransaction',
-    'bars_transactions.add_punishtransaction',
-    'bars_transactions.change_transaction',
+role_map['staff'] = \
+    role_map['moneymanager'] + \
+    role_map['policeman'] + [
+        'bars_transactions.add_transaction',
+        'bars_transactions.change_transaction',
 ]
-role_map['admin'] = role_map['staff'] + role_map['newsmanager'] + [
-    'bars_core.add_role',
-    'bars_core.change_role',
-    'bars_core.delete_role',
-    'bars_base.add_account',
-    'bars_base.change_account',
-    'bars_base.delete_account',
+role_map['admin'] = \
+    role_map['staff'] + \
+    role_map['newsmanager'] + \
+    role_map['accountmanager'] + [
+        'bars_core.add_role',
+        'bars_core.change_role',
+        'bars_core.delete_role',
 ]
 role_list = list(role_map.keys())
 
