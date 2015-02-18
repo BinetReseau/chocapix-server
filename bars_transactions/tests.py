@@ -3,7 +3,7 @@ from rest_framework.test import APITestCase
 from bars_core.models.user import User
 from bars_core.models.role import Role
 from bars_core.models.bar import Bar
-from bars_base.models.item import Item
+from bars_base.models.item import Item, ItemDetails
 from bars_base.models.account import Account
 from bars_transactions.models import Transaction
 
@@ -22,7 +22,8 @@ class TransactionTests(APITestCase):
         Role.objects.create(name='staff', bar=self.bar, user=self.user3)
         Account.objects.create(bar=self.bar, owner=self.user3)
 
-        Item.objects.create(name='Chocolat', bar=self.bar, price=1)
+        itemdetails = ItemDetails.objects.create(name='Chocolat')
+        Item.objects.create(details=itemdetails, bar=self.bar, price=1)
 
         self.client.force_authenticate(user=self.user)
         Transaction.objects.create(bar=self.bar, author=self.user)
