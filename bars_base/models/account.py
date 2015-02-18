@@ -18,6 +18,8 @@ class Account(models.Model):
     bar = models.ForeignKey(Bar)
     owner = models.ForeignKey(User)
     money = models.FloatField(default=0)
+
+    deleted = models.BooleanField(default=False)
     last_modified = models.DateTimeField(auto_now=True)
 
     def __unicode__(self):
