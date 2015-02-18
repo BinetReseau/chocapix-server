@@ -1,5 +1,5 @@
 from django.db import models
-from rest_framework import viewsets, serializers
+from rest_framework import viewsets, serializers, permissions
 from bars_django.utils import VirtualField
 
 
@@ -27,3 +27,4 @@ class BarSerializer(serializers.ModelSerializer):
 class BarViewSet(viewsets.ModelViewSet):
     queryset = Bar.objects.all()
     serializer_class = BarSerializer
+    permission_classes = (permissions.AllowAny,)  # TODO: temporary
