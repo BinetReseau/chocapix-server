@@ -63,6 +63,11 @@ class ItemQtySerializer(serializers.Serializer):
             raise ValidationError("Quantity must be positive")
         return value
 
+    def validate_item(self, item):
+        if item.deleted:
+            raise ValidationError("Item is deleted")
+        return item
+
 
 class ItemQtyPriceSerializer(ItemQtySerializer):
     price = serializers.FloatField(required=False)
@@ -77,6 +82,11 @@ class AccountAmountSerializer(serializers.Serializer):
     account = serializers.PrimaryKeyRelatedField(queryset=Account.objects.all())
     amount = serializers.FloatField()
 
+    def validate_account(self, account):
+        if account.deleted:
+            raise ValidationError("Account is deleted")
+        return account
+
     def validate_amount(self, value):
         if value < 0:
             raise ValidationError("Amount must be positive")
@@ -86,6 +96,11 @@ class AccountAmountSerializer(serializers.Serializer):
 class AccountRatioSerializer(serializers.Serializer):
     account = serializers.PrimaryKeyRelatedField(queryset=Account.objects.all())
     ratio = serializers.FloatField()
+
+    def validate_account(self, account):
+        if account.deleted:
+            raise ValidationError("Account is deleted")
+        return account
 
     def validate_ratio(self, value):
         if value <= 0:
@@ -175,6 +190,7 @@ class DepositTransactionSerializer(BaseTransactionSerializer, AccountAmountSeria
 
 class GiveTransactionSerializer(BaseTransactionSerializer, AccountAmountSerializer):
     def validate_account(self, account):
+        account = super(GiveTransactionSerializer, self).validate_account(self, account)
         if self.context['request'].user == account.owner:
             raise serializers.ValidationError("Cannot give money to yourself")
         return account

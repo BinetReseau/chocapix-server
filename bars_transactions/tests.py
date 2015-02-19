@@ -61,3 +61,11 @@ class TransactionTests(APITestCase):
 
         end_qty = Item.objects.get(id=1).qty
         self.assertEqual(end_qty, start_qty - 1)
+
+    def test_create_buytransaction_itemdeleted(self):
+        i = Item.objects.create(name='Pizza', bar=self.bar, price=1, deleted=True)
+        data = {'type':'buy', 'item':i.id, 'qty':1}
+
+        self.client.force_authenticate(user=self.user)
+        response = self.client.post('/transaction/?bar=natationjone', data)
+        self.assertEqual(response.status_code, 400)
