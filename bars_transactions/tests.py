@@ -79,7 +79,6 @@ class TransactionTests(APITestCase):
 
         end_qty = Item.objects.get(id=1).qty
         self.assertEqual(end_qty, start_qty - 1)
-        self.assertTrue(end_qty >= 0)
 
     def test_create_buytransaction_itemdeleted(self):
         i = Item.objects.create(name='Pizza', bar=self.bar, price=1, deleted=True)

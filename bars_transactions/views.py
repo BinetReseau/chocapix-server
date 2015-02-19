@@ -1,3 +1,4 @@
+from django.http import Http404
 from django.db.models import Q
 from rest_framework import viewsets, decorators, exceptions
 from rest_framework.response import Response
@@ -60,7 +61,11 @@ class TransactionViewSet(viewsets.ModelViewSet):
 
     @decorators.detail_route(methods=['put'])
     def cancel(self, request, pk=None):
-        transaction = Transaction.objects.select_related().get(pk=pk)
+        try:
+            transaction = Transaction.objects.select_related().get(pk=pk)
+        except Transaction.DoesNotExist:
+            raise Http404()
+
         if request.user.has_perm('bars_transactions.change_transaction', transaction):
             transaction.canceled = True
             transaction.save()
@@ -79,7 +84,11 @@ class TransactionViewSet(viewsets.ModelViewSet):
 
     @decorators.detail_route(methods=['put'])
     def restore(self, request, pk=None):
-        transaction = Transaction.objects.get(pk=pk)
+        try:
+            transaction = Transaction.objects.get(pk=pk)
+        except Transaction.DoesNotExist:
+            raise Http404()
+
         if request.user.has_perm('bars_transactions.change_transaction', transaction):
             transaction.canceled = False
             transaction.save()
