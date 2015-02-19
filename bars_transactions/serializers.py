@@ -5,7 +5,7 @@ from rest_framework import exceptions
 
 from bars_core.models.bar import Bar
 from bars_base.models.item import Item
-from bars_base.models.account import Account
+from bars_base.models.account import Account, get_default_account
 from bars_transactions.models import Transaction
 
 
@@ -152,6 +152,9 @@ class DepositTransactionSerializer(BaseTransactionSerializer, AccountAmountSeria
 
         t.accountoperation_set.create(
             target=data["account"],
+            delta=data["amount"])
+        t.accountoperation_set.create(
+            target=get_default_account(t.bar),
             delta=data["amount"])
 
         return t
@@ -304,15 +307,23 @@ class ApproTransactionSerializer(BaseTransactionSerializer):
     def create(self, data):
         t = super(ApproTransactionSerializer, self).create(data)
 
+        total = 0
         for i in data["items"]:
             item = i["item"]
             if "price" in i:
                 item.buy_price = i["price"] / i["qty"]
                 item.save()
+                total += i["price"]
+            else:
+                total += item.buy_price * i["qty"]
 
             t.itemoperation_set.create(
                 target=item,
                 delta=i["qty"])
+
+        t.accountoperation_set.create(
+            target=get_default_account(t.bar),
+            delta=-total)
 
         return t
 

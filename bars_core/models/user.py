@@ -58,7 +58,6 @@ class User(AbstractBaseUser):
 
         return _user_has_module_perms(self, app_label)
 
-
     def get_short_name(self):
         return self.username
 
@@ -72,12 +71,6 @@ class UserSerializer(serializers.ModelSerializer):
         fields = ('id', '_type', 'username', 'full_name', 'pseudo', 'last_login', 'last_modified')
         read_only_fields = ('id', '_type', 'full_name', 'last_login', 'last_modified')
     _type = VirtualField("User")
-
-    # def restore_object(self, attrs, instance=None):
-    #     user = super(UserSerializer, self).restore_object(attrs, instance)
-    #     if 'password' in attrs:
-    #         user.set_password(attrs['password'])
-    #     return user
 
 
 class UserViewSet(viewsets.ModelViewSet):
@@ -100,3 +93,10 @@ class UserViewSet(viewsets.ModelViewSet):
         user.set_password(data['password'])
         user.save()
         return Response('Password changed', 200)
+
+
+def get_default_user():
+    try:
+        return User.objects.get(username="bar")
+    except User.DoesNotExist:
+        return User.objects.create(username="bar", full_name="Bar", is_active=False)

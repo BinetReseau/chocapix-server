@@ -6,7 +6,7 @@ from rest_framework.validators import UniqueTogetherValidator
 
 from bars_django.utils import VirtualField
 from bars_core.models.bar import Bar
-from bars_core.models.user import User
+from bars_core.models.user import User, get_default_user
 from bars_core.models.role import Role
 from bars_core.perms import PerBarPermissionsOrAnonReadOnly
 
@@ -72,3 +72,11 @@ class AccountViewSet(viewsets.ModelViewSet):
         else:
             serializer = self.serializer_class(request.user.account_set.get(bar=bar))
         return Response(serializer.data)
+
+
+def get_default_account(bar):
+    user = get_default_user()
+    try:
+        return Account.objects.get(owner=user, bar=bar)
+    except Account.DoesNotExist:
+        return Account.objects.create(owner=user, bar=bar)
