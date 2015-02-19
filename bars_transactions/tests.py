@@ -29,46 +29,45 @@ class TransactionTests(APITestCase):
 
         Item.objects.create(name='Chocolat', bar=self.bar, price=1)
 
-        self.client.force_authenticate(user=self.user)
         Transaction.objects.create(bar=self.bar, author=self.user)
 
         Transaction.objects.create(bar=self.bar2, author=self.user4)
 
 
     def test_cancel_transaction(self):
-        response = self.client.put('/transaction/1/cancel/?bar=natationjone', {})
+        self.client.force_authenticate(user=self.user)
+        response = self.client.put('/transaction/1/cancel/', {})
         self.assertEqual(response.status_code, 200)
         transaction = Transaction.objects.get(pk=1)
-        self.assertEqual(transaction.canceled, True)
-
-    def test_cancel_transaction_unexisting_bar(self):
-        response = self.client.put('/transaction/1/cancel/?bar=basketjone', {})
-        self.assertEqual(response.status_code, 404)
+        self.assertTrue(transaction.canceled)
 
     def test_cancel_unexisting_transaction(self):
-        response = self.client.put('/transaction/3/cancel/?bar=natationjone', {})
+        self.client.force_authenticate(user=self.user)
+        response = self.client.put('/transaction/3/cancel/', {})
         self.assertEqual(response.status_code, 404)
 
     def test_restore_transaction(self):
-        response = self.client.put('/transaction/1/restore/?bar=natationjone', {})
+        self.client.force_authenticate(user=self.user)
+        response = self.client.put('/transaction/1/restore/', {})
         self.assertEqual(response.status_code, 200)
         transaction = Transaction.objects.get(pk=1)
-        self.assertEqual(transaction.canceled, False)
+        self.assertFalse(transaction.canceled)
 
     def test_cancel_transaction_wrong_user(self):
         self.client.force_authenticate(user=self.user2)
-        response = self.client.put('/transaction/1/cancel/?bar=natationjone', {})
+        response = self.client.put('/transaction/1/cancel/', {})
         self.assertEqual(response.status_code, 403)
 
     def test_cancel_transaction_staff(self):
         self.client.force_authenticate(user=self.user3)
-        response = self.client.put('/transaction/1/cancel/?bar=natationjone', {})
+        response = self.client.put('/transaction/1/cancel/', {})
         self.assertEqual(response.status_code, 200)
 
     def test_cancel_transaction_staff_wrong_bar(self):
         self.client.force_authenticate(user=self.user3)
-        response = self.client.put('/transaction/1/cancel/?bar=natationrouge', {})
+        response = self.client.put('/transaction/2/cancel/', {})
         self.assertEqual(response.status_code, 403)
+
 
     def test_create_buytransaction(self):
         data = {'type':'buy', 'item':1, 'qty':1}
