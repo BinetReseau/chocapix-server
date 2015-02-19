@@ -27,6 +27,7 @@ class User(AbstractBaseUser):
     username = models.CharField(max_length=128, unique=True)
     full_name = models.CharField(max_length=128, blank=True)
     pseudo = models.CharField(max_length=128, blank=True)
+    email = models.EmailField(max_length=254, blank=True)
 
     is_active = models.BooleanField(default=True)
     last_modified = models.DateTimeField(auto_now=True)
@@ -38,7 +39,7 @@ class User(AbstractBaseUser):
 
     USERNAME_FIELD = 'username'
     REQUIRED_FIELDS = []
-    email = ''
+    # email = ''
 
     def has_perm(self, perm, obj=None):
         if self.is_active and self.is_superuser:
