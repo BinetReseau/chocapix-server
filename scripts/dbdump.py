@@ -132,334 +132,142 @@ def import_data():
 
     from bars_core.models.bar import Bar
 
-    bars_api_bar_1 = Bar()
-    bars_api_bar_1.id = u'avironjone'
-    bars_api_bar_1.name = u'Aviron J\xf4ne'
-    bars_api_bar_1 = importer.save_or_locate(bars_api_bar_1)
+    bar_1 = Bar()
+    bar_1.id = u'avironjone'
+    bar_1.name = u'Aviron J\xf4ne'
+    bar_1 = importer.save_or_locate(bar_1)
 
-    bars_api_bar_2 = Bar()
-    bars_api_bar_2.id = u'footrouje'
-    bars_api_bar_2.name = u'Foot Rouje'
-    bars_api_bar_2 = importer.save_or_locate(bars_api_bar_2)
+    bar_2 = Bar()
+    bar_2.id = u'escrimejone'
+    bar_2.name = u'Escrime J\xf4ne'
+    bar_2 = importer.save_or_locate(bar_2)
 
-    bars_api_bar_3 = Bar()
-    bars_api_bar_3.id = u'natationjone'
-    bars_api_bar_3.name = u'Natation J\xf4ne'
-    bars_api_bar_3 = importer.save_or_locate(bars_api_bar_3)
+    bar_3 = Bar()
+    bar_3.id = u'natationjone'
+    bar_3.name = u'Natation J\xf4ne'
+    bar_3 = importer.save_or_locate(bar_3)
 
     # Processing model: User
 
     from bars_core.models.user import User
 
-    bars_api_user_1 = User()
-    bars_api_user_1.username = u'nadri'
-    bars_api_user_1.set_password('nadri')
-    bars_api_user_1.full_name = u'Nadrieril'
-    bars_api_user_1.pseudo = u'Nadri'
-    bars_api_user_1 = importer.save_or_locate(bars_api_user_1)
+    user_1 = User()
+    user_1.username = u'nadri'
+    user_1.set_password('nadri')
+    user_1.full_name = u'Nadrieril'
+    user_1.pseudo = u'Nadri'
+    user_1 = importer.save_or_locate(user_1)
 
-    bars_api_user_2 = User()
-    bars_api_user_2.username = u'ntag'
-    bars_api_user_2.set_password('ntag')
-    bars_api_user_2.full_name = u'Basile Bruneau'
-    bars_api_user_2.pseudo = u'NTag'
-    bars_api_user_2 = importer.save_or_locate(bars_api_user_2)
+    user_2 = User()
+    user_2.username = u'ntag'
+    user_2.set_password('ntag')
+    user_2.full_name = u'Basile Bruneau'
+    user_2.pseudo = u'NTag'
+    user_2 = importer.save_or_locate(user_2)
 
-    bars_api_user_3 = User()
-    bars_api_user_3.username = u'tizot'
-    bars_api_user_3.set_password('tizot')
-    bars_api_user_3.full_name = u'Camille Masset'
-    bars_api_user_3.pseudo = u'Tizot'
-    bars_api_user_3 = importer.save_or_locate(bars_api_user_3)
+    user_3 = User()
+    user_3.username = u'tizot'
+    user_3.set_password('tizot')
+    user_3.full_name = u'Camille Masset'
+    user_3.pseudo = u'Tizot'
+    user_3 = importer.save_or_locate(user_3)
 
-    bars_api_user_4 = User()
-    bars_api_user_4.username = u'denis'
-    bars_api_user_4.set_password('denis')
-    bars_api_user_4.full_name = u'Denis M\xe9rigoux'
-    bars_api_user_4.pseudo = u''
-    bars_api_user_4 = importer.save_or_locate(bars_api_user_4)
+    user_4 = User()
+    user_4.username = u'denis'
+    user_4.set_password('denis')
+    user_4.full_name = u'Denis M\xe9rigoux'
+    user_4.pseudo = u''
+    user_4 = importer.save_or_locate(user_4)
 
 
     # Processing model: Account
 
     from bars_base.models.account import Account
 
-    bars_api_account_1 = Account()
-    bars_api_account_1.bar = bars_api_bar_1
-    bars_api_account_1.owner = bars_api_user_1
-    bars_api_account_1 = importer.save_or_locate(bars_api_account_1)
+    account_1 = Account()
+    account_1.bar = bar_1
+    account_1.owner = user_1
+    account_1 = importer.save_or_locate(account_1)
 
-    bars_api_account_2 = Account()
-    bars_api_account_2.bar = bars_api_bar_1
-    bars_api_account_2.owner = bars_api_user_2
-    bars_api_account_2 = importer.save_or_locate(bars_api_account_2)
+    account_2 = Account()
+    account_2.bar = bar_1
+    account_2.owner = user_2
+    account_2 = importer.save_or_locate(account_2)
 
-    bars_api_account_3 = Account()
-    bars_api_account_3.bar = bars_api_bar_1
-    bars_api_account_3.owner = bars_api_user_3
-    bars_api_account_3 = importer.save_or_locate(bars_api_account_3)
+    account_3 = Account()
+    account_3.bar = bar_1
+    account_3.owner = user_3
+    account_3 = importer.save_or_locate(account_3)
 
-    bars_api_account_4 = Account()
-    bars_api_account_4.bar = bars_api_bar_1
-    bars_api_account_4.owner = bars_api_user_4
-    bars_api_account_4 = importer.save_or_locate(bars_api_account_4)
+    account_4 = Account()
+    account_4.bar = bar_1
+    account_4.owner = user_4
+    account_4 = importer.save_or_locate(account_4)
 
-    bars_api_account_5 = Account()
-    bars_api_account_5.bar = bars_api_bar_3
-    bars_api_account_5.owner = bars_api_user_2
-    bars_api_account_5 = importer.save_or_locate(bars_api_account_5)
+    account_5 = Account()
+    account_5.bar = bar_3
+    account_5.owner = user_2
+    account_5 = importer.save_or_locate(account_5)
+
+    account_6 = Account()
+    account_6.bar = bar_2
+    account_6.owner = user_4
+    account_6 = importer.save_or_locate(account_6)
+
+    # Processing model: ItemDetails
+    from bars_base.models.item import ItemDetails
+
+    itemdetails_1 = ItemDetails()
+    itemdetails_1.name = u'Chocolat'
+    itemdetails_1.unit_name = u'tablette'
+    itemdetails_1.unit_name_plural = u'tablettes'
+    itemdetails_1 = importer.save_or_locate(itemdetails_1)
+
+    itemdetails_2 = ItemDetails()
+    itemdetails_2.name = u'Pizza'
+    itemdetails_2.unit_name = u''
+    itemdetails_2.unit_name_plural = u''
+    itemdetails_2 = importer.save_or_locate(itemdetails_2)
 
     # Processing model: Item
 
     from bars_base.models.item import Item
 
-    bars_api_item_1 = Item()
-    bars_api_item_1.bar = bars_api_bar_1
-    bars_api_item_1.name = u'Chocolat'
-    bars_api_item_1.keywords = u''
-    bars_api_item_1.unit = u''
-    bars_api_item_1.unit_value = 1.0
-    bars_api_item_1.buy_unit = u''
-    bars_api_item_1.buy_unit_value = 1.0
-    bars_api_item_1.price = 1.0
-    bars_api_item_1.buy_price = 1.0
-    bars_api_item_1 = importer.save_or_locate(bars_api_item_1)
+    item_1 = Item()
+    item_1.bar = bar_1
+    item_1.details = itemdetails_1
+    item_1.unit_name = u'carre'
+    item_1.unit_name_plural = u'carres'
+    item_1.price = 1.0
+    item_1.buy_price = 1.0
+    item_1 = importer.save_or_locate(item_1)
 
-    bars_api_item_2 = Item()
-    bars_api_item_2.bar = bars_api_bar_1
-    bars_api_item_2.name = u'Pizza'
-    bars_api_item_2.keywords = u''
-    bars_api_item_2.unit = u''
-    bars_api_item_2.unit_value = 1.0
-    bars_api_item_2.buy_unit = u''
-    bars_api_item_2.buy_unit_value = 1.0
-    bars_api_item_2.price = 2.0
-    bars_api_item_2.buy_price = 1.0
-    bars_api_item_2 = importer.save_or_locate(bars_api_item_2)
-
-    bars_api_item_3 = Item()
-    bars_api_item_3.bar = bars_api_bar_1
-    bars_api_item_3.name = u'Tomates'
-    bars_api_item_3.keywords = u'tomates'
-    bars_api_item_3.unit = u''
-    bars_api_item_3.unit_value = 1.0
-    bars_api_item_3.buy_unit = u''
-    bars_api_item_3.buy_unit_value = 1.0
-    bars_api_item_3.price = 1.5
-    bars_api_item_3.buy_price = 1.0
-    bars_api_item_3 = importer.save_or_locate(bars_api_item_3)
-
-    bars_api_item_4 = Item()
-    bars_api_item_4.bar = bars_api_bar_1
-    bars_api_item_4.name = u'Nutella'
-    bars_api_item_4.keywords = u'nutella tartiner'
-    bars_api_item_4.unit = u'g'
-    bars_api_item_4.unit_value = 0.00158730159
-    bars_api_item_4.buy_unit = u'pot'
-    bars_api_item_4.buy_unit_value = 1.0
-    bars_api_item_4.price = 8.0
-    bars_api_item_4.buy_price = 8.0
-    bars_api_item_4 = importer.save_or_locate(bars_api_item_4)
-
-    bars_api_item_5 = Item()
-    bars_api_item_5.bar = bars_api_bar_1
-    bars_api_item_5.name = u'Spaghetti'
-    bars_api_item_5.keywords = u'pates italie'
-    bars_api_item_5.unit = u'g'
-    bars_api_item_5.unit_value = 1000.0
-    bars_api_item_5.buy_unit = u'kg'
-    bars_api_item_5.buy_unit_value = 1.0
-    bars_api_item_5.price = 1e-06
-    bars_api_item_5.buy_price = 1.0
-    bars_api_item_5 = importer.save_or_locate(bars_api_item_5)
-
-    bars_api_item_6 = Item()
-    bars_api_item_6.bar = bars_api_bar_1
-    bars_api_item_6.name = u'Dosette Nespresso'
-    bars_api_item_6.keywords = u'caf\xe9'
-    bars_api_item_6.unit = u''
-    bars_api_item_6.unit_value = 1.0
-    bars_api_item_6.buy_unit = u''
-    bars_api_item_6.buy_unit_value = 1.0
-    bars_api_item_6.price = 0.48
-    bars_api_item_6.buy_price = 1.0
-    bars_api_item_6 = importer.save_or_locate(bars_api_item_6)
-
-    bars_api_item_7 = Item()
-    bars_api_item_7.bar = bars_api_bar_1
-    bars_api_item_7.name = u'1664'
-    bars_api_item_7.keywords = u'bi\xe8re'
-    bars_api_item_7.unit = u''
-    bars_api_item_7.unit_value = 1.0
-    bars_api_item_7.buy_unit = u'Pack'
-    bars_api_item_7.buy_unit_value = 20.0
-    bars_api_item_7.price = 1.2
-    bars_api_item_7.buy_price = 1.0
-    bars_api_item_7 = importer.save_or_locate(bars_api_item_7)
-
-    bars_api_item_8 = Item()
-    bars_api_item_8.bar = bars_api_bar_1
-    bars_api_item_8.name = u'Pizza 4 fromages'
-    bars_api_item_8.keywords = u'pizza'
-    bars_api_item_8.unit = u''
-    bars_api_item_8.unit_value = 1.0
-    bars_api_item_8.buy_unit = u''
-    bars_api_item_8.buy_unit_value = 1.0
-    bars_api_item_8.price = 3.4
-    bars_api_item_8.buy_price = 1.0
-    bars_api_item_8 = importer.save_or_locate(bars_api_item_8)
-
-    bars_api_item_9 = Item()
-    bars_api_item_9.bar = bars_api_bar_1
-    bars_api_item_9.name = u'Pizza bolognaise'
-    bars_api_item_9.keywords = u'pizza'
-    bars_api_item_9.unit = u''
-    bars_api_item_9.unit_value = 1.0
-    bars_api_item_9.buy_unit = u''
-    bars_api_item_9.buy_unit_value = 1.0
-    bars_api_item_9.price = 3.1
-    bars_api_item_9.buy_price = 1.0
-    bars_api_item_9 = importer.save_or_locate(bars_api_item_9)
-
-    bars_api_item_10 = Item()
-    bars_api_item_10.bar = bars_api_bar_1
-    bars_api_item_10.name = u'Margharitta'
-    bars_api_item_10.keywords = u'pizza'
-    bars_api_item_10.unit = u''
-    bars_api_item_10.unit_value = 1.0
-    bars_api_item_10.buy_unit = u''
-    bars_api_item_10.buy_unit_value = 1.0
-    bars_api_item_10.price = 2.8
-    bars_api_item_10.buy_price = 1.0
-    bars_api_item_10 = importer.save_or_locate(bars_api_item_10)
-
-    bars_api_item_11 = Item()
-    bars_api_item_11.bar = bars_api_bar_1
-    bars_api_item_11.name = u'Radis'
-    bars_api_item_11.keywords = u'l\xe9gume'
-    bars_api_item_11.unit = u'g'
-    bars_api_item_11.unit_value = 0.001
-    bars_api_item_11.buy_unit = u'kg'
-    bars_api_item_11.buy_unit_value = 1.0
-    bars_api_item_11.price = 8.0
-    bars_api_item_11.buy_price = 1.0
-    bars_api_item_11 = importer.save_or_locate(bars_api_item_11)
-
-    bars_api_item_12 = Item()
-    bars_api_item_12.bar = bars_api_bar_1
-    bars_api_item_12.name = u'Galette'
-    bars_api_item_12.keywords = u'sarazin'
-    bars_api_item_12.unit = u''
-    bars_api_item_12.unit_value = 0.166666666666667
-    bars_api_item_12.buy_unit = u'paquet de 6'
-    bars_api_item_12.buy_unit_value = 1.0
-    bars_api_item_12.price = 3.5
-    bars_api_item_12.buy_price = 1.0
-    bars_api_item_12 = importer.save_or_locate(bars_api_item_12)
-
-    bars_api_item_13 = Item()
-    bars_api_item_13.bar = bars_api_bar_1
-    bars_api_item_13.name = u'Jambon'
-    bars_api_item_13.keywords = u'charcuterie'
-    bars_api_item_13.unit = u'tranche'
-    bars_api_item_13.unit_value = 0.166666666666667
-    bars_api_item_13.buy_unit = u'paquet'
-    bars_api_item_13.buy_unit_value = 1.0
-    bars_api_item_13.price = 2.67
-    bars_api_item_13.buy_price = 1.0
-    bars_api_item_13 = importer.save_or_locate(bars_api_item_13)
-
-    bars_api_item_14 = Item()
-    bars_api_item_14.bar = bars_api_bar_1
-    bars_api_item_14.name = u'Emmental rap\xe9'
-    bars_api_item_14.keywords = u'fromage'
-    bars_api_item_14.unit = u'g'
-    bars_api_item_14.unit_value = 0.002
-    bars_api_item_14.buy_unit = u'paquet de 500g'
-    bars_api_item_14.buy_unit_value = 1.0
-    bars_api_item_14.price = 6.3
-    bars_api_item_14.buy_price = 1.0
-    bars_api_item_14 = importer.save_or_locate(bars_api_item_14)
-
-    bars_api_item_15 = Item()
-    bars_api_item_15.bar = bars_api_bar_1
-    bars_api_item_15.name = u'Pain de mie'
-    bars_api_item_15.keywords = u'd\xe9jeuner'
-    bars_api_item_15.unit = u'tranche'
-    bars_api_item_15.unit_value = 0.0476190476190476
-    bars_api_item_15.buy_unit = u'paquet de 21'
-    bars_api_item_15.buy_unit_value = 1.0
-    bars_api_item_15.price = 4.12
-    bars_api_item_15.buy_price = 1.0
-    bars_api_item_15 = importer.save_or_locate(bars_api_item_15)
-
-    bars_api_item_16 = Item()
-    bars_api_item_16.bar = bars_api_bar_1
-    bars_api_item_16.name = u'Canette de coca'
-    bars_api_item_16.keywords = u'boisson'
-    bars_api_item_16.unit = u''
-    bars_api_item_16.unit_value = 0.1
-    bars_api_item_16.buy_unit = u'pack de 10'
-    bars_api_item_16.buy_unit_value = 1.0
-    bars_api_item_16.price = 5.6
-    bars_api_item_16.buy_price = 1.0
-    bars_api_item_16 = importer.save_or_locate(bars_api_item_16)
-
-    bars_api_item_17 = Item()
-    bars_api_item_17.bar = bars_api_bar_1
-    bars_api_item_17.name = u'Iced tea'
-    bars_api_item_17.keywords = u'boire'
-    bars_api_item_17.unit = u'verre'
-    bars_api_item_17.unit_value = 0.1
-    bars_api_item_17.buy_unit = u'bouteille de 2l'
-    bars_api_item_17.buy_unit_value = 1.0
-    bars_api_item_17.price = 2.2
-    bars_api_item_17.buy_price = 1.0
-    bars_api_item_17 = importer.save_or_locate(bars_api_item_17)
-
-    bars_api_item_18 = Item()
-    bars_api_item_18.bar = bars_api_bar_1
-    bars_api_item_18.name = u"Jus d'orange"
-    bars_api_item_18.keywords = u'd\xe9jeuner'
-    bars_api_item_18.unit = u'verre'
-    bars_api_item_18.unit_value = 0.2
-    bars_api_item_18.buy_unit = u'l'
-    bars_api_item_18.buy_unit_value = 1.0
-    bars_api_item_18.price = 3.2
-    bars_api_item_18.buy_price = 1.0
-    bars_api_item_18 = importer.save_or_locate(bars_api_item_18)
-
-    bars_api_item_19 = Item()
-    bars_api_item_19.bar = bars_api_bar_1
-    bars_api_item_19.name = u'Pizza mozarella'
-    bars_api_item_19.keywords = u'fromage'
-    bars_api_item_19.unit = u''
-    bars_api_item_19.unit_value = 1.0
-    bars_api_item_19.buy_unit = u''
-    bars_api_item_19.buy_unit_value = 1.0
-    bars_api_item_19.price = 3.2
-    bars_api_item_19.buy_price = 1.0
-    bars_api_item_19 = importer.save_or_locate(bars_api_item_19)
+    item_2 = Item()
+    item_2.bar = bar_1
+    item_2.details = itemdetails_2
+    item_2.price = 2.5
+    item_2.buy_price = 2.0
+    item_2 = importer.save_or_locate(item_2)
 
     # Processing model: News
 
     from bars_news.models import News
 
-    bars_api_news_1 = News()
-    bars_api_news_1.bar = bars_api_bar_1
-    bars_api_news_1.author = bars_api_user_3
-    bars_api_news_1.name = u"C'est du propre !"
-    bars_api_news_1.text = u"Bar d'\xe9tage d\xe9guelasse !! Faites votre vaisselle bande de p**** !"
-    bars_api_news_1.timestamp = dateutil.parser.parse("2015-01-30T02:37:14+00:00")
-    bars_api_news_1 = importer.save_or_locate(bars_api_news_1)
+    news_1 = News()
+    news_1.bar = bar_1
+    news_1.author = user_3
+    news_1.name = u"C'est du propre !"
+    news_1.text = u"Bar d'\xe9tage d\xe9guelasse !! Faites votre vaisselle bande de p**** !"
+    news_1.timestamp = dateutil.parser.parse("2015-01-30T02:37:14+00:00")
+    news_1 = importer.save_or_locate(news_1)
 
-    bars_api_news_2 = News()
-    bars_api_news_2.bar = bars_api_bar_1
-    bars_api_news_2.author = bars_api_user_3
-    bars_api_news_2.name = u'Merci pour les photos'
-    bars_api_news_2.text = u"Bravo \xe0 Yoann qui a pris le temps de mettre toutes les photos sur les murs du bar d'\xe9tage !"
-    bars_api_news_2.timestamp = dateutil.parser.parse("2015-01-30T02:37:14+00:00")
-    bars_api_news_2 = importer.save_or_locate(bars_api_news_2)
+    news_2 = News()
+    news_2.bar = bar_1
+    news_2.author = user_3
+    news_2.name = u'Merci pour les photos'
+    news_2.text = u"Bravo \xe0 Yoann qui a pris le temps de mettre toutes les photos sur les murs du bar d'\xe9tage !"
+    news_2.timestamp = dateutil.parser.parse("2015-01-30T02:37:14+00:00")
+    news_2 = importer.save_or_locate(news_2)
 
     # Processing model: Transaction
 
@@ -467,10 +275,10 @@ def import_data():
     from bars_transactions.models import AccountOperation
     from bars_transactions.models import ItemOperation
 
-    for i in range(30):
+    for i in range(20):
         t = Transaction()
-        t.bar = bars_api_bar_1
-        t.author = bars_api_user_2
+        t.bar = bar_1
+        t.author = user_2
         t.type = u'buy'
         t = importer.save_or_locate(t)
 
@@ -478,11 +286,11 @@ def import_data():
         ao.transaction = t
         ao.fixed = False
         ao.delta = -2
-        ao.target = bars_api_account_2
+        ao.target = account_2
         ao = importer.save_or_locate(ao)
 
         io = ItemOperation()
         io.transaction = t
         io.delta = -1.0
-        io.target = bars_api_item_2
+        io.target = item_2
         io = importer.save_or_locate(io)

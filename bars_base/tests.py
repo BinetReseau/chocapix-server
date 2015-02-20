@@ -3,13 +3,8 @@ from rest_framework.test import APITestCase
 from bars_core.models.user import User
 from bars_core.models.role import Role
 from bars_core.models.bar import Bar
-from bars_base.models.item import Item
+from bars_base.models.item import Item, ItemDetails
 from bars_base.models.account import Account
-
-
-def reload_user(client, user):  # Avoid permission caching
-    user = User.objects.get(pk=user.pk)
-    client.force_authenticate(user=user)
 
 
 class ItemTests(APITestCase):
@@ -23,16 +18,17 @@ class ItemTests(APITestCase):
         Role.objects.create(name='appromanager', bar=self.bar, user=self.user2)
         self.user2 = User.objects.get(username='ntag')
 
-        self.create_data = {'name': 'test', 'price': 1}
-        self.item = Item.objects.create(name='Chocolat', bar=self.bar, price=1)
+        self.create_data = {'details': 1, 'price': 1}
+        self.itemdetails = ItemDetails.objects.create(name='Chocolat')
+        self.item = Item.objects.create(details=self.itemdetails, bar=self.bar, price=1)
         self.update_data = self.client.get('/item/1/').data
-        self.update_data['name'] = "Pizza"
+        self.update_data['price'] = 4
 
 
     def test_get_item(self):
         response = self.client.get('/item/')
         self.assertEqual(len(response.data), 1)
-        self.assertEqual(response.data[0]['name'], self.item.name)
+        self.assertEqual(response.data[0]['price'], self.item.price)
 
 
     def test_create_item(self):
