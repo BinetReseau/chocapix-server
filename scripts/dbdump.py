@@ -26,8 +26,8 @@
 # you must make sure ./some_folder/__init__.py exists
 # and run  ./manage.py runscript some_folder.some_script
 
-import sys, os
-from django.db import transaction
+import sys
+import os
 
 class BasicImportHelper(object):
 
@@ -112,10 +112,6 @@ except ImportError as e:
     else:
         raise
 
-import datetime
-from decimal import Decimal
-from django.contrib.contenttypes.models import ContentType
-
 try:
     import dateutil.parser
 except ImportError:
@@ -150,6 +146,8 @@ def import_data():
     # Processing model: User
 
     from bars_core.models.user import User
+
+    User.objects.create_superuser('admin', 'admin')
 
     user_1 = User()
     user_1.username = u'nadri'
