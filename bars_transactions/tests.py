@@ -134,11 +134,11 @@ class TransactionTests(APITestCase):
         self.assertEqual(end_qty, start_qty - 1)
 
         response2 = self.client.put('/transaction/3/cancel/', {})
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response2.status_code, 200)
         end_qty = Item.objects.get(id=1).qty
         self.assertEqual(end_qty, start_qty)
 
         response3 = self.client.put('/transaction/3/cancel/', {})
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response3.status_code, 200)
         end_qty = Item.objects.get(id=1).qty
         self.assertEqual(end_qty, start_qty)
