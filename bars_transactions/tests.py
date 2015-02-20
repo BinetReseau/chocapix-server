@@ -3,7 +3,7 @@ from rest_framework.test import APITestCase
 from bars_core.models.user import User
 from bars_core.models.role import Role
 from bars_core.models.bar import Bar
-from bars_base.models.item import Item
+from bars_base.models.item import Item, ItemDetails
 from bars_base.models.account import Account
 from bars_transactions.models import Transaction
 
@@ -27,7 +27,8 @@ class TransactionTests(APITestCase):
         Role.objects.create(name='staff', bar=self.bar2, user=self.user4)
         Account.objects.create(bar=self.bar2, owner=self.user4)
 
-        Item.objects.create(name='Chocolat', bar=self.bar, price=1)
+        itemdetails = ItemDetails.objects.create(name='Chocolat')
+        Item.objects.create(details=itemdetails, bar=self.bar, price=1)
 
         Transaction.objects.create(bar=self.bar, author=self.user)
 
@@ -102,7 +103,8 @@ class TransactionTests(APITestCase):
         self.assertEqual(end_qty, start_qty - 1)
 
     def test_create_buytransaction_itemdeleted(self):
-        i = Item.objects.create(name='Pizza', bar=self.bar, price=1, deleted=True)
+        id = ItemDetails.objects.create(name='Pizza')
+        i = Item.objects.create(details=id, bar=self.bar, price=1, deleted=True)
         data = {'type':'buy', 'item':i.id, 'qty':1}
 
         self.client.force_authenticate(user=self.user)
@@ -110,7 +112,8 @@ class TransactionTests(APITestCase):
         self.assertEqual(response.status_code, 400)
 
     def test_create_buytransaction_wrong_bar(self):
-        i = Item.objects.create(name='steak', bar=self.bar2, price=2)
+        id = ItemDetails.objects.create(name='steak')
+        i = Item.objects.create(details=id, bar=self.bar2, price=2)
         start_qty = i.qty
 
         data = {'type':'buy', 'item':i.id, 'qty':2}

@@ -18,8 +18,8 @@ RUN sed -i 's/bars_django\.settings\.dev_local/bars_django.settings.prod/' bars_
     sed -i 's/bars_django\.settings\.dev_local/bars_django.settings.prod/' manage.py && \
     echo yes | python manage.py collectstatic
 
-VOLUME /srv/server
-CMD rm -r /srv/server/*; \
-    cp -R /app/static /srv/server/static; \
+VOLUME /srv/api
+CMD rm -r /srv/api/*; \
+    cp -R /app/static /srv/api/static; \
     python manage.py migrate; \
-    gunicorn bars_django.wsgi -w 4 -b unix:/srv/server/gunicorn.sock --log-level=debug
+    gunicorn bars_django.wsgi -w 4 -b unix:/srv/api/gunicorn.sock --log-level=warning --log-file=-
