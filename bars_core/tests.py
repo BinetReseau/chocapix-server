@@ -63,19 +63,19 @@ class UserTests(APITestCase):
 
     def test_change_user_not_authed(self):
         # Not authenticated
-        self.data['full_name'] = 'alice'
+        self.data['username'] = 'alice'
         response = self.client.post(self.user_url, self.data)
         self.assertEqual(response.status_code, 401)
 
     def test_change_user_self(self):
         # Authenticated as self
-        self.data['full_name'] = 'alice'
+        self.data['username'] = 'alice'
         self.client.force_authenticate(user=self.user)
         response = self.client.put(self.user_url, self.data)
         self.assertEqual(response.status_code, 200)
 
         response2 = self.client.get(self.user_url)
-        self.assertEqual(response2.data['full_name'], self.data['full_name'])
+        self.assertEqual(response2.data['username'], self.data['username'])
 
 
     def test_change_password(self):

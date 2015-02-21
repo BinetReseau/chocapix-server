@@ -5,7 +5,7 @@ from rest_framework import exceptions
 
 from bars_core.models.bar import Bar
 from bars_base.models.item import Item
-from bars_base.models.account import Account
+from bars_base.models.account import Account, get_default_account
 from bars_transactions.models import Transaction
 
 
@@ -63,6 +63,11 @@ class ItemQtySerializer(serializers.Serializer):
             raise ValidationError("Quantity must be positive")
         return value
 
+    def validate_item(self, item):
+        if item.deleted:
+            raise ValidationError("Item is deleted")
+        return item
+
 
 class ItemQtyPriceSerializer(ItemQtySerializer):
     price = serializers.FloatField(required=False)
@@ -77,6 +82,11 @@ class AccountAmountSerializer(serializers.Serializer):
     account = serializers.PrimaryKeyRelatedField(queryset=Account.objects.all())
     amount = serializers.FloatField()
 
+    def validate_account(self, account):
+        if account.deleted:
+            raise ValidationError("Account is deleted")
+        return account
+
     def validate_amount(self, value):
         if value < 0:
             raise ValidationError("Amount must be positive")
@@ -86,6 +96,11 @@ class AccountAmountSerializer(serializers.Serializer):
 class AccountRatioSerializer(serializers.Serializer):
     account = serializers.PrimaryKeyRelatedField(queryset=Account.objects.all())
     ratio = serializers.FloatField()
+
+    def validate_account(self, account):
+        if account.deleted:
+            raise ValidationError("Account is deleted")
+        return account
 
     def validate_ratio(self, value):
         if value <= 0:
@@ -153,6 +168,9 @@ class DepositTransactionSerializer(BaseTransactionSerializer, AccountAmountSeria
         t.accountoperation_set.create(
             target=data["account"],
             delta=data["amount"])
+        t.accountoperation_set.create(
+            target=get_default_account(t.bar),
+            delta=data["amount"])
 
         return t
 
@@ -171,6 +189,12 @@ class DepositTransactionSerializer(BaseTransactionSerializer, AccountAmountSeria
 
 
 class GiveTransactionSerializer(BaseTransactionSerializer, AccountAmountSerializer):
+    def validate_account(self, account):
+        account = super(GiveTransactionSerializer, self).validate_account(account)
+        if self.context['request'].user == account.owner:
+            raise serializers.ValidationError("Cannot give money to yourself")
+        return account
+
     def create(self, data):
         t = super(GiveTransactionSerializer, self).create(data)
 
@@ -299,15 +323,23 @@ class ApproTransactionSerializer(BaseTransactionSerializer):
     def create(self, data):
         t = super(ApproTransactionSerializer, self).create(data)
 
+        total = 0
         for i in data["items"]:
             item = i["item"]
             if "price" in i:
                 item.buy_price = i["price"] / i["qty"]
                 item.save()
+                total += i["price"]
+            else:
+                total += item.buy_price * i["qty"]
 
             t.itemoperation_set.create(
                 target=item,
                 delta=i["qty"])
+
+        t.accountoperation_set.create(
+            target=get_default_account(t.bar),
+            delta=-total)
 
         return t
 
