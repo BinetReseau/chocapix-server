@@ -1,4 +1,3 @@
-from django.http import Http404
 from rest_framework.permissions import DjangoObjectPermissions
 from permission.utils.field_lookup import field_lookup
 from permission.logics import PermissionLogic, OneselfPermissionLogic
@@ -14,27 +13,23 @@ class PerBarPermissionsOrAnonReadOnly(DjangoObjectPermissions):
         if request.method in ('GET', 'OPTIONS', 'HEAD'):
             return True
 
-        bar = request.QUERY_PARAMS.get('bar', None)
+        bar = request.bar
         if bar is not None:
-            try:
-                bar = Bar.objects.get(pk=bar)
-                model_cls = getattr(view, 'model', None)
-                queryset = getattr(view, 'queryset', None)
+            model_cls = getattr(view, 'model', None)
+            queryset = getattr(view, 'queryset', None)
 
-                if model_cls is None and queryset is not None:
-                    model_cls = queryset.model
+            if model_cls is None and queryset is not None:
+                model_cls = queryset.model
 
-                assert model_cls, ('Cannot apply permissions on a view that'
-                                   ' does not have `.model` or `.queryset` property.')
+            assert model_cls, ('Cannot apply permissions on a view that'
+                               ' does not have `.model` or `.queryset` property.')
 
-                perms = self.get_required_permissions(request.method, model_cls)
+            perms = self.get_required_permissions(request.method, model_cls)
 
-                # print "Rest: ", perms, bar
-                for perm in perms:
-                    if request.user.has_perm(perm, bar):
-                        return True
-            except Bar.DoesNotExist:
-                raise Http404("Unknown bar: %s" % bar)
+            # print "Rest: ", perms, bar
+            for perm in perms:
+                if request.user.has_perm(perm, bar):
+                    return True
 
         return super(DjangoObjectPermissions, self).has_permission(request, view)
 

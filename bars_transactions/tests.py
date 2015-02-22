@@ -132,9 +132,9 @@ class BaseSerializerTests(APITestCase):
         self.user, _ = User.objects.get_or_create(username='user')
         self.user.has_perm = Mock(side_effect=lambda perm, bar: bar.id == self.bar.id)
 
-        self.context = {'request': Mock(user=self.user, QUERY_PARAMS={'bar': self.bar.id})}
-        self.context_wrong_bar = {'request': Mock(user=self.user, QUERY_PARAMS={'bar': self.wrong_bar.id})}
-        self.context_no_bar = {'request': Mock(user=self.user, QUERY_PARAMS={})}
+        self.context = {'request': Mock(user=self.user, bar=self.bar)}
+        self.context_wrong_bar = {'request': Mock(user=self.user, bar=self.wrong_bar)}
+        self.context_no_bar = {'request': Mock(user=self.user, bar=None)}
 
         self.data = {'type': 'some_type'}
 
@@ -178,7 +178,7 @@ class SerializerTests(APITestCase):
         self.item.qty = 5
         self.item.save()
 
-        self.context = {'request': Mock(user=self.user, QUERY_PARAMS={'bar': self.bar.id})}
+        self.context = {'request': Mock(user=self.user, bar=self.bar)}
 
     @classmethod
     def tearDownClass(self):
