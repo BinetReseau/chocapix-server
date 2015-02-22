@@ -174,7 +174,7 @@ class SerializerTests(APITestCase):
         self.wrong_account, _ = Account.objects.get_or_create(bar=self.wrong_bar, owner=self.wrong_user)
 
         self.itemdetail, _ = ItemDetails.objects.get_or_create(name='Pizza')
-        self.item, _ = Item.objects.get_or_create(details=self.itemdetail, bar=self.bar, price=1)
+        self.item, _ = Item.objects.get_or_create(details=self.itemdetail, bar=self.bar, price=1, tax=0.2)
         self.item.qty = 5
         self.item.save()
 
@@ -202,7 +202,7 @@ class BuySerializerTests(SerializerTests):
         s.save()
 
         self.assertEqual(reload(self.item).qty, self.item.qty - data['qty'])
-        self.assertEqual(reload(self.account).money, self.account.money - self.item.price * data['qty'])
+        self.assertEqual(reload(self.account).money, self.account.money - self.item.get_sell_price() * data['qty'])
 
     def test_buy_itemdeleted(self):
         deleted_item, _ = Item.objects.get_or_create(details=self.itemdetail, bar=self.bar, price=1, deleted=True)
