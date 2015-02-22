@@ -72,12 +72,10 @@ class ItemSerializer(serializers.ModelSerializer):
 
     def create(self, data):
         request = self.context['request']
-        bar = request.QUERY_PARAMS.get('bar', None)
-        bar = Bar.objects.get(pk=bar)
 
         item = Item(**data)
         item.qty = 0
-        item.bar = bar
+        item.bar = request.bar
         item.save()
         return item
 

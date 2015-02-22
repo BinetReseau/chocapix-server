@@ -18,16 +18,16 @@ class ItemTests(APITestCase):
         Role.objects.create(name='appromanager', bar=self.bar, user=self.user2)
         self.user2 = User.objects.get(username='ntag')
 
-        self.create_data = {'details': 1, 'price': 1}
         self.itemdetails = ItemDetails.objects.create(name='Chocolat')
         self.item = Item.objects.create(details=self.itemdetails, bar=self.bar, price=1)
-        self.update_data = self.client.get('/item/1/').data
+        self.create_data = {'details': self.itemdetails.id, 'price': 1}
+        self.update_data = self.client.get('/item/%d/' % self.item.id).data
         self.update_data['price'] = 4
 
 
     def test_get_item(self):
         response = self.client.get('/item/')
-        self.assertEqual(len(response.data), 1)
+        self.assertEqual(len(response.data), Item.objects.all().count())
         self.assertEqual(response.data[0]['price'], self.item.price)
 
 
@@ -63,37 +63,37 @@ class ItemTests(APITestCase):
 
     def test_change_item(self):
         # Unauthenticated
-        response = self.client.put('/item/1/?bar=natationjone', self.update_data)
+        response = self.client.put('/item/%d/?bar=natationjone' % self.item.id, self.update_data)
         self.assertEqual(response.status_code, 401)
 
     def test_change_item2(self):
         # Wrong permissions
         self.client.force_authenticate(user=self.user)
-        response = self.client.put('/item/1/?bar=natationjone', self.update_data)
+        response = self.client.put('/item/%d/?bar=natationjone' % self.item.id, self.update_data)
         self.assertEqual(response.status_code, 403)
 
     def test_change_item3(self):
         # No bar
         self.client.force_authenticate(user=self.user)
-        response = self.client.put('/item/1/', self.update_data)
+        response = self.client.put('/item/%d/' % self.item.id, self.update_data)
         self.assertEqual(response.status_code, 403)
 
     def test_change_item4(self):
         # Correct permissions
         self.client.force_authenticate(user=self.user2)
-        response = self.client.put('/item/1/?bar=natationjone', self.update_data)
+        response = self.client.put('/item/%d/?bar=natationjone' % self.item.id, self.update_data)
         self.assertEqual(response.status_code, 200)
 
     def test_change_item5(self):
         # Wrong bar
         self.client.force_authenticate(user=self.user2)
-        response = self.client.put('/item/1/?bar=avironjone', self.update_data)
+        response = self.client.put('/item/%d/?bar=avironjone' % self.item.id, self.update_data)
         self.assertEqual(response.status_code, 404)
 
     def test_change_item6(self):
         # No bar
         self.client.force_authenticate(user=self.user2)
-        response = self.client.put('/item/1/', self.update_data)
+        response = self.client.put('/item/%d/' % self.item.id, self.update_data)
         self.assertEqual(response.status_code, 200)
 
 
@@ -109,15 +109,15 @@ class AccountTests(APITestCase):
         Role.objects.create(name='admin', bar=self.bar, user=self.user2)
         self.user2 = User.objects.get(username='ntag')
 
-        self.create_data = {'owner': 2}
+        self.create_data = {'owner': self.user2.id}
         self.account = Account.objects.create(owner=self.user, bar=self.bar)
-        self.update_data = self.client.get('/account/1/').data
+        self.update_data = self.client.get('/account/%d/' % self.account.id).data
         self.update_data['money'] = 100
 
 
     def test_get_account(self):
         response = self.client.get('/account/')
-        self.assertEqual(len(response.data), 1)
+        self.assertEqual(len(response.data), Account.objects.all().count())
         self.assertEqual(response.data[0]['money'], self.account.money)
 
 
@@ -153,35 +153,35 @@ class AccountTests(APITestCase):
 
     def test_change_account(self):
         # Unauthenticated
-        response = self.client.put('/account/1/?bar=natationjone', self.update_data)
+        response = self.client.put('/account/%d/?bar=natationjone' % self.account.id, self.update_data)
         self.assertEqual(response.status_code, 401)
 
     def test_change_account2(self):
         # Wrong permissions
         self.client.force_authenticate(user=self.user)
-        response = self.client.put('/account/1/?bar=natationjone', self.update_data)
+        response = self.client.put('/account/%d/?bar=natationjone' % self.account.id, self.update_data)
         self.assertEqual(response.status_code, 403)
 
     def test_change_account3(self):
         # No bar
         self.client.force_authenticate(user=self.user)
-        response = self.client.put('/account/1/', self.update_data)
+        response = self.client.put('/account/%d/' % self.account.id, self.update_data)
         self.assertEqual(response.status_code, 403)
 
     def test_change_account4(self):
         # Correct permissions
         self.client.force_authenticate(user=self.user2)
-        response = self.client.put('/account/1/?bar=natationjone', self.update_data)
+        response = self.client.put('/account/%d/?bar=natationjone' % self.account.id, self.update_data)
         self.assertEqual(response.status_code, 200)
 
     def test_change_account5(self):
         # Wrong bar
         self.client.force_authenticate(user=self.user2)
-        response = self.client.put('/account/1/?bar=avironjone', self.update_data)
+        response = self.client.put('/account/%d/?bar=avironjone' % self.account.id, self.update_data)
         self.assertEqual(response.status_code, 404)
 
     def test_change_account6(self):
         # No bar
         self.client.force_authenticate(user=self.user2)
-        response = self.client.put('/account/1/', self.update_data)
+        response = self.client.put('/account/%d/' % self.account.id, self.update_data)
         self.assertEqual(response.status_code, 200)

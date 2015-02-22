@@ -3,7 +3,6 @@ from rest_framework import serializers
 from rest_framework.serializers import ValidationError
 from rest_framework import exceptions
 
-from bars_core.models.bar import Bar
 from bars_base.models.item import Item
 from bars_base.models.account import Account, get_default_account
 from bars_transactions.models import Transaction
@@ -35,10 +34,10 @@ class BaseTransactionSerializer(serializers.ModelSerializer):
 
     def create(self, data):
         request = self.context['request']
-        bar = request.QUERY_PARAMS.get('bar', None)
+        bar = request.bar
         if bar is None:
             raise Http404()
-        bar = Bar.objects.get(pk=bar)
+
         if request.user.has_perm('bars_transactions.add_' + data["type"] + 'transaction', bar):
             fields = Transaction._meta.get_all_field_names()
             attrs = {k: v for k, v in data.items() if k in fields}
@@ -110,6 +109,14 @@ class AccountRatioSerializer(serializers.Serializer):
 
 
 class BuyTransactionSerializer(BaseTransactionSerializer, ItemQtySerializer):
+    def validate_item(self, item):
+        item = super(BuyTransactionSerializer, self).validate_item(item)
+
+        if self.context['request'].bar.id != item.bar.id:
+            raise serializers.ValidationError("Cannot buy across bars")
+
+        return item
+
     def create(self, data):
         t = super(BuyTransactionSerializer, self).create(data)
 
@@ -191,8 +198,13 @@ class DepositTransactionSerializer(BaseTransactionSerializer, AccountAmountSeria
 class GiveTransactionSerializer(BaseTransactionSerializer, AccountAmountSerializer):
     def validate_account(self, account):
         account = super(GiveTransactionSerializer, self).validate_account(account)
+
         if self.context['request'].user == account.owner:
             raise serializers.ValidationError("Cannot give money to yourself")
+
+        if self.context['request'].bar.id != account.bar.id:
+            raise serializers.ValidationError("Cannot give across bars")
+
         return account
 
     def create(self, data):

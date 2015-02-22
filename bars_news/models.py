@@ -36,11 +36,10 @@ class NewsSerializer(serializers.ModelSerializer):
 
     def create(self, data):
         request = self.context['request']
-        bar = request.QUERY_PARAMS.get('bar', None)
+        bar = request.bar
         if bar is None:
             raise Http404()
 
-        bar = Bar.objects.get(pk=bar)
         if request.user.has_perm('bars_news.add_news', bar):
             n = News(**data)
             n.author = request.user
