@@ -145,3 +145,64 @@ class TransactionTests(APITestCase):
         self.assertEqual(response3.status_code, 200)
         end_qty = Item.objects.get(id=1).qty
         self.assertEqual(end_qty, start_qty)
+
+    def test_create_throwtransaction(self):
+        data = {'type':'throw', 'item':1, 'qty':1}
+        start_qty = Item.objects.get(id=1).qty
+
+        self.client.force_authenticate(self.user)
+
+        response = self.client.post('/transaction/?bar=natationjone',data)
+        self.assertEqual(response.status_code, 201)
+        end_qty = Item.objects.get(id=1).qty
+        self.assertEqual(end_qty, start_qty - 1)
+
+    def test_create_throwtransaction_unauthorized_user(self):
+        data = {'type':'throw', 'item':1, 'qty':1}
+        start_qty = Item.objects.get(id=1).qty
+
+        self.client.force_authenticate(self.user4)
+
+        response = self.client.post('/transaction/?bar=natationjone',data)
+        self.assertEqual(response.status_code, 403)
+        end_qty = Item.objects.get(id=1).qty
+        self.assertEqual(end_qty, start_qty)
+
+    def test_create_deposittransaction_staff(self):
+        account = Account.objects.get(bar=self.bar, owner=self.user)
+        data = {'type':'deposit', 'account':account.id, 'amount':30}
+        start_money = account.money
+
+        self.client.force_authenticate(self.user3)
+
+        response = self.client.post('/transaction/?bar=natationjone',data)
+        self.assertEqual(response.status_code, 201)
+        end_money = Account.objects.get(bar=self.bar, owner=self.user).money
+        self.assertEqual(end_money,start_money + 30)
+
+    def test_create_deposittransaction_unauthorized_user(self):
+        account = Account.objects.get(bar=self.bar, owner=self.user)
+        data = {'type':'deposit', 'account':account.id, 'amount':40}
+        start_money = account.money
+
+        self.client.force_authenticate(self.user)
+
+        response = self.client.post('/transaction/?bar=natationjone',data)
+        self.assertEqual(response.status_code, 403)
+
+    def test_create_givetransaction(self):
+        account = Account.objects.get(bar=self.bar, owner=self.user)
+        data = {'type':'give', 'account':account.id, 'amount':50}
+        start_money = account.money
+        start_money2 = Account.objects.get(bar=self.bar, owner=self.user2).money
+
+        self.client.force_authenticate(self.user2)
+
+        response = self.client.post('/transaction/?bar=natationjone',data)
+        self.assertEqual(response.status_code, 201)
+
+        end_money = Account.objects.get(bar=self.bar, owner=self.user).money
+        self.assertEqual(end_money,start_money + 50)
+
+        end_money2 = Account.objects.get(bar=self.bar, owner=self.user2).money
+        self.assertEqual(end_money2,start_money2 - 50)
