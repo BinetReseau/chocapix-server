@@ -180,6 +180,19 @@ class SerializerTests(APITestCase):
 
         self.context = {'request': Mock(user=self.user, QUERY_PARAMS={'bar': self.bar.id})}
 
+    @classmethod
+    def tearDownClass(self):
+        self.bar.delete()
+        self.wrong_bar.delete()
+
+        self.user.delete()
+        self.account.delete()
+        self.wrong_user.delete()
+        self.wrong_account.delete()
+
+        self.itemdetail.delete()
+        self.item.delete()
+
 
 class BuySerializerTests(SerializerTests):
     def test_buy(self):
@@ -216,6 +229,13 @@ class GiveSerializerTests(SerializerTests):
         super(GiveSerializerTests, self).setUpClass()
         self.user2, _ = User.objects.get_or_create(username='user2')
         self.account2, _ = Account.objects.get_or_create(bar=self.bar, owner=self.user2)
+
+    @classmethod
+    def tearDownClass(self):
+        self.user2.delete()
+        self.account2.delete()
+        super(GiveSerializerTests, self).tearDownClass()
+
 
     def test_give(self):
         data = {'type':'give', 'account':self.account2.id, 'amount':10}
