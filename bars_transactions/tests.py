@@ -90,7 +90,7 @@ class TransactionTests(APITestCase):
         transaction2 = Transaction.objects.get(pk=2)
         self.assertTrue(transaction2.canceled)
 
-
+    # TODO: move to operation tests
     def test_create_cancel_buytransaction(self):
         data = {'type':'buy', 'item':1, 'qty':1}
         start_qty = Item.objects.get(id=1).qty
@@ -116,7 +116,7 @@ class TransactionTests(APITestCase):
 from mock import Mock
 from serializers import BaseTransactionSerializer, BuyTransactionSerializer
 from django.http import Http404
-from rest_framework import exceptions
+from rest_framework import exceptions, serializers
 
 
 def reload(obj):
@@ -179,19 +179,21 @@ class SerializerTests(APITestCase):
 
 
 class BuySerializerTests(SerializerTests):
-    def setUp(self):
-        self.data = {'type':'buy', 'item':self.item.id, 'qty':3}
-
-    def test_buy_transaction(self):
-        s = BuyTransactionSerializer(data=self.data, context=self.context)
+    def test_buy(self):
+        data = {'type':'buy', 'item':self.item.id, 'qty':3}
+        s = BuyTransactionSerializer(data=data, context=self.context)
         self.assertTrue(s.is_valid())
         s.save()
 
-        self.assertEqual(reload(self.item).qty, self.item.qty - self.data['qty'])
-        self.assertEqual(reload(self.account).money, self.account.money - self.item.price * self.data['qty'])
+        self.assertEqual(reload(self.item).qty, self.item.qty - data['qty'])
+        self.assertEqual(reload(self.account).money, self.account.money - self.item.price * data['qty'])
 
-    def test_buy_transaction_itemdeleted(self):
+    def test_buy_itemdeleted(self):
         deleted_item, _ = Item.objects.get_or_create(details=self.itemdetail, bar=self.bar, price=1, deleted=True)
         data = {'type':'buy', 'item':deleted_item.id, 'qty':3}
         s = BuyTransactionSerializer(data=data, context=self.context)
-        self.assertFalse(s.is_valid())
+
+        with self.assertRaises(serializers.ValidationError) as err:
+            s.is_valid(raise_exception=True)
+        self.assertEqual(err.exception.detail, {'item': ['Item is deleted']})
+
