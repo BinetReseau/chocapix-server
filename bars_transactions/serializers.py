@@ -348,16 +348,15 @@ class ApproTransactionSerializer(BaseTransactionSerializer):
         if transaction is None:
             return obj
 
-        total_price = 0
         obj["items"] = []
         for iop in transaction.itemoperation_set.all():
             obj["items"].append({
                 'item': iop.target.id,
                 'qty': abs(iop.delta)
             })
-            total_price += iop.delta * iop.target.buy_price
 
-        obj["moneyflow"] = total_price
+        aop = transaction.accountoperation_set.all()[0]
+        obj["moneyflow"] = -aop.delta
 
         return obj
 
