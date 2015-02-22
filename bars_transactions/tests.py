@@ -114,7 +114,7 @@ class TransactionTests(APITestCase):
 
 
 from mock import Mock
-from serializers import BaseTransactionSerializer, BuyTransactionSerializer
+from serializers import BaseTransactionSerializer, BuyTransactionSerializer, GiveTransactionSerializer
 from django.http import Http404
 from rest_framework import exceptions, serializers
 
@@ -197,3 +197,20 @@ class BuySerializerTests(SerializerTests):
             s.is_valid(raise_exception=True)
         self.assertEqual(err.exception.detail, {'item': ['Item is deleted']})
 
+
+
+class GiveSerializerTests(SerializerTests):
+    @classmethod
+    def setUpClass(self):
+        super(GiveSerializerTests, self).setUpClass()
+        self.user2, _ = User.objects.get_or_create(username='user2')
+        self.account2, _ = Account.objects.get_or_create(bar=self.bar, owner=self.user2)
+
+    def test_give(self):
+        data = {'type':'give', 'account':self.account2.id, 'amount':10}
+        s = GiveTransactionSerializer(data=data, context=self.context)
+        self.assertTrue(s.is_valid())
+        s.save()
+
+        self.assertEqual(reload(self.account).money, self.account.money - data['amount'])
+        self.assertEqual(reload(self.account2).money, self.account2.money + data['amount'])
