@@ -91,40 +91,6 @@ class TransactionTests(APITestCase):
         self.assertTrue(transaction2.canceled)
 
 
-    def test_create_buytransaction(self):
-        data = {'type':'buy', 'item':1, 'qty':1}
-        start_qty = Item.objects.get(id=1).qty
-
-        self.client.force_authenticate(user=self.user)
-        response = self.client.post('/transaction/?bar=natationjone', data)
-        self.assertEqual(response.status_code, 201)
-
-        end_qty = Item.objects.get(id=1).qty
-        self.assertEqual(end_qty, start_qty - 1)
-
-    def test_create_buytransaction_itemdeleted(self):
-        id = ItemDetails.objects.create(name='Pizza')
-        i = Item.objects.create(details=id, bar=self.bar, price=1, deleted=True)
-        data = {'type':'buy', 'item':i.id, 'qty':1}
-
-        self.client.force_authenticate(user=self.user)
-        response = self.client.post('/transaction/?bar=natationjone', data)
-        self.assertEqual(response.status_code, 400)
-
-    def test_create_buytransaction_wrong_bar(self):
-        id = ItemDetails.objects.create(name='steak')
-        i = Item.objects.create(details=id, bar=self.bar2, price=2)
-        start_qty = i.qty
-
-        data = {'type':'buy', 'item':i.id, 'qty':2}
-
-        self.client.force_authenticate(user=self.user3)
-        response = self.client.post('/transaction/?bar=natationrouge', data)
-        self.assertEqual(response.status_code, 403)
-
-        end_qty = Item.objects.get(id=i.id).qty
-        self.assertEqual(end_qty, start_qty)
-
     def test_create_cancel_buytransaction(self):
         data = {'type':'buy', 'item':1, 'qty':1}
         start_qty = Item.objects.get(id=1).qty
@@ -145,3 +111,87 @@ class TransactionTests(APITestCase):
         self.assertEqual(response3.status_code, 200)
         end_qty = Item.objects.get(id=1).qty
         self.assertEqual(end_qty, start_qty)
+
+
+from mock import Mock
+from serializers import BaseTransactionSerializer, BuyTransactionSerializer
+from django.http import Http404
+from rest_framework import exceptions
+
+
+def reload(obj):
+    return obj.__class__.objects.get(pk=obj.pk)
+
+
+class BaseSerializerTests(APITestCase):
+    @classmethod
+    def setUpClass(self):
+        self.bar, _ = Bar.objects.get_or_create(id='barjone')
+        self.wrong_bar, _ = Bar.objects.get_or_create(id='barrouje')
+
+        self.user, _ = User.objects.get_or_create(username='user')
+        self.user.has_perm = Mock(side_effect=lambda perm, bar: bar.id == self.bar.id)
+
+        self.context = {'request': Mock(user=self.user, QUERY_PARAMS={'bar': self.bar.id})}
+        self.context_wrong_bar = {'request': Mock(user=self.user, QUERY_PARAMS={'bar': self.wrong_bar.id})}
+        self.context_no_bar = {'request': Mock(user=self.user, QUERY_PARAMS={})}
+
+        self.data = {'type': 'some_type'}
+
+    def test_base_transaction(self):
+        s = BaseTransactionSerializer(data=self.data, context=self.context)
+        self.assertTrue(s.is_valid())
+        t = s.save()
+
+        self.assertEqual(t.bar.id, self.bar.id)
+
+    def test_base_transaction_wrong_bar(self):
+        s = BaseTransactionSerializer(data=self.data, context=self.context_wrong_bar)
+        self.assertTrue(s.is_valid())
+
+        with self.assertRaises(exceptions.PermissionDenied):
+            s.save()
+
+    def test_base_transaction_no_bar(self):
+        s = BaseTransactionSerializer(data=self.data, context=self.context_no_bar)
+        self.assertTrue(s.is_valid())
+
+        with self.assertRaises(Http404):
+            s.save()
+
+
+class SerializerTests(APITestCase):
+    @classmethod
+    def setUpClass(self):
+        self.bar, _ = Bar.objects.get_or_create(id='barjone')
+
+        self.user, _ = User.objects.get_or_create(username='user')
+        self.account, _ = Account.objects.get_or_create(bar=self.bar, owner=self.user)
+        self.account.money = 100
+        self.account.save()
+
+        self.itemdetail, _ = ItemDetails.objects.get_or_create(name='Pizza')
+        self.item, _ = Item.objects.get_or_create(details=self.itemdetail, bar=self.bar, price=1)
+        self.item.qty = 5
+        self.item.save()
+
+        self.context = {'request': Mock(user=self.user, QUERY_PARAMS={'bar': self.bar.id})}
+
+
+class BuySerializerTests(SerializerTests):
+    def setUp(self):
+        self.data = {'type':'buy', 'item':self.item.id, 'qty':3}
+
+    def test_buy_transaction(self):
+        s = BuyTransactionSerializer(data=self.data, context=self.context)
+        self.assertTrue(s.is_valid())
+        s.save()
+
+        self.assertEqual(reload(self.item).qty, self.item.qty - self.data['qty'])
+        self.assertEqual(reload(self.account).money, self.account.money - self.item.price * self.data['qty'])
+
+    def test_buy_transaction_itemdeleted(self):
+        deleted_item, _ = Item.objects.get_or_create(details=self.itemdetail, bar=self.bar, price=1, deleted=True)
+        data = {'type':'buy', 'item':deleted_item.id, 'qty':3}
+        s = BuyTransactionSerializer(data=data, context=self.context)
+        self.assertFalse(s.is_valid())
