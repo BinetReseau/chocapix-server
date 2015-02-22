@@ -11,7 +11,7 @@ from bars_core.models.bar import BarViewSet
 from bars_core.models.user import UserViewSet
 from bars_base.models.account import AccountViewSet
 from bars_core.models.role import RoleViewSet
-from bars_base.models.item import ItemViewSet, ItemDetailsViewSet
+# from bars_base.models.item import ItemViewSet, ItemDetailsViewSet
 from bars_news.models import NewsViewSet
 from bars_transactions.views import TransactionViewSet
 
@@ -22,8 +22,11 @@ router.register('bar', BarViewSet)
 router.register('user', UserViewSet)
 router.register('account', AccountViewSet)
 router.register('role', RoleViewSet)
-router.register('item', ItemViewSet)
-router.register('itemdetails', ItemDetailsViewSet)
+
+
+# router.register('item', ItemViewSet)
+# router.register('itemdetails', ItemDetailsViewSet)
+
 router.register('news', NewsViewSet)
 router.register('transaction', TransactionViewSet)
 
