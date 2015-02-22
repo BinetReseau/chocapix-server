@@ -110,6 +110,14 @@ class AccountRatioSerializer(serializers.Serializer):
 
 
 class BuyTransactionSerializer(BaseTransactionSerializer, ItemQtySerializer):
+    def validate_item(self, item):
+        item = super(BuyTransactionSerializer, self).validate_item(item)
+
+        if self.context['request'].QUERY_PARAMS.get('bar', None) != item.bar.id:
+            raise serializers.ValidationError("Cannot buy across bars")
+
+        return item
+
     def create(self, data):
         t = super(BuyTransactionSerializer, self).create(data)
 
@@ -191,8 +199,13 @@ class DepositTransactionSerializer(BaseTransactionSerializer, AccountAmountSeria
 class GiveTransactionSerializer(BaseTransactionSerializer, AccountAmountSerializer):
     def validate_account(self, account):
         account = super(GiveTransactionSerializer, self).validate_account(account)
+
         if self.context['request'].user == account.owner:
             raise serializers.ValidationError("Cannot give money to yourself")
+
+        if self.context['request'].QUERY_PARAMS.get('bar', None) != account.bar.id:
+            raise serializers.ValidationError("Cannot give across bars")
+
         return account
 
     def create(self, data):

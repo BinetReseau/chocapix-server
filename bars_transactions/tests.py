@@ -10,29 +10,29 @@ from bars_transactions.models import Transaction
 
 class TransactionTests(APITestCase):
     def setUp(self):
-        self.bar = Bar.objects.create(id='natationjone')
-        self.bar2 = Bar.objects.create(id='natationrouge')
+        self.bar, _ = Bar.objects.get_or_create(id='natationjone')
+        self.bar2, _ = Bar.objects.get_or_create(id='natationrouge')
 
-        self.user = User.objects.create(username='nadrieril')
-        Account.objects.create(bar=self.bar, owner=self.user)
+        self.user, _ = User.objects.get_or_create(username='nadrieril')
+        Account.objects.get_or_create(bar=self.bar, owner=self.user)
 
-        self.user2 = User.objects.create(username='ntag')
-        Account.objects.create(bar=self.bar, owner=self.user2)
+        self.user2, _ = User.objects.get_or_create(username='ntag')
+        Account.objects.get_or_create(bar=self.bar, owner=self.user2)
 
-        self.user3 = User.objects.create(username='tizot')
-        Role.objects.create(name='staff', bar=self.bar, user=self.user3)
-        Account.objects.create(bar=self.bar, owner=self.user3)
+        self.user3, _ = User.objects.get_or_create(username='tizot')
+        Role.objects.get_or_create(name='staff', bar=self.bar, user=self.user3)
+        Account.objects.get_or_create(bar=self.bar, owner=self.user3)
 
-        self.user4 = User.objects.create(username='marioyc')
-        Role.objects.create(name='staff', bar=self.bar2, user=self.user4)
-        Account.objects.create(bar=self.bar2, owner=self.user4)
+        self.user4, _ = User.objects.get_or_create(username='marioyc')
+        Role.objects.get_or_create(name='staff', bar=self.bar2, user=self.user4)
+        Account.objects.get_or_create(bar=self.bar2, owner=self.user4)
 
-        itemdetails = ItemDetails.objects.create(name='Chocolat')
-        Item.objects.create(details=itemdetails, bar=self.bar, price=1)
+        itemdetails, _ = ItemDetails.objects.get_or_create(name='Chocolat')
+        self.item, _ = Item.objects.get_or_create(details=itemdetails, bar=self.bar, price=1)
 
-        Transaction.objects.create(bar=self.bar, author=self.user)
+        Transaction.objects.get_or_create(bar=self.bar, author=self.user)
 
-        Transaction.objects.create(bar=self.bar2, author=self.user4)
+        Transaction.objects.get_or_create(bar=self.bar2, author=self.user4)
 
 
     def test_cancel_transaction(self):
@@ -76,8 +76,8 @@ class TransactionTests(APITestCase):
         self.assertFalse(transaction.canceled)
 
     def test_cancel_transaction_two_bars(self):
-        Role.objects.create(name='staff', bar=self.bar, user=self.user4)
-        Account.objects.create(bar=self.bar, owner=self.user4)
+        Role.objects.get_or_create(name='staff', bar=self.bar, user=self.user4)
+        Account.objects.get_or_create(bar=self.bar, owner=self.user4)
         self.client.force_authenticate(user=self.user4)
 
         response = self.client.put('/transaction/1/cancel/', {})
@@ -92,24 +92,24 @@ class TransactionTests(APITestCase):
 
     # TODO: move to operation tests
     def test_create_cancel_buytransaction(self):
-        data = {'type':'buy', 'item':1, 'qty':1}
-        start_qty = Item.objects.get(id=1).qty
+        data = {'type':'buy', 'item':self.item.id, 'qty':1}
+        start_qty = Item.objects.get(id=self.item.id).qty
 
         self.client.force_authenticate(user=self.user)
 
         response = self.client.post('/transaction/?bar=natationjone', data)
         self.assertEqual(response.status_code, 201)
-        end_qty = Item.objects.get(id=1).qty
+        end_qty = Item.objects.get(id=self.item.id).qty
         self.assertEqual(end_qty, start_qty - 1)
 
         response2 = self.client.put('/transaction/3/cancel/', {})
         self.assertEqual(response2.status_code, 200)
-        end_qty = Item.objects.get(id=1).qty
+        end_qty = Item.objects.get(id=self.item.id).qty
         self.assertEqual(end_qty, start_qty)
 
         response3 = self.client.put('/transaction/3/cancel/', {})
         self.assertEqual(response3.status_code, 200)
-        end_qty = Item.objects.get(id=1).qty
+        end_qty = Item.objects.get(id=self.item.id).qty
         self.assertEqual(end_qty, start_qty)
 
 
@@ -164,11 +164,14 @@ class SerializerTests(APITestCase):
     @classmethod
     def setUpClass(self):
         self.bar, _ = Bar.objects.get_or_create(id='barjone')
+        self.wrong_bar, _ = Bar.objects.get_or_create(id='barrouje')
 
         self.user, _ = User.objects.get_or_create(username='user')
         self.account, _ = Account.objects.get_or_create(bar=self.bar, owner=self.user)
         self.account.money = 100
         self.account.save()
+        self.wrong_user, _ = User.objects.get_or_create(username='wrong_user')
+        self.wrong_account, _ = Account.objects.get_or_create(bar=self.wrong_bar, owner=self.wrong_user)
 
         self.itemdetail, _ = ItemDetails.objects.get_or_create(name='Pizza')
         self.item, _ = Item.objects.get_or_create(details=self.itemdetail, bar=self.bar, price=1)
@@ -197,6 +200,14 @@ class BuySerializerTests(SerializerTests):
             s.is_valid(raise_exception=True)
         self.assertEqual(err.exception.detail, {'item': ['Item is deleted']})
 
+    def test_buy_other_bar(self):
+        wrong_item, _ = Item.objects.get_or_create(details=self.itemdetail, bar=self.wrong_bar, price=1)
+        data = {'type':'buy', 'item':wrong_item.id, 'qty':3}
+        s = BuyTransactionSerializer(data=data, context=self.context)
+
+        with self.assertRaises(serializers.ValidationError) as err:
+            s.is_valid(raise_exception=True)
+        self.assertEqual(err.exception.detail, {'item': ['Cannot buy across bars']})
 
 
 class GiveSerializerTests(SerializerTests):
@@ -214,3 +225,11 @@ class GiveSerializerTests(SerializerTests):
 
         self.assertEqual(reload(self.account).money, self.account.money - data['amount'])
         self.assertEqual(reload(self.account2).money, self.account2.money + data['amount'])
+
+    def test_give_other_bar(self):
+        data = {'type':'give', 'account':self.wrong_account.id, 'amount':10}
+        s = GiveTransactionSerializer(data=data, context=self.context)
+
+        with self.assertRaises(serializers.ValidationError) as err:
+            s.is_valid(raise_exception=True)
+        self.assertEqual(err.exception.detail, {'account': ['Cannot give across bars']})
