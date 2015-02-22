@@ -125,7 +125,7 @@ class BuyTransactionSerializer(BaseTransactionSerializer, ItemQtySerializer):
             delta=-data['qty'])
         t.accountoperation_set.create(
             target=Account.objects.get(owner=t.author, bar=t.bar),
-            delta=-data['qty'] * data['item'].price)
+            delta=-data['qty'] * data['item'].get_sell_price())
 
         return t
 
@@ -163,7 +163,7 @@ class ThrowTransactionSerializer(BaseTransactionSerializer, ItemQtySerializer):
         obj["item"] = iop.target.id
         obj["qty"] = abs(iop.delta)
 
-        obj["moneyflow"] = iop.delta * iop.target.price
+        obj["moneyflow"] = iop.delta * iop.target.get_sell_price()
 
         return obj
 
@@ -282,7 +282,7 @@ class MealTransactionSerializer(BaseTransactionSerializer):
             t.itemoperation_set.create(
                 target=i["item"],
                 delta=-i["qty"])
-            total_price += i["qty"] * i["item"].price
+            total_price += i["qty"] * i["item"].get_sell_price()
 
         total_ratio = 0
         for a in data["accounts"]:
@@ -400,7 +400,7 @@ class InventoryTransactionSerializer(BaseTransactionSerializer):
                 'item': iop.target.id,
                 'qty': iop.delta
             })
-            total_price += iop.delta * iop.target.price
+            total_price += iop.delta * iop.target.get_sell_price()
 
         obj["moneyflow"] = total_price
 

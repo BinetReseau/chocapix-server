@@ -39,7 +39,6 @@ class User(AbstractBaseUser):
 
     USERNAME_FIELD = 'username'
     REQUIRED_FIELDS = []
-    # email = ''
 
     def has_perm(self, perm, obj=None):
         if self.is_active and self.is_superuser:
@@ -69,8 +68,8 @@ class User(AbstractBaseUser):
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ('id', '_type', 'username', 'full_name', 'pseudo', 'last_login', 'last_modified')
-        read_only_fields = ('id', '_type', 'full_name', 'last_login', 'last_modified')
+        fields = ('id', '_type', 'username', 'full_name', 'pseudo', 'is_active', 'last_login', 'last_modified')
+        read_only_fields = ('id', '_type', 'full_name', 'is_active', 'last_login', 'last_modified')
     _type = VirtualField("User")
 
 

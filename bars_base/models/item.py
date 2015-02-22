@@ -50,14 +50,18 @@ class Item(models.Model):
     unit_name_plural = models.CharField(max_length=100, blank=True)
     unit_value = models.FloatField(default=1)
 
-    price = models.FloatField()
     buy_price = models.FloatField(default=1)
+    price = models.FloatField()
+    tax = models.FloatField(default=0)
 
     deleted = models.BooleanField(default=False)
     last_modified = models.DateTimeField(auto_now=True)
 
     def __unicode__(self):
         return "%s (%s)" % (self.details.name, self.bar.id)
+
+    def get_sell_price(self):
+        return self.price * (1 + self.tax)
 
 
 class ItemSerializer(serializers.ModelSerializer):
