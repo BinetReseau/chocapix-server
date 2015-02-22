@@ -27,7 +27,7 @@ class ItemTests(APITestCase):
 
     def test_get_item(self):
         response = self.client.get('/item/')
-        self.assertEqual(len(response.data), Item.objects.all().count())
+        self.assertEqual(len(response.data), Item.objects.count())
         self.assertEqual(response.data[0]['price'], self.item.price)
 
 
@@ -117,7 +117,7 @@ class AccountTests(APITestCase):
 
     def test_get_account(self):
         response = self.client.get('/account/')
-        self.assertEqual(len(response.data), Account.objects.all().count())
+        self.assertEqual(len(response.data), Account.objects.count())
         self.assertEqual(response.data[0]['money'], self.account.money)
 
 
