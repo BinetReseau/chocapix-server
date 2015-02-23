@@ -18,6 +18,8 @@ class SellItem(models.Model):
 
     tax = models.FloatField(default=0)
 
+    deleted = models.BooleanField(default=False)
+
     def __unicode__(self):
         return self.name
 

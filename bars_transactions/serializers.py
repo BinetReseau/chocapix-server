@@ -3,8 +3,8 @@ from rest_framework import serializers
 from rest_framework.serializers import ValidationError
 from rest_framework import exceptions
 
-from bars_base.models.item import Item
 from bars_base.models.account import Account, get_default_account
+from bars_items.models.stockitem import StockItem
 from bars_transactions.models import Transaction
 
 
@@ -54,7 +54,7 @@ class BaseTransactionSerializer(serializers.ModelSerializer):
 
 
 class ItemQtySerializer(serializers.Serializer):
-    item = serializers.PrimaryKeyRelatedField(queryset=Item.objects.all())
+    item = serializers.PrimaryKeyRelatedField(queryset=StockItem.objects.all())
     qty = serializers.FloatField()
 
     def validate_qty(self, value):

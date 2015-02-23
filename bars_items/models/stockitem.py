@@ -13,16 +13,21 @@ class StockItem(models.Model):
         app_label = 'bars_items'
     bar = models.ForeignKey(Bar)
     details = models.ForeignKey(ItemDetails)
-    sellitem = models.ForeignKey(SellItem, related_name="stockitems")
+    sellitem = models.ForeignKey(SellItem, related_name="stockitems", null=True)
 
     qty = models.FloatField(default=0)
     price = models.FloatField()
+
+    deleted = models.BooleanField(default=False)
 
     def __unicode__(self):
         return "%s (%s)" % (unicode(self.details), unicode(self.bar))
 
     def get_sell_price(self):
-        return self.price * (1 + self.sellitem.tax)
+        if self.sellitem is not None:
+            return self.price * (1 + self.sellitem.tax)
+        else:
+            return self.price
 
 
 class StockItemSerializer(serializers.ModelSerializer):
