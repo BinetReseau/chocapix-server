@@ -4,8 +4,9 @@ from rest_framework.serializers import ValidationError
 from rest_framework import exceptions
 
 from bars_base.models.account import Account, get_default_account
-from bars_items.models.stockitem import StockItem
 from bars_items.models.buyitem import BuyItem, BuyItemPrice
+from bars_items.models.stockitem import StockItem
+from bars_items.models.sellitem import SellItem
 from bars_transactions.models import Transaction
 
 
@@ -145,6 +146,63 @@ class BuyTransactionSerializer(BaseTransactionSerializer, ItemQtySerializer):
         iop = transaction.itemoperation_set.all()[0]
         obj["item"] = iop.target.id
         obj["qty"] = abs(iop.delta)
+
+        aop = transaction.accountoperation_set.all()[0]
+        obj["moneyflow"] = -aop.delta
+
+        return obj
+
+
+class FuzzyBuyTransactionSerializer(BaseTransactionSerializer):
+    sellitem = serializers.PrimaryKeyRelatedField(queryset=SellItem.objects.all())
+    qty = serializers.FloatField()
+
+    def validate_qty(self, value):
+        if value < 0:
+            raise serializers.ValidationError("Quantity must be positive")
+        return value
+
+    def validate_sellitem(self, sellitem):
+        if sellitem.deleted:
+            raise ValidationError("Item is deleted")
+
+        if self.context['request'].bar.id != sellitem.bar.id:
+            raise serializers.ValidationError("Cannot buy across bars")
+
+        return sellitem
+
+    def create(self, data):
+        t = super(FuzzyBuyTransactionSerializer, self).create(data)
+
+        total_qty = data['qty']
+        sellitem = data['sellitem']
+        stockitems = sellitem.stockitems.all()
+
+        total_price = 0
+        for si in stockitems.all():
+            if sellitem.calc_qty() != 0:
+                delta = (si.qty * total_qty) / sellitem.calc_qty()
+            else:
+                delta = total_qty / stockitems.count()
+
+            t.itemoperation_set.create(
+                target=si,
+                delta=-delta)
+            total_price += delta * si.get_sell_price()
+
+        t.accountoperation_set.create(
+            target=Account.objects.get(owner=t.author, bar=t.bar),
+            delta=-total_price)
+
+        return t
+
+    def to_representation(self, transaction):
+        obj = BaseTransactionSerializer(transaction, context={'ignore_type': True}).data
+        if transaction is None:
+            return obj
+
+        obj["sellitem"] = transaction.itemoperation_set.all()[0].target.sellitem.id
+        obj["qty"] = sum([-iop.delta for iop in transaction.itemoperation_set.all()])
 
         aop = transaction.accountoperation_set.all()[0]
         obj["moneyflow"] = -aop.delta
@@ -421,6 +479,7 @@ class InventoryTransactionSerializer(BaseTransactionSerializer):
 serializers_class_map = {
     "": BaseTransactionSerializer,
     "buy": BuyTransactionSerializer,
+    "fuzzybuy": FuzzyBuyTransactionSerializer,
     "throw": ThrowTransactionSerializer,
     "deposit": DepositTransactionSerializer,
     "give": GiveTransactionSerializer,
