@@ -98,7 +98,7 @@ class RoleViewSet(viewsets.ModelViewSet):
 
     @decorators.list_route(methods=['get'])
     def me(self, request):
-        bar = request.QUERY_PARAMS.get('bar', None)
+        bar = request.bar
         if bar is None:
             roles = request.user.role_set.all()
         else:

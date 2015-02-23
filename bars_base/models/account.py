@@ -45,12 +45,10 @@ class AccountSerializer(serializers.ModelSerializer):
 
     def create(self, data):
         request = self.context['request']
-        bar = request.QUERY_PARAMS.get('bar', None)
-        bar = Bar.objects.get(pk=bar)
 
         account = Account(**data)
         account.money = 0
-        account.bar = bar
+        account.bar = request.bar
         account.save()
         return account
 
@@ -66,7 +64,7 @@ class AccountViewSet(viewsets.ModelViewSet):
 
     @decorators.list_route(methods=['get'])
     def me(self, request):
-        bar = request.QUERY_PARAMS.get('bar', None)
+        bar = request.bar
         if bar is None:
             serializer = self.serializer_class(request.user.account_set.all())
         else:

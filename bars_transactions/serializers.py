@@ -3,7 +3,6 @@ from rest_framework import serializers
 from rest_framework.serializers import ValidationError
 from rest_framework import exceptions
 
-from bars_core.models.bar import Bar
 from bars_base.models.item import Item
 from bars_base.models.account import Account, get_default_account
 from bars_transactions.models import Transaction
@@ -35,10 +34,10 @@ class BaseTransactionSerializer(serializers.ModelSerializer):
 
     def create(self, data):
         request = self.context['request']
-        bar = request.QUERY_PARAMS.get('bar', None)
+        bar = request.bar
         if bar is None:
             raise Http404()
-        bar = Bar.objects.get(pk=bar)
+
         if request.user.has_perm('bars_transactions.add_' + data["type"] + 'transaction', bar):
             fields = Transaction._meta.get_all_field_names()
             attrs = {k: v for k, v in data.items() if k in fields}
@@ -110,6 +109,14 @@ class AccountRatioSerializer(serializers.Serializer):
 
 
 class BuyTransactionSerializer(BaseTransactionSerializer, ItemQtySerializer):
+    def validate_item(self, item):
+        item = super(BuyTransactionSerializer, self).validate_item(item)
+
+        if self.context['request'].bar.id != item.bar.id:
+            raise serializers.ValidationError("Cannot buy across bars")
+
+        return item
+
     def create(self, data):
         t = super(BuyTransactionSerializer, self).create(data)
 
@@ -118,7 +125,7 @@ class BuyTransactionSerializer(BaseTransactionSerializer, ItemQtySerializer):
             delta=-data['qty'])
         t.accountoperation_set.create(
             target=Account.objects.get(owner=t.author, bar=t.bar),
-            delta=-data['qty'] * data['item'].price)
+            delta=-data['qty'] * data['item'].get_sell_price())
 
         return t
 
@@ -156,7 +163,7 @@ class ThrowTransactionSerializer(BaseTransactionSerializer, ItemQtySerializer):
         obj["item"] = iop.target.id
         obj["qty"] = abs(iop.delta)
 
-        obj["moneyflow"] = iop.delta * iop.target.price
+        obj["moneyflow"] = iop.delta * iop.target.get_sell_price()
 
         return obj
 
@@ -191,8 +198,13 @@ class DepositTransactionSerializer(BaseTransactionSerializer, AccountAmountSeria
 class GiveTransactionSerializer(BaseTransactionSerializer, AccountAmountSerializer):
     def validate_account(self, account):
         account = super(GiveTransactionSerializer, self).validate_account(account)
+
         if self.context['request'].user == account.owner:
             raise serializers.ValidationError("Cannot give money to yourself")
+
+        if self.context['request'].bar.id != account.bar.id:
+            raise serializers.ValidationError("Cannot give across bars")
+
         return account
 
     def create(self, data):
@@ -270,7 +282,7 @@ class MealTransactionSerializer(BaseTransactionSerializer):
             t.itemoperation_set.create(
                 target=i["item"],
                 delta=-i["qty"])
-            total_price += i["qty"] * i["item"].price
+            total_price += i["qty"] * i["item"].get_sell_price()
 
         total_ratio = 0
         for a in data["accounts"]:
@@ -348,16 +360,15 @@ class ApproTransactionSerializer(BaseTransactionSerializer):
         if transaction is None:
             return obj
 
-        total_price = 0
         obj["items"] = []
         for iop in transaction.itemoperation_set.all():
             obj["items"].append({
                 'item': iop.target.id,
                 'qty': abs(iop.delta)
             })
-            total_price += iop.delta * iop.target.buy_price
 
-        obj["moneyflow"] = total_price
+        aop = transaction.accountoperation_set.all()[0]
+        obj["moneyflow"] = -aop.delta
 
         return obj
 
@@ -388,7 +399,7 @@ class InventoryTransactionSerializer(BaseTransactionSerializer):
                 'item': iop.target.id,
                 'qty': iop.delta
             })
-            total_price += iop.delta * iop.target.price
+            total_price += iop.delta * iop.target.get_sell_price()
 
         obj["moneyflow"] = total_price
 
