@@ -45,7 +45,18 @@ class BuyItemPrice(models.Model):
 class BuyItemPriceSerializer(serializers.ModelSerializer):
     class Meta:
         model = BuyItemPrice
+        read_only_fields = ("bar",)
+        extra_kwargs = {'bar': {'required': False}}
+
     _type = VirtualField("BuyItemPrice")
+
+    def create(self, data):
+        request = self.context['request']
+
+        bip = BuyItemPrice(**data)
+        bip.bar = request.bar
+        bip.save()
+        return bip
 
 
 class BuyItemPriceViewSet(viewsets.ModelViewSet):
