@@ -9,7 +9,8 @@ from bars_base.models.account import Account
 
 from mock import Mock
 from serializers import (BaseTransactionSerializer, BuyTransactionSerializer, GiveTransactionSerializer,
-                        ThrowTransactionSerializer, DepositTransactionSerializer,PunishTransactionSerializer,)
+                        ThrowTransactionSerializer, DepositTransactionSerializer,PunishTransactionSerializer,
+                        MealTransactionSerializer, ApproTransactionSerializer, InventoryTransactionSerializer,)
 from django.http import Http404
 from rest_framework import exceptions, serializers
 
@@ -77,6 +78,11 @@ class SerializerTests(APITestCase):
         self.item.qty = 5
         self.item.save()
 
+        self.itemdetail2, _ = ItemDetails.objects.get_or_create(name='Steak')
+        self.item2, _ = Item.objects.get_or_create(details=self.itemdetail2, bar=self.bar, price=2, tax=0.1)
+        self.item2.qty = 10
+        self.item2.save()
+
         self.context = {'request': Mock(user=self.user, bar=self.bar)}
 
     @classmethod
@@ -95,6 +101,8 @@ class SerializerTests(APITestCase):
 
         self.itemdetail.delete()
         self.item.delete()
+        self.itemdetail2.delete()
+        self.item2.delete()
 
 
 class BuySerializerTests(SerializerTests):
@@ -130,6 +138,7 @@ class GiveSerializerTests(SerializerTests):
     @classmethod
     def setUpClass(self):
         super(GiveSerializerTests, self).setUpClass()
+
         self.user2, _ = User.objects.get_or_create(username='user2')
         self.account2, _ = Account.objects.get_or_create(bar=self.bar, owner=self.user2)
 
@@ -137,6 +146,7 @@ class GiveSerializerTests(SerializerTests):
     def tearDownClass(self):
         self.user2.delete()
         self.account2.delete()
+
         super(GiveSerializerTests, self).tearDownClass()
 
 
@@ -185,7 +195,9 @@ class ThrowSerializerTests(SerializerTests):
         s = ThrowTransactionSerializer(data=data, context=self.context)
         self.assertFalse(s.is_valid())
 
+
 from bars_base.models.account import get_default_account
+
 
 class DepositSerializerTests(SerializerTests):
     @classmethod
@@ -236,6 +248,7 @@ class DepositSerializerTests(SerializerTests):
         s = DepositTransactionSerializer(data=data, context=self.context)
         self.assertFalse(s.is_valid())
 
+
 class PunishSerializerTests(SerializerTests):
     def test_punish(self):
         self.context = {'request': Mock(user=self.staff_user, bar=self.bar)}
@@ -262,3 +275,145 @@ class PunishSerializerTests(SerializerTests):
 
         s = PunishTransactionSerializer(data=data, context=self.context)
         self.assertFalse(s.is_valid())
+
+
+class MealSerializerTests(SerializerTests):
+    @classmethod
+    def setUpClass(self):
+        super(MealSerializerTests, self).setUpClass()
+
+        self.user2, _ = User.objects.get_or_create(username='user2')
+        self.account2, _ = Account.objects.get_or_create(bar=self.bar, owner=self.user2)
+        self.account2.money = 500
+        self.account2.save()
+
+
+    def test_meal(self):
+        data = {'type':'meal', 'name':'',
+                'items': [
+                    {'item':self.item.id, 'qty':5}
+                ],'accounts': [
+                    {"account":self.account.id,"ratio":1},
+                ]
+                }
+
+        s = MealTransactionSerializer(data=data, context=self.context)
+        self.assertTrue(s.is_valid())
+        s.save()
+
+        self.assertEqual(reload(self.item).qty,self.item.qty - data['items'][0]['qty'])
+        end_money = self.account.money - data['items'][0]['qty'] * self.item.get_sell_price()
+        self.assertEqual(reload(self.account).money,end_money)
+
+    def test_meal_multiple(self):
+        self.account2
+        data = {'type':'meal', 'name':'',
+                'items': [
+                    {'item':self.item.id, 'qty':1},
+                    {'item':self.item2.id, 'qty':5}
+                ],'accounts': [
+                    {'account':self.account.id, 'ratio':1.0},
+                    {'account':self.account2.id, 'ratio':12.0}
+                ]
+                }
+
+        s = MealTransactionSerializer(data=data, context=self.context)
+        self.assertTrue(s.is_valid())
+        s.save()
+
+        self.assertEqual(reload(self.item).qty,self.item.qty - data['items'][0]['qty'])
+        self.assertEqual(reload(self.item2).qty,self.item2.qty - data['items'][1]['qty'])
+
+        total_money = data['items'][0]['qty'] * self.item.get_sell_price()
+        total_money += data['items'][1]['qty'] * self.item2.get_sell_price()
+
+        total_ratio = data['accounts'][0]['ratio'] + data['accounts'][1]['ratio']
+
+        end_money = self.account.money - total_money * data['accounts'][0]['ratio'] / total_ratio
+        end_money2 = self.account2.money - total_money * data['accounts'][1]['ratio'] / total_ratio
+
+        self.assertEqual(reload(self.account).money,end_money)
+        self.assertEqual(reload(self.account2).money,end_money2)
+
+
+class ApproSerializerTests(SerializerTests):
+    @classmethod
+    def setUpClass(self):
+        super(ApproSerializerTests, self).setUpClass()
+
+        self.bar_account = get_default_account(self.bar)
+
+
+    def test_appro(self):
+        self.context = {'request': Mock(user=self.staff_user, bar=self.bar)}
+        data = {'type':'appro',
+                'items': [
+                    {'item':self.item.id, 'qty':10},
+                    {'item':self.item2.id, 'qty':100, 'price':250}
+                ]
+                }
+
+        s = ApproTransactionSerializer(data=data, context=self.context)
+        self.assertTrue(s.is_valid())
+        s.save()
+
+        self.assertEqual(reload(self.item).qty,self.item.qty + data['items'][0]['qty'])
+        self.assertEqual(reload(self.item2).qty,self.item2.qty + data['items'][1]['qty'])
+
+        end_money = self.bar_account.money
+        end_money -= data['items'][0]['qty'] * self.item.buy_price
+        end_money -= data['items'][1]['price']
+
+        self.assertEqual(reload(self.bar_account).money,end_money)
+
+    def test_appro_no_staff(self):
+        data = {'type':'appro',
+                'items': [
+                    {'item':self.item.id, 'qty':10}
+                ]
+                }
+
+        s = ApproTransactionSerializer(data=data, context=self.context)
+        self.assertTrue(s.is_valid())
+
+        with self.assertRaises(exceptions.PermissionDenied):
+            s.save()
+
+        self.assertEqual(reload(self.item).qty,self.item.qty)
+        self.assertEqual(reload(self.bar_account).money,self.bar_account.money)
+
+
+class InventorySerializerTests(SerializerTests):
+    def test_inventory(self):
+        self.context = {'request': Mock(user=self.staff_user, bar=self.bar)}
+        data = {'type':'inventory',
+                'items': [
+                    {'item':self.item.id, 'qty':3},
+                    {'item':self.item2.id, 'qty': 5}
+                ]
+                }
+
+        s = InventoryTransactionSerializer(data=data, context=self.context)
+        self.assertTrue(s.is_valid())
+        s.save()
+
+        self.assertEqual(reload(self.item).qty, data['items'][0]['qty'])
+        self.assertEqual(reload(self.item2).qty, data['items'][1]['qty'])
+
+    def test_inventory_no_staff(self):
+        self.context = {'request': Mock(user=self.user, bar=self.bar)}
+        data = {'type':'inventory',
+                'items': [
+                    {'item':self.item.id, 'qty':1},
+                    {'item':self.item2.id, 'qty': 7}
+                ]
+                }
+
+        s = InventoryTransactionSerializer(data=data, context=self.context)
+        self.assertTrue(s.is_valid())
+
+        with self.assertRaises(exceptions.PermissionDenied):
+            s.save()
+
+        self.assertEqual(reload(self.item).qty, self.item.qty)
+        self.assertEqual(reload(self.item2).qty, self.item2.qty)
