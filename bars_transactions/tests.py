@@ -180,7 +180,7 @@ class SerializerTests(APITestCase):
 
         self.sellitem, _ = SellItem.objects.get_or_create(bar=self.bar, name="Chocolat", tax=0.2)
         self.itemdetails, _ = ItemDetails.objects.get_or_create(name="Chocolat")
-        self.buyitem, _ = BuyItem.objects.get_or_create(item=self.itemdetails)
+        self.buyitem, _ = BuyItem.objects.get_or_create(details=self.itemdetails)
         self.stockitem, _ = StockItem.objects.get_or_create(bar=self.bar, sellitem=self.sellitem, details=self.itemdetails, price=1)
         self.stockitem.qty = 5
         self.stockitem.save()
