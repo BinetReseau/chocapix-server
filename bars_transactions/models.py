@@ -3,7 +3,7 @@ from django.db import models
 from bars_core.models.user import User
 from bars_django.utils import VirtualField
 from bars_core.models.bar import Bar
-from bars_base.models.item import Item
+from bars_items.models.stockitem import StockItem
 from bars_base.models.account import Account
 
 
@@ -107,9 +107,9 @@ class BaseOperation(models.Model):
 class ItemOperation(BaseOperation):
     class Meta:
         app_label = 'bars_transactions'
-    target = models.ForeignKey(Item)
+    target = models.ForeignKey(StockItem)
 
-    op_model = Item
+    op_model = StockItem
     op_model_field = 'qty'
 
 class AccountOperation(BaseOperation):
