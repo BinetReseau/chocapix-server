@@ -20,15 +20,29 @@ class SellItem(models.Model):
 
     deleted = models.BooleanField(default=False)
 
+    def calc_qty(self):
+        if not hasattr(self, '_qty'):
+            self._qty = sum(i.qty for i in self.stockitems.all())
+        return self._qty
+
+    def calc_price(self):
+        qty = self.calc_qty()
+        if qty != 0:
+            return sum(i.price * i.qty for i in self.stockitems.all()) / qty
+        else:
+            return sum(i.price for i in self.stockitems.all()) / self.stockitems.count()
+
     def __unicode__(self):
         return self.name
 
 class SellItemSerializer(serializers.ModelSerializer):
     class Meta:
         model = SellItem
-        fields = ("id", "bar", "stockitems", "name", "name_plural", "unit_name", "unit_name_plural", "unit_value", "tax", "deleted", "_type")
+        fields = ("id", "bar", "stockitems", "name", "name_plural", "unit_name", "unit_name_plural", "unit_value", "tax", "deleted", "qty", "price", "_type")
         read_only_fields = ("id", "bar")
     _type = VirtualField("SellItem")
+    qty = serializers.FloatField(read_only=True, source='calc_qty')
+    price = serializers.FloatField(read_only=True, source='calc_price')
 
 
 class SellItemViewSet(viewsets.ModelViewSet):
