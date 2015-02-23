@@ -9,7 +9,7 @@ from bars_base.models.account import Account
 
 from mock import Mock
 from serializers import (BaseTransactionSerializer, BuyTransactionSerializer, GiveTransactionSerializer,
-                        ThrowTransactionSerializer, DepositTransactionSerializer,)
+                        ThrowTransactionSerializer, DepositTransactionSerializer,PunishTransactionSerializer,)
 from django.http import Http404
 from rest_framework import exceptions, serializers
 
@@ -68,6 +68,10 @@ class SerializerTests(APITestCase):
         self.wrong_user, _ = User.objects.get_or_create(username='wrong_user')
         self.wrong_account, _ = Account.objects.get_or_create(bar=self.wrong_bar, owner=self.wrong_user)
 
+        self.staff_user, _ = User.objects.get_or_create(username='staff_user')
+        self.staff_account, _ = Account.objects.get_or_create(bar=self.bar, owner=self.staff_user)
+        self.staff_role, _ = Role.objects.get_or_create(name='staff', bar=self.bar, user=self.staff_user)
+
         self.itemdetail, _ = ItemDetails.objects.get_or_create(name='Pizza')
         self.item, _ = Item.objects.get_or_create(details=self.itemdetail, bar=self.bar, price=1, tax=0.2)
         self.item.qty = 5
@@ -84,6 +88,10 @@ class SerializerTests(APITestCase):
         self.account.delete()
         self.wrong_user.delete()
         self.wrong_account.delete()
+
+        self.staff_user.delete()
+        self.staff_account.delete()
+        self.staff_role.delete()
 
         self.itemdetail.delete()
         self.item.delete()
@@ -151,14 +159,6 @@ class GiveSerializerTests(SerializerTests):
 
 
 class ThrowSerializerTests(SerializerTests):
-    @classmethod
-    def setUpClass(self):
-        super(ThrowSerializerTests, self).setUpClass()
-
-    @classmethod
-    def tearDownClass(self):
-        super(ThrowSerializerTests, self).tearDownClass()
-
     def test_throw(self):
         data = {'type':'throw', 'item':self.item.id, 'qty':1}
 
@@ -179,6 +179,12 @@ class ThrowSerializerTests(SerializerTests):
             s.save()
         self.assertEqual(reload(self.item).qty, self.item.qty)
 
+    def test_throw_negative(self):
+        data = {'type':'throw', 'item':self.item.id, 'qty':-1}
+
+        s = ThrowTransactionSerializer(data=data, context=self.context)
+        self.assertFalse(s.is_valid())
+
 from bars_base.models.account import get_default_account
 
 class DepositSerializerTests(SerializerTests):
@@ -189,20 +195,9 @@ class DepositSerializerTests(SerializerTests):
         self.bar_account = get_default_account(self.bar)
         self.wrong_bar_account = get_default_account(self.wrong_bar)
 
-        self.user2, _ = User.objects.get_or_create(username='user2')
-        self.account2, _ = Account.objects.get_or_create(bar=self.bar, owner=self.user2)
-        self.role, _ = Role.objects.get_or_create(name='staff', bar=self.bar, user=self.user2)
-
-    @classmethod
-    def tearDownClass(self):
-        super(DepositSerializerTests, self).tearDownClass()
-
-        self.user2.delete()
-        self.account2.delete()
-        self.role.delete()
 
     def test_deposit_staff(self):
-        self.context = {'request': Mock(user=self.user2, bar=self.bar)}
+        self.context = {'request': Mock(user=self.staff_user, bar=self.bar)}
         data = {'type':'deposit', 'account':self.account.id, 'amount':30}
 
         s = DepositTransactionSerializer(data=data, context=self.context)
@@ -233,3 +228,37 @@ class DepositSerializerTests(SerializerTests):
             s.save()
         self.assertEqual(reload(self.wrong_account).money,self.wrong_account.money)
         self.assertEqual(reload(self.wrong_bar_account).money,self.wrong_bar_account.money)
+
+    def test_deposit_negative(self):
+        self.context = {'request': Mock(user=self.staff_user, bar=self.bar)}
+        data = {'type':'deposit', 'account':self.account.id, 'amount':-30}
+
+        s = DepositTransactionSerializer(data=data, context=self.context)
+        self.assertFalse(s.is_valid())
+
+class PunishSerializerTests(SerializerTests):
+    def test_punish(self):
+        self.context = {'request': Mock(user=self.staff_user, bar=self.bar)}
+        data = {'type':'punish', 'account':self.account.id, 'amount':50, 'motive':'vaisselle'}
+
+        s = PunishTransactionSerializer(data=data, context=self.context)
+        self.assertTrue(s.is_valid())
+        s.save()
+
+        self.assertEqual(reload(self.account).money,self.account.money - data['amount'])
+
+    def test_punish_no_staff(self):
+        data = {'type':'punish', 'account':self.account.id, 'amount':50, 'motive':'vaisselle'}
+
+        s = PunishTransactionSerializer(data=data, context=self.context)
+        self.assertTrue(s.is_valid())
+
+        with self.assertRaises(exceptions.PermissionDenied):
+            s.save()
+        self.assertEqual(reload(self.account).money,self.account.money)
+
+    def test_punish_negative(self):
+        data = {'type':'punish', 'account':self.account.id, 'amount':-50, 'motive':'cadeau'}
+
+        s = PunishTransactionSerializer(data=data, context=self.context)
+        self.assertFalse(s.is_valid())
