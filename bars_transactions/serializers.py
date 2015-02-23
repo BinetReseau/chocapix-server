@@ -354,7 +354,7 @@ class ApproTransactionSerializer(BaseTransactionSerializer):
             else:
                 total += priceobj.price * i["qty"]
 
-            stockitem = StockItem.objects.all(bar=t.bar, details=buyitem.details)
+            stockitem = StockItem.objects.get(bar=t.bar, details=buyitem.details)
             t.itemoperation_set.create(
                 target=stockitem,
                 delta=i["qty"])
