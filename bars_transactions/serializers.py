@@ -69,10 +69,15 @@ class ItemQtySerializer(serializers.Serializer):
         return item
 
 
-class BuyItemQtyPriceSerializer(ItemQtySerializer):
+class BuyItemQtyPriceSerializer(serializers.Serializer):
     buyitem = serializers.PrimaryKeyRelatedField(queryset=BuyItem.objects.all())
     qty = serializers.FloatField()
     price = serializers.FloatField(required=False)
+
+    def validate_qty(self, value):
+        if value < 0:
+            raise ValidationError("Quantity must be positive")
+        return value
 
     def validate_price(self, value):
         if value is not None and value < 0:
