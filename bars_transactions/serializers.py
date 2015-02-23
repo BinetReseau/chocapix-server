@@ -5,6 +5,7 @@ from rest_framework import exceptions
 
 from bars_base.models.account import Account, get_default_account
 from bars_items.models.stockitem import StockItem
+from bars_items.models.buyitem import BuyItem
 from bars_transactions.models import Transaction
 
 
@@ -68,7 +69,9 @@ class ItemQtySerializer(serializers.Serializer):
         return item
 
 
-class ItemQtyPriceSerializer(ItemQtySerializer):
+class BuyItemQtyPriceSerializer(ItemQtySerializer):
+    buyitem = serializers.PrimaryKeyRelatedField(queryset=BuyItem.objects.all())
+    qty = serializers.FloatField()
     price = serializers.FloatField(required=False)
 
     def validate_price(self, value):
@@ -330,23 +333,25 @@ class MealTransactionSerializer(BaseTransactionSerializer):
 
 
 class ApproTransactionSerializer(BaseTransactionSerializer):
-    items = ItemQtyPriceSerializer(many=True)
+    items = BuyItemQtyPriceSerializer(many=True)
 
     def create(self, data):
         t = super(ApproTransactionSerializer, self).create(data)
 
         total = 0
         for i in data["items"]:
-            item = i["item"]
+            buyitem = i["buyitem"]
+            priceobj, _ = BuyItemPrice.objects.get_or_create(bar=t.bar, buyitem=buyitem)
             if "price" in i:
-                item.buy_price = i["price"] / i["qty"]
-                item.save()
+                priceobj.price = i["price"] / i["qty"]
+                priceobj.save()
                 total += i["price"]
             else:
-                total += item.buy_price * i["qty"]
+                total += priceobj.price * i["qty"]
 
+            stockitem = StockItem.objects.all(bar=t.bar, details=buyitem.details)
             t.itemoperation_set.create(
-                target=item,
+                target=stockitem,
                 delta=i["qty"])
 
         t.accountoperation_set.create(
