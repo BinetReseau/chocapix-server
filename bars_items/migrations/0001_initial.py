@@ -7,7 +7,7 @@ from django.db import models, migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('bars_core', '0005_user_email'),
+        ('bars_core', '0001_initial'),
     ]
 
     operations = [
@@ -59,6 +59,7 @@ class Migration(migrations.Migration):
                 ('unit_name_plural', models.CharField(max_length=100, blank=True)),
                 ('unit_value', models.FloatField(default=1)),
                 ('tax', models.FloatField(default=0)),
+                ('deleted', models.BooleanField(default=False)),
                 ('bar', models.ForeignKey(to='bars_core.Bar')),
             ],
             options={
@@ -71,9 +72,10 @@ class Migration(migrations.Migration):
                 ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
                 ('qty', models.FloatField(default=0)),
                 ('price', models.FloatField()),
+                ('deleted', models.BooleanField(default=False)),
                 ('bar', models.ForeignKey(to='bars_core.Bar')),
                 ('details', models.ForeignKey(to='bars_items.ItemDetails')),
-                ('sellitem', models.ForeignKey(related_name='stockitems', to='bars_items.SellItem')),
+                ('sellitem', models.ForeignKey(related_name='stockitems', to='bars_items.SellItem', null=True)),
             ],
             options={
             },
