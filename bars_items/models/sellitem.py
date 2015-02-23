@@ -35,6 +35,7 @@ class SellItem(models.Model):
     def __unicode__(self):
         return self.name
 
+
 class SellItemSerializer(serializers.ModelSerializer):
     class Meta:
         model = SellItem
@@ -43,6 +44,14 @@ class SellItemSerializer(serializers.ModelSerializer):
     _type = VirtualField("SellItem")
     qty = serializers.FloatField(read_only=True, source='calc_qty')
     price = serializers.FloatField(read_only=True, source='calc_price')
+
+    def create(self, data):
+        request = self.context['request']
+
+        item = SellItem(**data)
+        item.bar = request.bar
+        item.save()
+        return item
 
 
 class SellItemViewSet(viewsets.ModelViewSet):

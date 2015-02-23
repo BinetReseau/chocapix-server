@@ -1,5 +1,6 @@
 from django.db import models
 from rest_framework import viewsets, serializers, permissions
+from rest_framework.validators import UniqueTogetherValidator
 
 from bars_django.utils import VirtualField
 from bars_core.models.bar import Bar
@@ -49,6 +50,10 @@ class BuyItemPriceSerializer(serializers.ModelSerializer):
         extra_kwargs = {'bar': {'required': False}}
 
     _type = VirtualField("BuyItemPrice")
+
+    def get_validators(self):
+        validators = super(BuyItemPriceSerializer, self).get_validators()
+        return filter(lambda v:not isinstance(v, UniqueTogetherValidator), validators)
 
     def create(self, data):
         request = self.context['request']
