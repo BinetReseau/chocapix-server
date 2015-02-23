@@ -12,11 +12,11 @@ class BuyItem(models.Model):
     class Meta:
         app_label = 'bars_items'
     barcode = models.CharField(max_length=25, blank=True)
-    item = models.ForeignKey(ItemDetails)
+    details = models.ForeignKey(ItemDetails)
     itemqty = models.FloatField(default=1)
 
     def __unicode__(self):
-        return "%s * %f %s" % (unicode(self.item), self.itemqty * self.item.unit_value, self.item.unit_name)
+        return "%s * %f %s" % (unicode(self.details), self.itemqty * self.details.unit_value, self.details.unit_name)
 
 class BuyItemSerializer(serializers.ModelSerializer):
     class Meta:
@@ -28,7 +28,7 @@ class BuyItemViewSet(viewsets.ModelViewSet):
     queryset = BuyItem.objects.all()
     serializer_class = BuyItemSerializer
     permission_classes = (permissions.AllowAny,)  # TODO: temporary
-    filter_fields = ['barcode', 'item']
+    filter_fields = ['barcode', 'details']
 
 
 
@@ -38,7 +38,7 @@ class BuyItemPrice(models.Model):
         app_label = 'bars_items'
     bar = models.ForeignKey(Bar)
     buyitem = models.ForeignKey(BuyItem)
-    price = models.FloatField(default=1)
+    price = models.FloatField(default=0)
 
     def __unicode__(self):
         return "%s (%s)" % (unicode(self.buyitem), unicode(self.bar))
