@@ -338,7 +338,12 @@ class ApproTransactionSerializer(BaseTransactionSerializer):
         total = 0
         for i in data["items"]:
             item = i["item"]
-            total += i["price"]
+            if "price" in i:
+                item.buy_price = i["price"] / i["qty"]
+                item.save()
+                total += i["price"]
+            else:
+                total += item.buy_price * i["qty"]
 
             t.itemoperation_set.create(
                 target=item,
