@@ -27,7 +27,7 @@ from bars_base.models.account import Account
 #
 #     def test_get_item(self):
 #         response = self.client.get('/item/')
-#         self.assertEqual(len(response.data), Item.objects.all().count())
+#         self.assertEqual(len(response.data), Item.objects.count())
 #         self.assertEqual(response.data[0]['price'], self.item.price)
 #
 #
