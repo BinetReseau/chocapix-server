@@ -287,6 +287,13 @@ class MealSerializerTests(SerializerTests):
         self.account2.money = 500
         self.account2.save()
 
+    @classmethod
+    def tearDownClass(self):
+        self.user2.delete()
+        self.account2.delete()
+
+        super(MealSerializerTests, self).tearDownClass()
+
 
     def test_meal(self):
         data = {'type':'meal', 'name':'',
