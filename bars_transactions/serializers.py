@@ -5,7 +5,7 @@ from rest_framework import exceptions
 
 from bars_base.models.account import Account, get_default_account
 from bars_items.models.stockitem import StockItem
-from bars_items.models.buyitem import BuyItem
+from bars_items.models.buyitem import BuyItem, BuyItemPrice
 from bars_transactions.models import Transaction
 
 
