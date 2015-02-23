@@ -1,0 +1,235 @@
+from rest_framework.test import APITestCase
+
+from bars_core.models.user import User
+from bars_core.models.role import Role
+from bars_core.models.bar import Bar
+from bars_base.models.item import Item, ItemDetails
+from bars_base.models.account import Account
+
+
+from mock import Mock
+from serializers import (BaseTransactionSerializer, BuyTransactionSerializer, GiveTransactionSerializer,
+                        ThrowTransactionSerializer, DepositTransactionSerializer,)
+from django.http import Http404
+from rest_framework import exceptions, serializers
+
+
+def reload(obj):
+    return obj.__class__.objects.get(pk=obj.pk)
+
+
+class BaseSerializerTests(APITestCase):
+    @classmethod
+    def setUpClass(self):
+        self.bar, _ = Bar.objects.get_or_create(id='barjone')
+        self.wrong_bar, _ = Bar.objects.get_or_create(id='barrouje')
+
+        self.user, _ = User.objects.get_or_create(username='user')
+        self.user.has_perm = Mock(side_effect=lambda perm, bar: bar.id == self.bar.id)
+
+        self.context = {'request': Mock(user=self.user, bar=self.bar)}
+        self.context_wrong_bar = {'request': Mock(user=self.user, bar=self.wrong_bar)}
+        self.context_no_bar = {'request': Mock(user=self.user, bar=None)}
+
+        self.data = {'type': 'some_type'}
+
+    def test_base_transaction(self):
+        s = BaseTransactionSerializer(data=self.data, context=self.context)
+        self.assertTrue(s.is_valid())
+        t = s.save()
+
+        self.assertEqual(t.bar.id, self.bar.id)
+
+    def test_base_transaction_wrong_bar(self):
+        s = BaseTransactionSerializer(data=self.data, context=self.context_wrong_bar)
+        self.assertTrue(s.is_valid())
+
+        with self.assertRaises(exceptions.PermissionDenied):
+            s.save()
+
+    def test_base_transaction_no_bar(self):
+        s = BaseTransactionSerializer(data=self.data, context=self.context_no_bar)
+        self.assertTrue(s.is_valid())
+
+        with self.assertRaises(Http404):
+            s.save()
+
+
+class SerializerTests(APITestCase):
+    @classmethod
+    def setUpClass(self):
+        self.bar, _ = Bar.objects.get_or_create(id='barjone')
+        self.wrong_bar, _ = Bar.objects.get_or_create(id='barrouje')
+
+        self.user, _ = User.objects.get_or_create(username='user')
+        self.account, _ = Account.objects.get_or_create(bar=self.bar, owner=self.user)
+        self.account.money = 100
+        self.account.save()
+        self.wrong_user, _ = User.objects.get_or_create(username='wrong_user')
+        self.wrong_account, _ = Account.objects.get_or_create(bar=self.wrong_bar, owner=self.wrong_user)
+
+        self.itemdetail, _ = ItemDetails.objects.get_or_create(name='Pizza')
+        self.item, _ = Item.objects.get_or_create(details=self.itemdetail, bar=self.bar, price=1, tax=0.2)
+        self.item.qty = 5
+        self.item.save()
+
+        self.context = {'request': Mock(user=self.user, bar=self.bar)}
+
+    @classmethod
+    def tearDownClass(self):
+        self.bar.delete()
+        self.wrong_bar.delete()
+
+        self.user.delete()
+        self.account.delete()
+        self.wrong_user.delete()
+        self.wrong_account.delete()
+
+        self.itemdetail.delete()
+        self.item.delete()
+
+
+class BuySerializerTests(SerializerTests):
+    def test_buy(self):
+        data = {'type':'buy', 'item':self.item.id, 'qty':3}
+        s = BuyTransactionSerializer(data=data, context=self.context)
+        self.assertTrue(s.is_valid())
+        s.save()
+
+        self.assertEqual(reload(self.item).qty, self.item.qty - data['qty'])
+        self.assertEqual(reload(self.account).money, self.account.money - self.item.get_sell_price() * data['qty'])
+
+    def test_buy_itemdeleted(self):
+        deleted_item, _ = Item.objects.get_or_create(details=self.itemdetail, bar=self.bar, price=1, deleted=True)
+        data = {'type':'buy', 'item':deleted_item.id, 'qty':3}
+        s = BuyTransactionSerializer(data=data, context=self.context)
+
+        with self.assertRaises(serializers.ValidationError) as err:
+            s.is_valid(raise_exception=True)
+        self.assertEqual(err.exception.detail, {'item': ['Item is deleted']})
+
+    def test_buy_other_bar(self):
+        wrong_item, _ = Item.objects.get_or_create(details=self.itemdetail, bar=self.wrong_bar, price=1)
+        data = {'type':'buy', 'item':wrong_item.id, 'qty':3}
+        s = BuyTransactionSerializer(data=data, context=self.context)
+
+        with self.assertRaises(serializers.ValidationError) as err:
+            s.is_valid(raise_exception=True)
+        self.assertEqual(err.exception.detail, {'item': ['Cannot buy across bars']})
+
+
+class GiveSerializerTests(SerializerTests):
+    @classmethod
+    def setUpClass(self):
+        super(GiveSerializerTests, self).setUpClass()
+        self.user2, _ = User.objects.get_or_create(username='user2')
+        self.account2, _ = Account.objects.get_or_create(bar=self.bar, owner=self.user2)
+
+    @classmethod
+    def tearDownClass(self):
+        self.user2.delete()
+        self.account2.delete()
+        super(GiveSerializerTests, self).tearDownClass()
+
+
+    def test_give(self):
+        data = {'type':'give', 'account':self.account2.id, 'amount':10}
+        s = GiveTransactionSerializer(data=data, context=self.context)
+        self.assertTrue(s.is_valid())
+        s.save()
+
+        self.assertEqual(reload(self.account).money, self.account.money - data['amount'])
+        self.assertEqual(reload(self.account2).money, self.account2.money + data['amount'])
+
+    def test_give_other_bar(self):
+        data = {'type':'give', 'account':self.wrong_account.id, 'amount':10}
+        s = GiveTransactionSerializer(data=data, context=self.context)
+
+        with self.assertRaises(serializers.ValidationError) as err:
+            s.is_valid(raise_exception=True)
+        self.assertEqual(err.exception.detail, {'account': ['Cannot give across bars']})
+
+
+class ThrowSerializerTests(SerializerTests):
+    @classmethod
+    def setUpClass(self):
+        super(ThrowSerializerTests, self).setUpClass()
+
+    @classmethod
+    def tearDownClass(self):
+        super(ThrowSerializerTests, self).tearDownClass()
+
+    def test_throw(self):
+        data = {'type':'throw', 'item':self.item.id, 'qty':1}
+
+        s = ThrowTransactionSerializer(data=data, context=self.context)
+        self.assertTrue(s.is_valid())
+        s.save()
+
+        self.assertEqual(reload(self.item).qty, self.item.qty - 1)
+
+    def test_thow_other_bar(self):
+        self.context = {'request': Mock(user=self.user, bar=self.wrong_bar)}
+        data = {'type':'throw', 'item':self.item.id, 'qty':1}
+
+        s = ThrowTransactionSerializer(data=data, context=self.context)
+        self.assertTrue(s.is_valid())
+
+        with self.assertRaises(exceptions.PermissionDenied):
+            s.save()
+        self.assertEqual(reload(self.item).qty, self.item.qty)
+
+from bars_base.models.account import get_default_account
+
+class DepositSerializerTests(SerializerTests):
+    @classmethod
+    def setUpClass(self):
+        super(DepositSerializerTests, self).setUpClass()
+
+        self.bar_account = get_default_account(self.bar)
+        self.wrong_bar_account = get_default_account(self.wrong_bar)
+
+        self.user2, _ = User.objects.get_or_create(username='user2')
+        self.account2, _ = Account.objects.get_or_create(bar=self.bar, owner=self.user2)
+        self.role, _ = Role.objects.get_or_create(name='staff', bar=self.bar, user=self.user2)
+
+    @classmethod
+    def tearDownClass(self):
+        super(DepositSerializerTests, self).tearDownClass()
+
+        self.user2.delete()
+        self.account2.delete()
+        self.role.delete()
+
+    def test_deposit_staff(self):
+        self.context = {'request': Mock(user=self.user2, bar=self.bar)}
+        data = {'type':'deposit', 'account':self.account.id, 'amount':30}
+
+        s = DepositTransactionSerializer(data=data, context=self.context)
+        self.assertTrue(s.is_valid())
+        s.save()
+
+        self.assertEqual(reload(self.account).money,self.account.money + data['amount'])
+        self.assertEqual(reload(self.bar_account).money,self.bar_account.money + data['amount'])
+
+    def test_deposit_no_staff(self):
+        data = {'type':'deposit', 'account':self.account.id, 'amount':40}
+
+        s = DepositTransactionSerializer(data=data, context=self.context)
+        self.assertTrue(s.is_valid())
+
+        with self.assertRaises(exceptions.PermissionDenied):
+            s.save()
+        self.assertEqual(reload(self.account).money,self.account.money)
+        self.assertEqual(reload(self.bar_account).money,self.bar_account.money)
+
+    def test_deposit_other_bar(self):
+        data = {'type':'deposit','account':self.wrong_account.id,'amount':30}
+
+        s = DepositTransactionSerializer(data=data, context=self.context)
+        self.assertTrue(s.is_valid(raise_exception=True))
+
+        with self.assertRaises(exceptions.PermissionDenied):
+            s.save()
+        self.assertEqual(reload(self.wrong_account).money,self.wrong_account.money)
+        self.assertEqual(reload(self.wrong_bar_account).money,self.wrong_bar_account.money)
