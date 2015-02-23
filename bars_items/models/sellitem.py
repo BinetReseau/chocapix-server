@@ -41,6 +41,8 @@ class SellItemSerializer(serializers.ModelSerializer):
         model = SellItem
         fields = ("id", "bar", "stockitems", "name", "name_plural", "unit_name", "unit_name_plural", "unit_value", "tax", "deleted", "qty", "price", "_type")
         read_only_fields = ("id", "bar")
+        extra_kwargs = {'stockitems': {'required': False}}
+
     _type = VirtualField("SellItem")
     qty = serializers.FloatField(read_only=True, source='calc_qty')
     price = serializers.FloatField(read_only=True, source='calc_price')
