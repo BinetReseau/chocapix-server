@@ -33,7 +33,8 @@ class StockItem(models.Model):
 class StockItemSerializer(serializers.ModelSerializer):
     class Meta:
         model = StockItem
-        read_only_fields = ('bar', 'details', 'qty')
+        read_only_fields = ('bar', 'qty')
+        extra_kwargs = {'bar': {'required': False}}
     _type = VirtualField("StockItem")
 
     def create(self, data):
