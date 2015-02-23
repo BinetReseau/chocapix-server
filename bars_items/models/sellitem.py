@@ -26,7 +26,7 @@ class SellItem(models.Model):
 class SellItemSerializer(serializers.ModelSerializer):
     class Meta:
         model = SellItem
-        fields = ("bar", "stockitems", "name", "name_plural", "unit_name", "unit_name_plural", "unit_value", "tax")
+        fields = ("bar", "stockitems", "name", "name_plural", "unit_name", "unit_name_plural", "unit_value", "tax", "_type")
         read_only_fields = ("bar",)
     _type = VirtualField("SellItem")
 
