@@ -29,8 +29,10 @@ class SellItem(models.Model):
         qty = self.calc_qty()
         if qty != 0:
             return sum(i.price * i.qty for i in self.stockitems.all()) / qty
-        else:
+        elif self.stockitems.count() != 0:
             return sum(i.price for i in self.stockitems.all()) / self.stockitems.count()
+        else:
+            return 0
 
     def __unicode__(self):
         return self.name
