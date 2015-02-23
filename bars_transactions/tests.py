@@ -112,53 +112,10 @@ class TransactionTests(APITestCase):
         end_qty = Item.objects.get(id=self.item.id).qty
         self.assertEqual(end_qty, start_qty)
 
-    def test_create_throwtransaction(self):
-        data = {'type':'throw', 'item':1, 'qty':1}
-        start_qty = Item.objects.get(id=1).qty
-
-        self.client.force_authenticate(self.user)
-
-        response = self.client.post('/transaction/?bar=natationjone',data)
-        self.assertEqual(response.status_code, 201)
-        end_qty = Item.objects.get(id=1).qty
-        self.assertEqual(end_qty, start_qty - 1)
-
-    def test_create_throwtransaction_unauthorized_user(self):
-        data = {'type':'throw', 'item':1, 'qty':1}
-        start_qty = Item.objects.get(id=1).qty
-
-        self.client.force_authenticate(self.user4)
-
-        response = self.client.post('/transaction/?bar=natationjone',data)
-        self.assertEqual(response.status_code, 403)
-        end_qty = Item.objects.get(id=1).qty
-        self.assertEqual(end_qty, start_qty)
-
-    def test_create_deposittransaction_staff(self):
-        account = Account.objects.get(bar=self.bar, owner=self.user)
-        data = {'type':'deposit', 'account':account.id, 'amount':30}
-        start_money = account.money
-
-        self.client.force_authenticate(self.user3)
-
-        response = self.client.post('/transaction/?bar=natationjone',data)
-        self.assertEqual(response.status_code, 201)
-        end_money = Account.objects.get(bar=self.bar, owner=self.user).money
-        self.assertEqual(end_money,start_money + 30)
-
-    def test_create_deposittransaction_unauthorized_user(self):
-        account = Account.objects.get(bar=self.bar, owner=self.user)
-        data = {'type':'deposit', 'account':account.id, 'amount':40}
-        start_money = account.money
-
-        self.client.force_authenticate(self.user)
-
-        response = self.client.post('/transaction/?bar=natationjone',data)
-        self.assertEqual(response.status_code, 403)
-
 
 from mock import Mock
-from serializers import BaseTransactionSerializer, BuyTransactionSerializer, GiveTransactionSerializer
+from serializers import (BaseTransactionSerializer, BuyTransactionSerializer, GiveTransactionSerializer,
+                        ThrowTransactionSerializer, DepositTransactionSerializer,)
 from django.http import Http404
 from rest_framework import exceptions, serializers
 
@@ -297,3 +254,88 @@ class GiveSerializerTests(SerializerTests):
         with self.assertRaises(serializers.ValidationError) as err:
             s.is_valid(raise_exception=True)
         self.assertEqual(err.exception.detail, {'account': ['Cannot give across bars']})
+
+
+class ThrowSerializerTests(SerializerTests):
+    @classmethod
+    def setUpClass(self):
+        super(ThrowSerializerTests, self).setUpClass()
+
+    @classmethod
+    def tearDownClass(self):
+        super(ThrowSerializerTests, self).tearDownClass()
+
+    def test_throw(self):
+        data = {'type':'throw', 'item':self.item.id, 'qty':1}
+
+        s = ThrowTransactionSerializer(data=data, context=self.context)
+        self.assertTrue(s.is_valid())
+        s.save()
+
+        self.assertEqual(reload(self.item).qty, self.item.qty - 1)
+
+    def test_thow_other_bar(self):
+        self.context = {'request': Mock(user=self.user, bar=self.wrong_bar)}
+        data = {'type':'throw', 'item':self.item.id, 'qty':1}
+
+        s = ThrowTransactionSerializer(data=data, context=self.context)
+        self.assertTrue(s.is_valid())
+
+        with self.assertRaises(exceptions.PermissionDenied):
+            s.save()
+        self.assertEqual(reload(self.item).qty, self.item.qty)
+
+from bars_base.models.account import get_default_account
+
+class DepositSerializerTests(SerializerTests):
+    @classmethod
+    def setUpClass(self):
+        super(DepositSerializerTests, self).setUpClass()
+
+        self.bar_account = get_default_account(self.bar)
+        self.wrong_bar_account = get_default_account(self.wrong_bar)
+
+        self.user2, _ = User.objects.get_or_create(username='user2')
+        self.account2, _ = Account.objects.get_or_create(bar=self.bar, owner=self.user2)
+        self.role, _ = Role.objects.get_or_create(name='staff', bar=self.bar, user=self.user2)
+
+    @classmethod
+    def tearDownClass(self):
+        super(DepositSerializerTests, self).tearDownClass()
+
+        self.user2.delete()
+        self.account2.delete()
+        self.role.delete()
+
+    def test_deposit_staff(self):
+        self.context = {'request': Mock(user=self.user2, bar=self.bar)}
+        data = {'type':'deposit', 'account':self.account.id, 'amount':30}
+
+        s = DepositTransactionSerializer(data=data, context=self.context)
+        self.assertTrue(s.is_valid())
+        s.save()
+
+        self.assertEqual(reload(self.account).money,self.account.money + data['amount'])
+        self.assertEqual(reload(self.bar_account).money,self.bar_account.money + data['amount'])
+
+    def test_deposit_no_staff(self):
+        data = {'type':'deposit', 'account':self.account.id, 'amount':40}
+
+        s = DepositTransactionSerializer(data=data, context=self.context)
+        self.assertTrue(s.is_valid())
+
+        with self.assertRaises(exceptions.PermissionDenied):
+            s.save()
+        self.assertEqual(reload(self.account).money,self.account.money)
+        self.assertEqual(reload(self.bar_account).money,self.bar_account.money)
+
+    def test_deposit_other_bar(self):
+        data = {'type':'deposit','account':self.wrong_account.id,'amount':30}
+
+        s = DepositTransactionSerializer(data=data, context=self.context)
+        self.assertTrue(s.is_valid(raise_exception=True))
+
+        with self.assertRaises(exceptions.PermissionDenied):
+            s.save()
+        self.assertEqual(reload(self.wrong_account).money,self.wrong_account.money)
+        self.assertEqual(reload(self.wrong_bar_account).money,self.wrong_bar_account.money)
