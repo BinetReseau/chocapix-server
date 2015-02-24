@@ -1,7 +1,7 @@
 from django.db import models
 from rest_framework import viewsets, serializers, permissions
 
-from bars_django.utils import VirtualField
+from bars_django.utils import VirtualField, CurrentBarCreateOnlyDefault
 from bars_core.models.bar import Bar
 
 
@@ -45,16 +45,9 @@ class SellItemSerializer(serializers.ModelSerializer):
         extra_kwargs = {'stockitems': {'required': False}}
 
     _type = VirtualField("SellItem")
+    bar = serializers.PrimaryKeyRelatedField(read_only=True, default=CurrentBarCreateOnlyDefault())
     fuzzy_qty = serializers.FloatField(read_only=True, source='calc_qty')
     fuzzy_price = serializers.FloatField(read_only=True, source='calc_price')
-
-    def create(self, data):
-        request = self.context['request']
-
-        item = SellItem(**data)
-        item.bar = request.bar
-        item.save()
-        return item
 
 
 class SellItemViewSet(viewsets.ModelViewSet):

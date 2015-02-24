@@ -2,7 +2,7 @@ from django.db import models
 from rest_framework import viewsets, serializers, permissions
 from rest_framework.validators import UniqueTogetherValidator
 
-from bars_django.utils import VirtualField
+from bars_django.utils import VirtualField, CurrentBarCreateOnlyDefault
 from bars_core.models.bar import Bar
 from bars_items.models.itemdetails import ItemDetails
 from bars_items.models.sellitem import SellItem
@@ -51,25 +51,11 @@ class StockItemSerializer(serializers.ModelSerializer):
     class Meta:
         model = StockItem
         exclude = ('unit_factor',)
-        read_only_fields = ('bar', 'qty')
-        extra_kwargs = {'bar': {'required': False}}
 
     _type = VirtualField("StockItem")
-    qty = serializers.FloatField(source='sell_qty')
+    bar = serializers.PrimaryKeyRelatedField(read_only=True, default=CurrentBarCreateOnlyDefault())
+    qty = serializers.FloatField(source='sell_qty', read_only=True)
     price = serializers.FloatField(source='sell_price')
-
-    def get_validators(self):
-        validators = super(StockItemSerializer, self).get_validators()
-        return filter(lambda v:not isinstance(v, UniqueTogetherValidator), validators)
-
-    def create(self, data):
-        request = self.context['request']
-
-        item = StockItem(**data)
-        item.qty = 0
-        item.bar = request.bar
-        item.save()
-        return item
 
 
 class StockItemViewSet(viewsets.ModelViewSet):

@@ -2,7 +2,7 @@ from django.db import models
 from rest_framework import viewsets, serializers, permissions
 from rest_framework.validators import UniqueTogetherValidator
 
-from bars_django.utils import VirtualField
+from bars_django.utils import VirtualField, CurrentBarCreateOnlyDefault
 from bars_core.models.bar import Bar
 from bars_core.perms import PerBarPermissionsOrAnonReadOnly
 from bars_items.models.itemdetails import ItemDetails
@@ -47,21 +47,10 @@ class BuyItemPriceSerializer(serializers.ModelSerializer):
     class Meta:
         model = BuyItemPrice
         read_only_fields = ("bar",)
-        extra_kwargs = {'bar': {'required': False}}
 
     _type = VirtualField("BuyItemPrice")
+    bar = serializers.PrimaryKeyRelatedField(read_only=True, default=CurrentBarCreateOnlyDefault())
 
-    def get_validators(self):
-        validators = super(BuyItemPriceSerializer, self).get_validators()
-        return filter(lambda v:not isinstance(v, UniqueTogetherValidator), validators)
-
-    def create(self, data):
-        request = self.context['request']
-
-        bip = BuyItemPrice(**data)
-        bip.bar = request.bar
-        bip.save()
-        return bip
 
 
 class BuyItemPriceViewSet(viewsets.ModelViewSet):
