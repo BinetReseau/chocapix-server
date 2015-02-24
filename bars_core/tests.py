@@ -2,12 +2,13 @@ from rest_framework.test import APITestCase
 from bars_core.models.user import User, UserSerializer
 
 class BackendTests(APITestCase):
-    def setUp(self):
-        User.objects.create_user("admin", "admin")
+    @classmethod
+    def setUpClass(self):
+        User.objects.create_user("test", "test")
 
 
     def test_login(self):
-        data = {'username': 'admin', 'password': 'admin'}
+        data = {'username': 'test', 'password': 'test'}
         response = self.client.post('/api-token-auth/', data, format='json')
 
         self.assertEqual(response.status_code, 200)
@@ -17,16 +18,16 @@ class BackendTests(APITestCase):
         response = self.client.get('/user/me/', HTTP_AUTHORIZATION=auth, format='json')
 
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.data['username'], "admin")
+        self.assertEqual(response.data['username'], "test")
 
     def test_login_wrong_password(self):
-        data = {'username': 'admin', 'password': 'sdgez'}
+        data = {'username': 'test', 'password': 'sdgez'}
         response = self.client.post('/api-token-auth/', data, format='json')
 
         self.assertEqual(response.status_code, 400)
 
     def test_login_wrong_user(self):
-        data = {'username': 'not_admin', 'password': 'admin'}
+        data = {'username': 'not_admin', 'password': 'test'}
         response = self.client.post('/api-token-auth/', data, format='json')
 
         self.assertEqual(response.status_code, 400)
@@ -40,12 +41,19 @@ class BackendTests(APITestCase):
 
 
 class UserTests(APITestCase):
-    def setUp(self):
+    @classmethod
+    def setUpClass(self):
         self.admin = User.objects.create_user("admin", "admin")
+
         self.user = User.objects.create_user("bob", "password")
         serializer = UserSerializer(self.user)
         self.data = serializer.data
         self.user_url = '/user/%d/' % self.user.id
+
+    def setUp(self):
+        self.data['username'] = "bob"
+        self.user.username = "bob"
+        self.user.save()
 
 
     def test_get_user_not_authed(self):
@@ -58,7 +66,7 @@ class UserTests(APITestCase):
         self.client.force_authenticate(user=self.admin)
         response = self.client.get(self.user_url)
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.data, self.data)
+        self.assertEqual(response.data['username'], self.data['username'])
 
 
     def test_change_user_not_authed(self):
