@@ -19,7 +19,6 @@ class StockItem(models.Model):
     qty = models.FloatField(default=0)
     unit_value = models.FloatField(default=1)
     price = models.FloatField()
-    buy_price = models.FloatField(default=0)
 
     deleted = models.BooleanField(default=False)
 
