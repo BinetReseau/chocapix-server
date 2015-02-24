@@ -107,7 +107,7 @@ class ItemQtySerializer(serializers.Serializer):
             t.itemoperation_set.create(
                 target=stockitem,
                 delta=-qty)
-            return qty * stockitem.get_sell_price()
+            return qty * stockitem.computed_price()
 
         elif "sellitem" in data:
             sellitem = data['sellitem']
@@ -125,7 +125,7 @@ class ItemQtySerializer(serializers.Serializer):
                     target=si,
                     delta=-delta,
                     fuzzy=True)
-                total_price += delta * si.get_sell_price()
+                total_price += delta * si.computed_price()
 
             return total_price
 
@@ -238,7 +238,7 @@ class ThrowTransactionSerializer(BaseTransactionSerializer, ItemQtySerializer):
         obj["stockitem"] = iop.target.id
         obj["qty"] = abs(iop.delta)
 
-        obj["moneyflow"] = iop.delta * iop.target.get_sell_price()
+        obj["moneyflow"] = iop.delta * iop.target.computed_price()
 
         return obj
 
@@ -479,7 +479,7 @@ class InventoryTransactionSerializer(BaseTransactionSerializer):
                 'stockitem': iop.target.id,
                 'qty': iop.delta
             })
-            total_price += iop.delta * iop.target.get_sell_price()
+            total_price += iop.delta * iop.target.computed_price()
 
         obj["moneyflow"] = total_price
 

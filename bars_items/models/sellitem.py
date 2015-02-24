@@ -14,7 +14,6 @@ class SellItem(models.Model):
 
     unit_name = models.CharField(max_length=100, blank=True)
     unit_name_plural = models.CharField(max_length=100, blank=True)
-    unit_value = models.FloatField(default=1)
 
     tax = models.FloatField(default=0)
 

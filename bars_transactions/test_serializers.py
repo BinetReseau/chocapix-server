@@ -83,6 +83,7 @@ class SerializerTests(APITestCase):
         self.itemdetails, _ = ItemDetails.objects.get_or_create(name="Chocolat")
         self.buyitem, _ = BuyItem.objects.get_or_create(details=self.itemdetails)
         self.stockitem, _ = StockItem.objects.get_or_create(bar=self.bar, sellitem=self.sellitem, details=self.itemdetails, price=1)
+        self.stockitem.unit_value = 5
         self.stockitem.qty = 5
         self.stockitem.save()
 
@@ -120,7 +121,7 @@ class BuySerializerTests(SerializerTests):
         s.save()
 
         self.assertEqual(reload(self.stockitem).qty, self.stockitem.qty - data['qty'])
-        self.assertEqual(reload(self.account).money, self.account.money - self.stockitem.get_sell_price() * data['qty'])
+        self.assertEqual(reload(self.account).money, self.account.money - self.stockitem.computed_price() * data['qty'])
 
     def test_buy_itemdeleted(self):
         self.stockitem.deleted = True
