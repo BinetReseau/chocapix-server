@@ -121,7 +121,7 @@ class BuySerializerTests(SerializerTests):
         s.save()
 
         self.assertEqual(reload(self.stockitem).qty, self.stockitem.qty - data['qty'] * self.stockitem.get_unit('sell'))
-        self.assertEqual(reload(self.account).money, self.account.money - data['qty'] * self.stockitem.sell_price())
+        self.assertEqual(reload(self.account).money, self.account.money - data['qty'] * self.stockitem.sell_price)
 
     def test_buy_itemdeleted(self):
         self.stockitem.deleted = True
