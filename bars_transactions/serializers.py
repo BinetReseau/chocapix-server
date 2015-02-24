@@ -145,8 +145,6 @@ class ItemQtySerializer(serializers.Serializer):
         return stockitems + sellitem_map.values()
 
 
-
-
 class BuyItemQtyPriceSerializer(serializers.Serializer):
     buyitem = serializers.PrimaryKeyRelatedField(queryset=BuyItem.objects.all())
     qty = serializers.FloatField()
@@ -354,11 +352,12 @@ class MealTransactionSerializer(BaseTransactionSerializer):
     def create(self, data):
         t = super(MealTransactionSerializer, self).create(data)
 
-        self.context["transaction"] = t
+        s = ItemQtySerializer()
+        s.context["transaction"] = t
 
         total_price = 0
         for i in data["items"]:
-            total_price += ItemQtySerializer.create(self, i)
+            total_price += ItemQtySerializer.create(s, i)
 
         total_ratio = 0
         for a in data["accounts"]:
