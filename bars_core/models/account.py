@@ -2,7 +2,6 @@ from django.db import models
 from rest_framework import viewsets
 from rest_framework import serializers, decorators
 from rest_framework.response import Response
-from rest_framework.validators import UniqueTogetherValidator
 
 from bars_django.utils import VirtualField, CurrentBarCreateOnlyDefault
 from bars_core.models.bar import Bar
@@ -14,7 +13,7 @@ from bars_core.perms import PerBarPermissionsOrAnonReadOnly
 class Account(models.Model):
     class Meta:
         unique_together = ("bar", "owner")
-        app_label = 'bars_base'
+        app_label = 'bars_core'
     bar = models.ForeignKey(Bar)
     owner = models.ForeignKey(User)
     money = models.FloatField(default=0)

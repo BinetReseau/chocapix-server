@@ -10,7 +10,6 @@ class Migration(migrations.Migration):
     dependencies = [
         ('bars_core', '0001_initial'),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
-        ('bars_base', '0001_initial'),
         ('bars_items', '0001_initial'),
     ]
 
@@ -23,7 +22,7 @@ class Migration(migrations.Migration):
                 ('fixed', models.BooleanField(default=False)),
                 ('delta', models.FloatField()),
                 ('next_value', models.FloatField()),
-                ('target', models.ForeignKey(to='bars_base.Account')),
+                ('target', models.ForeignKey(to='bars_core.Account')),
             ],
             options={
             },
@@ -37,6 +36,7 @@ class Migration(migrations.Migration):
                 ('fixed', models.BooleanField(default=False)),
                 ('delta', models.FloatField()),
                 ('next_value', models.FloatField()),
+                ('fuzzy', models.BooleanField(default=False)),
                 ('target', models.ForeignKey(to='bars_items.StockItem')),
             ],
             options={

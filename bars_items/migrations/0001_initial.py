@@ -26,7 +26,7 @@ class Migration(migrations.Migration):
             name='BuyItemPrice',
             fields=[
                 ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
-                ('price', models.FloatField(default=1)),
+                ('price', models.FloatField(default=0)),
                 ('bar', models.ForeignKey(to='bars_core.Bar')),
                 ('buyitem', models.ForeignKey(to='bars_items.BuyItem')),
             ],
@@ -41,8 +41,6 @@ class Migration(migrations.Migration):
                 ('name', models.CharField(max_length=100)),
                 ('name_plural', models.CharField(max_length=100, blank=True)),
                 ('keywords', models.CharField(max_length=200, blank=True)),
-                ('unit_name', models.CharField(max_length=100, blank=True)),
-                ('unit_name_plural', models.CharField(max_length=100, blank=True)),
                 ('unit_value', models.FloatField(default=1)),
             ],
             options={
@@ -57,7 +55,6 @@ class Migration(migrations.Migration):
                 ('name_plural', models.CharField(max_length=100, blank=True)),
                 ('unit_name', models.CharField(max_length=100, blank=True)),
                 ('unit_name_plural', models.CharField(max_length=100, blank=True)),
-                ('unit_value', models.FloatField(default=1)),
                 ('tax', models.FloatField(default=0)),
                 ('deleted', models.BooleanField(default=False)),
                 ('bar', models.ForeignKey(to='bars_core.Bar')),
@@ -71,11 +68,12 @@ class Migration(migrations.Migration):
             fields=[
                 ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
                 ('qty', models.FloatField(default=0)),
+                ('unit_factor', models.FloatField(default=1)),
                 ('price', models.FloatField()),
                 ('deleted', models.BooleanField(default=False)),
                 ('bar', models.ForeignKey(to='bars_core.Bar')),
                 ('details', models.ForeignKey(to='bars_items.ItemDetails')),
-                ('sellitem', models.ForeignKey(related_name='stockitems', to='bars_items.SellItem', null=True)),
+                ('sellitem', models.ForeignKey(related_name='stockitems', to='bars_items.SellItem')),
             ],
             options={
             },
@@ -91,7 +89,7 @@ class Migration(migrations.Migration):
         ),
         migrations.AddField(
             model_name='buyitem',
-            name='item',
+            name='details',
             field=models.ForeignKey(to='bars_items.ItemDetails'),
             preserve_default=True,
         ),

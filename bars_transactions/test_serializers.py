@@ -3,7 +3,7 @@ from rest_framework.test import APITestCase
 from bars_core.models.bar import Bar
 from bars_core.models.user import User
 from bars_core.models.role import Role
-from bars_base.models.account import Account
+from bars_core.models.account import Account
 
 from bars_items.models.buyitem import BuyItem, BuyItemPrice
 from bars_items.models.itemdetails import ItemDetails
@@ -204,7 +204,7 @@ class ThrowSerializerTests(SerializerTests):
         self.assertFalse(s.is_valid())
 
 
-from bars_base.models.account import get_default_account
+from bars_core.models.account import get_default_account
 
 class DepositSerializerTests(SerializerTests):
     @classmethod

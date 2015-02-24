@@ -1,6 +1,5 @@
 from django.db import models
 from rest_framework import viewsets, serializers, permissions
-from rest_framework.validators import UniqueTogetherValidator
 
 from bars_django.utils import VirtualField, CurrentBarCreateOnlyDefault
 from bars_core.models.bar import Bar

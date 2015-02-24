@@ -3,7 +3,7 @@ from rest_framework import serializers
 from rest_framework.serializers import ValidationError
 from rest_framework import exceptions
 
-from bars_base.models.account import Account, get_default_account
+from bars_core.models.account import Account, get_default_account
 from bars_items.models.buyitem import BuyItem, BuyItemPrice
 from bars_items.models.stockitem import StockItem
 from bars_items.models.sellitem import SellItem

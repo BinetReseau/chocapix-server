@@ -4,7 +4,7 @@ from bars_core.models.user import User
 from bars_django.utils import VirtualField
 from bars_core.models.bar import Bar
 from bars_items.models.stockitem import StockItem
-from bars_base.models.account import Account
+from bars_core.models.account import Account
 
 
 class Transaction(models.Model):

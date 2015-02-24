@@ -180,7 +180,7 @@ def import_data():
 
     # Processing model: Account
 
-    from bars_base.models.account import Account
+    from bars_core.models.account import Account
 
     account_1 = Account()
     account_1.bar = bar_1
