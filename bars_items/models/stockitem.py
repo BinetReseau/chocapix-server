@@ -17,26 +17,46 @@ class StockItem(models.Model):
     sellitem = models.ForeignKey(SellItem, related_name="stockitems")
 
     qty = models.FloatField(default=0)
-    unit_value = models.FloatField(default=1)
+    unit_factor = models.FloatField(default=1)
     price = models.FloatField()
 
     deleted = models.BooleanField(default=False)
 
+    def get_unit(self, unit=''):
+        return {'':1, 'sell':self.unit_factor, 'buy':1}[unit]
+
+    def get_price(self, unit=''):
+        return self.get_unit(unit) * self.price * (1 + self.sellitem.tax)
+
+    def create_operation(self, delta=None, next_value=None, unit='', **kwargs):
+        from bars_transactions.models import ItemOperation
+        delta = delta * self.get_unit(unit) if delta else None
+        next_value = next_value * self.get_unit(unit) if next_value else None
+        io = ItemOperation(target=self, delta=delta, **kwargs)
+        io.save()
+        return io
+
+
+    def sell_price(self):
+        return self.get_price(unit='sell')
+
+    def sell_qty(self):
+        return self.qty * self.get_unit('sell')
+
     def __unicode__(self):
         return "%s (%s)" % (unicode(self.details), unicode(self.bar))
-
-    def computed_price(self):
-        return self.unit_value * self.price * (1 + self.sellitem.tax)
 
 
 class StockItemSerializer(serializers.ModelSerializer):
     class Meta:
         model = StockItem
+        exclude = ('unit_factor',)
         read_only_fields = ('bar', 'qty')
         extra_kwargs = {'bar': {'required': False}}
 
     _type = VirtualField("StockItem")
-    price_per_unit = serializers.FloatField(source='computed_price')
+    qty = serializers.FloatField(source='sell_qty')
+    price = serializers.FloatField(source='sell_price')
 
     def get_validators(self):
         validators = super(StockItemSerializer, self).get_validators()

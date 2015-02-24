@@ -104,10 +104,9 @@ class ItemQtySerializer(serializers.Serializer):
 
         if "stockitem" in data:
             stockitem = data['stockitem']
-            t.itemoperation_set.create(
-                target=stockitem,
-                delta=-qty)
-            return qty * stockitem.computed_price()
+            stockitem.create_operation(delta=-qty, unit='sell', transaction=t)
+
+            return qty * stockitem.get_price(unit='sell')
 
         elif "sellitem" in data:
             sellitem = data['sellitem']
@@ -121,11 +120,8 @@ class ItemQtySerializer(serializers.Serializer):
                 else:
                     delta = qty / stockitems.count()
 
-                t.itemoperation_set.create(
-                    target=si,
-                    delta=-delta,
-                    fuzzy=True)
-                total_price += delta * si.computed_price()
+                si.create_operation(delta=-delta, unit='sell', transaction=t, fuzzy=True)
+                total_price += delta * si.get_price(unit='sell')
 
             return total_price
 
@@ -134,13 +130,15 @@ class ItemQtySerializer(serializers.Serializer):
         stockitems = []
         sellitem_map = {}
         for iop in iops:
+            stockitem = iop.target
+            delta = iop.delta / stockitem.get_unit('sell')
             if iop.fuzzy or force_fuzzy:
-                sellitem = iop.target.sellitem
+                sellitem = stockitem.sellitem
                 if sellitem.id not in sellitem_map:
                     sellitem_map[sellitem.id] = {'sellitem':sellitem.id, 'qty':0}
-                sellitem_map[sellitem.id]['qty'] += iop.delta
+                sellitem_map[sellitem.id]['qty'] += delta
             else:
-                stockitems.append({'stockitem':iop.target.id, 'qty':iop.delta})
+                stockitems.append({'stockitem':stockitem.id, 'qty':delta})
 
         return stockitems + sellitem_map.values()
 
@@ -222,10 +220,10 @@ class BuyTransactionSerializer(BaseTransactionSerializer, ItemQtySerializer):
 class ThrowTransactionSerializer(BaseTransactionSerializer, ItemQtySerializer):
     def create(self, data):
         t = super(ThrowTransactionSerializer, self).create(data)
+        stockitem = data['stockitem']
+        qty = data['qty']
 
-        t.itemoperation_set.create(
-            target=data["stockitem"],
-            delta=-data["qty"])
+        stockitem.create_operation(delta=-qty, unit='sell', transaction=t)
 
         return t
 
@@ -235,10 +233,11 @@ class ThrowTransactionSerializer(BaseTransactionSerializer, ItemQtySerializer):
             return obj
 
         iop = transaction.itemoperation_set.all()[0]
-        obj["stockitem"] = iop.target.id
-        obj["qty"] = abs(iop.delta)
+        stockitem = iop.target
+        obj["stockitem"] = stockitem.id
+        obj["qty"] = -iop.delta / stockitem.get_unit('sell')
 
-        obj["moneyflow"] = iop.delta * iop.target.computed_price()
+        obj["moneyflow"] = iop.delta * stockitem.get_price()
 
         return obj
 
@@ -425,9 +424,7 @@ class ApproTransactionSerializer(BaseTransactionSerializer):
             stockitem_map[stockitem.id]['delta'] += qty
 
         for x in stockitem_map.values():
-            t.itemoperation_set.create(
-                target=x['stockitem'],
-                delta=x['delta'])
+            x['stockitem'].create_operation(delta=x['delta'], unit='buy', transaction=t)
 
         t.accountoperation_set.create(
             target=get_default_account(t.bar),
@@ -444,7 +441,7 @@ class ApproTransactionSerializer(BaseTransactionSerializer):
         for iop in transaction.itemoperation_set.all():
             obj["items"].append({
                 'stockitem': iop.target.id,
-                'qty': abs(iop.delta)
+                'qty': iop.delta / iop.target.get_price()
             })
 
         aop = transaction.accountoperation_set.all()[0]
@@ -460,10 +457,7 @@ class InventoryTransactionSerializer(BaseTransactionSerializer):
         t = super(InventoryTransactionSerializer, self).create(data)
 
         for i in data["items"]:
-            t.itemoperation_set.create(
-                target=i["stockitem"],
-                next_value=i["qty"],
-                fixed=True)
+            i["stockitem"].create_operation(next_value=i["qty"], unit='sell', transaction=t, fixed=True)
 
         return t
 
@@ -479,7 +473,7 @@ class InventoryTransactionSerializer(BaseTransactionSerializer):
                 'stockitem': iop.target.id,
                 'qty': iop.delta
             })
-            total_price += iop.delta * iop.target.computed_price()
+            total_price += iop.delta * iop.target.sell_price()
 
         obj["moneyflow"] = total_price
 

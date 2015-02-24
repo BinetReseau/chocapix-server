@@ -21,15 +21,15 @@ class SellItem(models.Model):
 
     def calc_qty(self):
         if not hasattr(self, '_qty'):
-            self._qty = sum(i.qty for i in self.stockitems.all())
+            self._qty = sum(i.qty * i.get_unit('sell') for i in self.stockitems.all())
         return self._qty
 
     def calc_price(self):
         qty = self.calc_qty()
         if qty != 0:
-            return sum(i.price * i.qty for i in self.stockitems.all()) / qty
+            return sum(i.qty * i.get_price('sell') for i in self.stockitems.all()) / qty
         elif self.stockitems.count() != 0:
-            return sum(i.price for i in self.stockitems.all()) / self.stockitems.count()
+            return sum(i.get_price('sell') for i in self.stockitems.all()) / self.stockitems.count()
         else:
             return 0
 
