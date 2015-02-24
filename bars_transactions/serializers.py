@@ -404,18 +404,19 @@ class ApproTransactionSerializer(BaseTransactionSerializer):
         total = 0
         for i in data["items"]:
             buyitem = i["buyitem"]
+            qty = i["qty"] * buyitem.itemqty
             priceobj, _ = BuyItemPrice.objects.get_or_create(bar=t.bar, buyitem=buyitem)
             if "price" in i:
-                priceobj.price = i["price"] / i["qty"]
+                priceobj.price = i["price"] / qty
                 priceobj.save()
                 total += i["price"]
             else:
-                total += priceobj.price * i["qty"]
+                total += priceobj.price * qty
 
             stockitem = StockItem.objects.get(bar=t.bar, details=buyitem.details)
             t.itemoperation_set.create(
                 target=stockitem,
-                delta=i["qty"])
+                delta=qty)
 
         t.accountoperation_set.create(
             target=get_default_account(t.bar),
