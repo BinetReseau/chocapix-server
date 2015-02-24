@@ -27,7 +27,7 @@ class SellItem(models.Model):
     def calc_price(self):
         qty = self.calc_qty()
         if qty != 0:
-            return sum(i.qty * i.get_price('sell') for i in self.stockitems.all()) / qty
+            return sum(i.qty * i.get_price() for i in self.stockitems.all()) / qty
         elif self.stockitems.count() != 0:
             return sum(i.get_price('sell') for i in self.stockitems.all()) / self.stockitems.count()
         else:
