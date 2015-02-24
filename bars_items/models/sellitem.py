@@ -40,13 +40,13 @@ class SellItem(models.Model):
 class SellItemSerializer(serializers.ModelSerializer):
     class Meta:
         model = SellItem
-        fields = ("id", "bar", "stockitems", "name", "name_plural", "unit_name", "unit_name_plural", "tax", "deleted", "qty", "price", "_type")
+        fields = ("id", "bar", "stockitems", "name", "name_plural", "unit_name", "unit_name_plural", "tax", "deleted", "fuzzy_qty", "fuzzy_price", "_type")
         read_only_fields = ("id", "bar")
         extra_kwargs = {'stockitems': {'required': False}}
 
     _type = VirtualField("SellItem")
-    qty = serializers.FloatField(read_only=True, source='calc_qty')
-    price = serializers.FloatField(read_only=True, source='calc_price')
+    fuzzy_qty = serializers.FloatField(read_only=True, source='calc_qty')
+    fuzzy_price = serializers.FloatField(read_only=True, source='calc_price')
 
     def create(self, data):
         request = self.context['request']
