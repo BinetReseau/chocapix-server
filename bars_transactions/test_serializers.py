@@ -133,7 +133,8 @@ class BuySerializerTests(SerializerTests):
         self.assertEqual(err.exception.detail, {'stockitem': ['StockItem (id=%d) is deleted' % self.stockitem.id]})
 
     def test_buy_other_bar(self):
-        wrong_stockitem, _ = StockItem.objects.get_or_create(bar=self.wrong_bar, details=self.itemdetails, price=1)
+        wrong_sellitem, _ = SellItem.objects.get_or_create(bar=self.wrong_bar, name="Lait", tax=0.1)
+        wrong_stockitem, _ = StockItem.objects.get_or_create(bar=self.wrong_bar, details=self.itemdetails, sellitem=wrong_sellitem, price=1)
 
         data = {'type':'buy', 'stockitem':wrong_stockitem.id, 'qty':3}
         s = BuyTransactionSerializer(data=data, context=self.context)
