@@ -26,7 +26,7 @@ class StockItem(models.Model):
         return {'':1, 'sell':self.unit_factor, 'buy':1}[unit]
 
     def get_price(self, unit=''):
-        return self.get_unit(unit) * self.price * (1 + self.sellitem.tax)
+        return self.price * (1 + self.sellitem.tax) / self.get_unit(unit)
 
     def create_operation(self, delta=None, next_value=None, unit='', **kwargs):
         from bars_transactions.models import ItemOperation
