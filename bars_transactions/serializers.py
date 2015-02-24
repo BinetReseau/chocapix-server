@@ -427,7 +427,7 @@ class ApproTransactionSerializer(BaseTransactionSerializer):
         for x in stockitem_map.values():
             t.itemoperation_set.create(
                 target=x['stockitem'],
-                delta=x['qty'])
+                delta=x['delta'])
 
         t.accountoperation_set.create(
             target=get_default_account(t.bar),
