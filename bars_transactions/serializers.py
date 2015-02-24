@@ -424,7 +424,7 @@ class ApproTransactionSerializer(BaseTransactionSerializer):
                 stockitem_map[stockitem.id] = {'stockitem': stockitem, 'delta': 0}
             stockitem_map[stockitem.id]['delta'] += qty
 
-        for x in stockitem_map.items():
+        for x in stockitem_map.values():
             t.itemoperation_set.create(
                 target=x['stockitem'],
                 delta=x['qty'])
