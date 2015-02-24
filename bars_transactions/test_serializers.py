@@ -130,7 +130,7 @@ class BuySerializerTests(SerializerTests):
 
         with self.assertRaises(serializers.ValidationError) as err:
             s.is_valid(raise_exception=True)
-        self.assertEqual(err.exception.detail, {'item': ['Item is deleted']})
+        self.assertEqual(err.exception.detail, {'item': ['StockItem (id=%d) is deleted' % self.stockitem.id]})
 
     def test_buy_other_bar(self):
         wrong_stockitem, _ = StockItem.objects.get_or_create(bar=self.wrong_bar, details=self.itemdetails, price=1)
@@ -140,7 +140,7 @@ class BuySerializerTests(SerializerTests):
 
         with self.assertRaises(serializers.ValidationError) as err:
             s.is_valid(raise_exception=True)
-        self.assertEqual(err.exception.detail, {'item': ['Cannot buy across bars']})
+        self.assertEqual(err.exception.detail, {'item': ['StockItem (id=%d) is in the wrong bar' % wrong_stockitem.id]})
 
 
 class GiveSerializerTests(SerializerTests):
@@ -185,16 +185,15 @@ class ThrowSerializerTests(SerializerTests):
 
         self.assertEqual(reload(self.stockitem).qty, self.stockitem.qty - 1)
 
-    def test_thow_other_bar(self):
-        self.context = {'request': Mock(user=self.user, bar=self.wrong_bar)}
+    def test_throw_other_bar(self):
+        context = {'request': Mock(user=self.user, bar=self.wrong_bar)}
         data = {'type':'throw', 'item':self.stockitem.id, 'qty':1}
 
-        s = ThrowTransactionSerializer(data=data, context=self.context)
-        self.assertTrue(s.is_valid())
+        s = ThrowTransactionSerializer(data=data, context=context)
 
-        with self.assertRaises(exceptions.PermissionDenied):
-            s.save()
-        self.assertEqual(reload(self.stockitem).qty, self.stockitem.qty)
+        with self.assertRaises(serializers.ValidationError) as err:
+            s.is_valid(raise_exception=True)
+        self.assertEqual(err.exception.detail, {'item': ['StockItem (id=%d) is in the wrong bar' % self.stockitem.id]})
 
     def test_throw_negative(self):
         data = {'type':'throw', 'item':self.stockitem.id, 'qty':-1}

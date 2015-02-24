@@ -108,6 +108,7 @@ class ItemOperation(BaseOperation):
     class Meta:
         app_label = 'bars_transactions'
     target = models.ForeignKey(StockItem)
+    fuzzy = models.BooleanField(default=False)
 
     op_model = StockItem
     op_model_field = 'qty'
