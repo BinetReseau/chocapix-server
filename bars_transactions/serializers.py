@@ -61,7 +61,7 @@ class BaseTransactionSerializer(serializers.ModelSerializer):
 
 
 class ItemQtySerializer(serializers.Serializer):
-    item = serializers.PrimaryKeyRelatedField(queryset=StockItem.objects.all(), required=False)
+    stockitem = serializers.PrimaryKeyRelatedField(queryset=StockItem.objects.all(), required=False)
     sellitem = serializers.PrimaryKeyRelatedField(queryset=SellItem.objects.all(), required=False)
     qty = serializers.FloatField()
 
@@ -70,7 +70,7 @@ class ItemQtySerializer(serializers.Serializer):
             raise ValidationError(ERROR_MESSAGES['negative'] % {'field':"Quantity"})
         return value
 
-    def validate_item(self, item):
+    def validate_stockitem(self, item):
         err_params = {'model':'StockItem', 'id':item.id}
         if item is not None and item.deleted:
             raise ValidationError(ERROR_MESSAGES['deleted'] % err_params)
@@ -91,9 +91,9 @@ class ItemQtySerializer(serializers.Serializer):
         return item
 
     def validate(self, data):
-        if "item" in data and "sellitem" in data:
+        if "stockitem" in data and "sellitem" in data:
             raise ValidationError("Two items were given")
-        if "item" not in data and "sellitem" not in data:
+        if "stockitem" not in data and "sellitem" not in data:
             raise ValidationError("No items were given")
         return data
 
@@ -102,8 +102,8 @@ class ItemQtySerializer(serializers.Serializer):
         t = self.context['transaction']
         qty = data['qty']
 
-        if "item" in data:
-            stockitem = data['item']
+        if "stockitem" in data:
+            stockitem = data['stockitem']
             t.itemoperation_set.create(
                 target=stockitem,
                 delta=-qty)
@@ -140,7 +140,7 @@ class ItemQtySerializer(serializers.Serializer):
                     sellitem_map[sellitem.id] = {'sellitem':sellitem.id, 'qty':0}
                 sellitem_map[sellitem.id]['qty'] += iop.delta
             else:
-                stockitems.append({'item':iop.target.id, 'qty':iop.delta})
+                stockitems.append({'stockitem':iop.target.id, 'qty':iop.delta})
 
         return stockitems + sellitem_map.values()
 
@@ -226,7 +226,7 @@ class ThrowTransactionSerializer(BaseTransactionSerializer, ItemQtySerializer):
         t = super(ThrowTransactionSerializer, self).create(data)
 
         t.itemoperation_set.create(
-            target=data["item"],
+            target=data["stockitem"],
             delta=-data["qty"])
 
         return t
@@ -237,7 +237,7 @@ class ThrowTransactionSerializer(BaseTransactionSerializer, ItemQtySerializer):
             return obj
 
         iop = transaction.itemoperation_set.all()[0]
-        obj["item"] = iop.target.id
+        obj["stockitem"] = iop.target.id
         obj["qty"] = abs(iop.delta)
 
         obj["moneyflow"] = iop.delta * iop.target.get_sell_price()
@@ -438,7 +438,7 @@ class ApproTransactionSerializer(BaseTransactionSerializer):
         obj["items"] = []
         for iop in transaction.itemoperation_set.all():
             obj["items"].append({
-                'item': iop.target.id,
+                'stockitem': iop.target.id,
                 'qty': abs(iop.delta)
             })
 
@@ -456,7 +456,7 @@ class InventoryTransactionSerializer(BaseTransactionSerializer):
 
         for i in data["items"]:
             t.itemoperation_set.create(
-                target=i["item"],
+                target=i["stockitem"],
                 next_value=i["qty"],
                 fixed=True)
 
@@ -471,7 +471,7 @@ class InventoryTransactionSerializer(BaseTransactionSerializer):
         obj["items"] = []
         for iop in transaction.itemoperation_set.all():
             obj["items"].append({
-                'item': iop.target.id,
+                'stockitem': iop.target.id,
                 'qty': iop.delta
             })
             total_price += iop.delta * iop.target.get_sell_price()

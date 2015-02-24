@@ -114,7 +114,7 @@ class BuySerializerTests(SerializerTests):
         self.stockitem.save()
 
     def test_buy(self):
-        data = {'type':'buy', 'item':self.stockitem.id, 'qty':3}
+        data = {'type':'buy', 'stockitem':self.stockitem.id, 'qty':3}
         s = BuyTransactionSerializer(data=data, context=self.context)
         self.assertTrue(s.is_valid())
         s.save()
@@ -125,22 +125,22 @@ class BuySerializerTests(SerializerTests):
     def test_buy_itemdeleted(self):
         self.stockitem.deleted = True
         self.stockitem.save()
-        data = {'type':'buy', 'item':self.stockitem.id, 'qty':3}
+        data = {'type':'buy', 'stockitem':self.stockitem.id, 'qty':3}
         s = BuyTransactionSerializer(data=data, context=self.context)
 
         with self.assertRaises(serializers.ValidationError) as err:
             s.is_valid(raise_exception=True)
-        self.assertEqual(err.exception.detail, {'item': ['StockItem (id=%d) is deleted' % self.stockitem.id]})
+        self.assertEqual(err.exception.detail, {'stockitem': ['StockItem (id=%d) is deleted' % self.stockitem.id]})
 
     def test_buy_other_bar(self):
         wrong_stockitem, _ = StockItem.objects.get_or_create(bar=self.wrong_bar, details=self.itemdetails, price=1)
 
-        data = {'type':'buy', 'item':wrong_stockitem.id, 'qty':3}
+        data = {'type':'buy', 'stockitem':wrong_stockitem.id, 'qty':3}
         s = BuyTransactionSerializer(data=data, context=self.context)
 
         with self.assertRaises(serializers.ValidationError) as err:
             s.is_valid(raise_exception=True)
-        self.assertEqual(err.exception.detail, {'item': ['StockItem (id=%d) is in the wrong bar' % wrong_stockitem.id]})
+        self.assertEqual(err.exception.detail, {'stockitem': ['StockItem (id=%d) is in the wrong bar' % wrong_stockitem.id]})
 
 
 class GiveSerializerTests(SerializerTests):
@@ -177,7 +177,7 @@ class GiveSerializerTests(SerializerTests):
 
 class ThrowSerializerTests(SerializerTests):
     def test_throw(self):
-        data = {'type':'throw', 'item':self.stockitem.id, 'qty':1}
+        data = {'type':'throw', 'stockitem':self.stockitem.id, 'qty':1}
 
         s = ThrowTransactionSerializer(data=data, context=self.context)
         self.assertTrue(s.is_valid())
@@ -187,16 +187,16 @@ class ThrowSerializerTests(SerializerTests):
 
     def test_throw_other_bar(self):
         context = {'request': Mock(user=self.user, bar=self.wrong_bar)}
-        data = {'type':'throw', 'item':self.stockitem.id, 'qty':1}
+        data = {'type':'throw', 'stockitem':self.stockitem.id, 'qty':1}
 
         s = ThrowTransactionSerializer(data=data, context=context)
 
         with self.assertRaises(serializers.ValidationError) as err:
             s.is_valid(raise_exception=True)
-        self.assertEqual(err.exception.detail, {'item': ['StockItem (id=%d) is in the wrong bar' % self.stockitem.id]})
+        self.assertEqual(err.exception.detail, {'stockitem': ['StockItem (id=%d) is in the wrong bar' % self.stockitem.id]})
 
     def test_throw_negative(self):
-        data = {'type':'throw', 'item':self.stockitem.id, 'qty':-1}
+        data = {'type':'throw', 'stockitem':self.stockitem.id, 'qty':-1}
 
         s = ThrowTransactionSerializer(data=data, context=self.context)
         self.assertFalse(s.is_valid())
