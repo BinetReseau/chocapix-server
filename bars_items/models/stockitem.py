@@ -36,7 +36,7 @@ class StockItemSerializer(serializers.ModelSerializer):
         extra_kwargs = {'bar': {'required': False}}
 
     _type = VirtualField("StockItem")
-    computed_price = serializers.FloatField(source='computed_price')
+    price_per_unit = serializers.FloatField(source='computed_price')
 
     def get_validators(self):
         validators = super(StockItemSerializer, self).get_validators()
