@@ -99,7 +99,7 @@ class ItemQtySerializer(serializers.Serializer):
 
 
     def create(self, data):
-        t = data['transaction']
+        t = self.context['transaction']
         qty = data['qty']
 
         if "item" in data:
@@ -198,7 +198,7 @@ class BuyTransactionSerializer(BaseTransactionSerializer, ItemQtySerializer):
     def create(self, data):
         t = super(BuyTransactionSerializer, self).create(data)
 
-        data["transaction"] = t
+        self.context["transaction"] = t
         money_delta = ItemQtySerializer.create(self, data)
 
         t.accountoperation_set.create(
@@ -354,12 +354,11 @@ class MealTransactionSerializer(BaseTransactionSerializer):
     def create(self, data):
         t = super(MealTransactionSerializer, self).create(data)
 
+        self.context["transaction"] = t
+
         total_price = 0
         for i in data["items"]:
-            t.itemoperation_set.create(
-                target=i["item"],
-                delta=-i["qty"])
-            total_price += i["qty"] * i["item"].get_sell_price()
+            total_price += ItemQtySerializer.create(self, i)
 
         total_ratio = 0
         for a in data["accounts"]:
@@ -380,12 +379,8 @@ class MealTransactionSerializer(BaseTransactionSerializer):
         if transaction is None:
             return obj
 
-        obj["items"] = []
-        for iop in transaction.itemoperation_set.all():
-            obj["items"].append({
-                'item': iop.target.id,
-                'qty': abs(iop.delta)
-            })
+        force_fuzzy = True
+        obj["items"] = ItemQtySerializer.serializeOperations(transaction.itemoperation_set.select_related(), force_fuzzy)
 
         total_price = 0
         obj["accounts"] = []
