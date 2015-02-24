@@ -406,6 +406,7 @@ class ApproTransactionSerializer(BaseTransactionSerializer):
     def create(self, data):
         t = super(ApproTransactionSerializer, self).create(data)
 
+        stockitem_map = {}
         total = 0
         for i in data["items"]:
             buyitem = i["buyitem"]
@@ -419,9 +420,14 @@ class ApproTransactionSerializer(BaseTransactionSerializer):
                 total += priceobj.price * qty
 
             stockitem = StockItem.objects.get(bar=t.bar, details=buyitem.details)
+            if stockitem.id not in stockitem_map:
+                stockitem_map[stockitem.id] = {'stockitem': stockitem, 'delta': 0}
+            stockitem_map[stockitem.id]['delta'] += qty
+
+        for x in stockitem_map.items:
             t.itemoperation_set.create(
-                target=stockitem,
-                delta=qty)
+                target=x['stockitem'],
+                delta=x['qty'])
 
         t.accountoperation_set.create(
             target=get_default_account(t.bar),
