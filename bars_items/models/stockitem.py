@@ -37,14 +37,26 @@ class StockItem(models.Model):
         return io
 
 
+    @property
+    def sell_to_buy(self):
+        return self.get_unit('buy') / self.get_unit('sell')
+
+    @sell_to_buy.setter
+    def sell_to_buy(self, value):
+        self.unit_factor = self.get_unit('buy') / value
+
+
+    @property
     def sell_price(self):
         return self.get_price(unit='sell')
 
+    @sell_price.setter
+    def sell_price(self, value):
+        self.price = value * self.get_unit('sell') / (1 + self.sellitem.tax)
+
+
     def sell_qty(self):
         return self.qty * self.get_unit('sell')
-
-    def sell_to_buy(self):
-        return self.get_unit('buy') / self.get_unit('sell')
 
     def __unicode__(self):
         return "%s (%s)" % (unicode(self.details), unicode(self.bar))
