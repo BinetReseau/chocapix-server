@@ -43,6 +43,9 @@ class StockItem(models.Model):
     def sell_qty(self):
         return self.qty * self.get_unit('sell')
 
+    def sell_to_buy(self):
+        return self.get_unit('buy') / self.get_unit('sell')
+
     def __unicode__(self):
         return "%s (%s)" % (unicode(self.details), unicode(self.bar))
 
@@ -56,6 +59,7 @@ class StockItemSerializer(serializers.ModelSerializer):
     bar = serializers.PrimaryKeyRelatedField(read_only=True, default=CurrentBarCreateOnlyDefault())
     qty = serializers.FloatField(source='sell_qty', read_only=True)
     price = serializers.FloatField(source='sell_price')
+    sell_to_buy = serializers.FloatField()
 
 
 class StockItemViewSet(viewsets.ModelViewSet):
