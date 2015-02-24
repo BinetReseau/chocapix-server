@@ -40,7 +40,7 @@ class SellItem(models.Model):
 class SellItemSerializer(serializers.ModelSerializer):
     class Meta:
         model = SellItem
-        fields = ("id", "bar", "stockitems", "name", "name_plural", "unit_name", "unit_name_plural", "unit_value", "tax", "deleted", "qty", "price", "_type")
+        fields = ("id", "bar", "stockitems", "name", "name_plural", "unit_name", "unit_name_plural", "tax", "deleted", "qty", "price", "_type")
         read_only_fields = ("id", "bar")
         extra_kwargs = {'stockitems': {'required': False}}
 
