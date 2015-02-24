@@ -131,7 +131,7 @@ class ItemQtySerializer(serializers.Serializer):
         sellitem_map = {}
         for iop in iops:
             stockitem = iop.target
-            delta = iop.delta / stockitem.get_unit('sell')
+            delta = iop.delta * stockitem.get_unit('sell')
             if iop.fuzzy or force_fuzzy:
                 sellitem = stockitem.sellitem
                 if sellitem.id not in sellitem_map:
