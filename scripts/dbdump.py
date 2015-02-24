@@ -75,9 +75,9 @@ class BasicImportHelper(object):
         #   if the_class == StaffGroup:
         #       pk_value=8
 
-        search_data = { pk_name: pk_value }
+        search_data = {pk_name: pk_value}
         the_obj = the_class.objects.get(**search_data)
-        #print(the_obj)
+        # print(the_obj)
         return the_obj
 
 
@@ -105,7 +105,7 @@ try:
     import import_helper
     # We need this so ImportHelper can extend BasicImportHelper, although import_helper.py
     # has no knowlodge of this class
-    importer = type("DynamicImportHelper", (import_helper.ImportHelper, BasicImportHelper ) , {} )()
+    importer = type("DynamicImportHelper", (import_helper.ImportHelper, BasicImportHelper), {})()
 except ImportError as e:
     if str(e) == "No module named import_helper":
         importer = BasicImportHelper()
@@ -250,11 +250,11 @@ def import_data():
     from bars_items.models.buyitem import BuyItem
 
     buyitem_1 = BuyItem()
-    buyitem_1.item = itemdetails_1
+    buyitem_1.details = itemdetails_1
     buyitem_1 = importer.save_or_locate(buyitem_1)
 
     buyitem_2 = BuyItem()
-    buyitem_2.item = itemdetails_2
+    buyitem_2.details = itemdetails_2
     buyitem_2 = importer.save_or_locate(buyitem_2)
 
     # Processing model: StockItem
