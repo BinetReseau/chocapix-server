@@ -44,6 +44,10 @@ class TransactionViewSet(viewsets.ModelViewSet):
         if item is not None:
             queryset = queryset.filter(itemoperation__target=item)
 
+        stockitem = self.request.QUERY_PARAMS.get('stockitem', None)
+        if stockitem is not None:
+            queryset = queryset.filter(itemoperation__target=stockitem)
+
         sellitem = self.request.QUERY_PARAMS.get('sellitem', None)
         if sellitem is not None:
             queryset = queryset.filter(itemoperation__target__sellitem=sellitem)
