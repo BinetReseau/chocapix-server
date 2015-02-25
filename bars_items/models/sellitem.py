@@ -60,6 +60,10 @@ class MergeSellItemSerializer(serializers.BaseSerializer):
     sellitem = serializers.PrimaryKeyRelatedField(queryset=SellItem.objects.all())
     unit_factor = serializers.FloatField()
 
+class AddStockItemSerializer(serializers.BaseSerializer):
+    stockitem = serializers.PrimaryKeyRelatedField(queryset=StockItem.objects.all())
+    unit_factor = serializers.FloatField()
+
 class RemoveStockItemSerializer(serializers.BaseSerializer):
     stockitem = serializers.PrimaryKeyRelatedField(queryset=StockItem.objects.all())
 
@@ -91,6 +95,32 @@ class SellItemViewSet(viewsets.ModelViewSet):
         other.delete()
 
         srz = SellItemSerializer(this)
+        return Response(srz.data, 200)
+
+    @decorators.detail_route(methods=['put'])
+    def add(self, request, pk=None):
+        unsrz = AddStockItemSerializer(data=request.data)
+        unsrz.is_valid(raise_exception=True)
+        stockitem = unsrz.validated_data['stockitem']
+        unit_factor = unsrz.validated_data['unit_factor']
+
+        try:
+            sellitem = SellItem.objects.get(pk=pk)
+        except SellItem.DoesNotExist:
+            raise Http404('SellItem (id=%d) does not exist' % pk)
+
+        if sellitem.bar != request.bar or stockitem.bar != sellitem.bar or stockitem.bar != request.bar:
+            raise exceptions.PermissionDenied('Cannot operate across bars')
+
+        old_sellitem = stockitem.sellitem
+        stockitem.sellitem = sellitem
+        stockitem.unit_factor *= unit_factor
+        stockitem.save()
+
+        if old_sellitem.stockitems.count() == 0:
+            old_sellitem.delete()
+
+        srz = SellItemSerializer(sellitem)
         return Response(srz.data, 200)
 
     @decorators.detail_route(methods=['put'])
