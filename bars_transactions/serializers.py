@@ -217,7 +217,26 @@ class BuyTransactionSerializer(BaseTransactionSerializer, ItemQtySerializer):
         return obj
 
 
-class ThrowTransactionSerializer(BaseTransactionSerializer, ItemQtySerializer):
+class ThrowTransactionSerializer(BaseTransactionSerializer):
+    stockitem = serializers.PrimaryKeyRelatedField(queryset=StockItem.objects.all())
+    qty = serializers.FloatField()
+
+    def validate_qty(self, value):
+        if value < 0:
+            raise ValidationError(ERROR_MESSAGES['negative'] % {'field':"Quantity"})
+        return value
+
+    def validate_stockitem(self, item):
+        err_params = {'model':'StockItem', 'id':item.id}
+        if item is not None and item.deleted:
+            raise ValidationError(ERROR_MESSAGES['deleted'] % err_params)
+
+        if item is not None and self.context['request'].bar.id != item.bar.id:
+            raise ValidationError(ERROR_MESSAGES['wrong_bar'] % err_params)
+
+        return item
+
+
     def create(self, data):
         t = super(ThrowTransactionSerializer, self).create(data)
         stockitem = data['stockitem']
