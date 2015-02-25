@@ -18,6 +18,9 @@ RUN sed -i 's/bars_django\.settings\.dev_local/bars_django.settings.prod/' bars_
     sed -i 's/bars_django\.settings\.dev_local/bars_django.settings.prod/' manage.py && \
     echo yes | python manage.py collectstatic
 
+# TODO: Temporary
+ADD routes.html /app/static/
+
 VOLUME /srv/api
 CMD rm -r /srv/api/*; \
     cp -R /app/static /srv/api/static; \

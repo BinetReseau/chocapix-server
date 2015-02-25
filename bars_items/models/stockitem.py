@@ -4,7 +4,7 @@ from rest_framework import viewsets, serializers, permissions
 from bars_django.utils import VirtualField, CurrentBarCreateOnlyDefault
 from bars_core.models.bar import Bar
 from bars_items.models.itemdetails import ItemDetails
-from bars_items.models.sellitem import SellItem
+# from bars_items.models.sellitem import SellItem
 
 
 class StockItem(models.Model):
@@ -13,7 +13,7 @@ class StockItem(models.Model):
         app_label = 'bars_items'
     bar = models.ForeignKey(Bar)
     details = models.ForeignKey(ItemDetails)
-    sellitem = models.ForeignKey(SellItem, related_name="stockitems")
+    sellitem = models.ForeignKey('SellItem', related_name="stockitems")
 
     qty = models.FloatField(default=0)
     unit_factor = models.FloatField(default=1)
@@ -22,16 +22,18 @@ class StockItem(models.Model):
     deleted = models.BooleanField(default=False)
 
     def get_unit(self, unit=''):
-        return {'':1, 'sell':self.unit_factor, 'buy':1}[unit]
+        return {'':1., 'sell':self.unit_factor, 'buy':1.}[unit]
 
     def get_price(self, unit=''):
-        return self.price * (1 + self.sellitem.tax) / self.get_unit(unit)
+        return self.price * (1. + self.sellitem.tax) / self.get_unit(unit)
 
-    def create_operation(self, delta=None, next_value=None, unit='', **kwargs):
+    def create_operation(self, unit='', **kwargs):
         from bars_transactions.models import ItemOperation
-        delta = delta * self.get_unit(unit) if delta else None
-        next_value = next_value * self.get_unit(unit) if next_value else None
-        io = ItemOperation(target=self, delta=delta, **kwargs)
+        if 'delta' in kwargs:
+            kwargs['delta'] = kwargs['delta'] / self.get_unit(unit)
+        if 'next_value' in kwargs:
+            kwargs['next_value'] = kwargs['next_value'] / self.get_unit(unit)
+        io = ItemOperation(target=self, **kwargs)
         io.save()
         return io
 
@@ -54,6 +56,7 @@ class StockItem(models.Model):
         self.price = value * self.get_unit('sell') / (1 + self.sellitem.tax)
 
 
+    @property
     def sell_qty(self):
         return self.qty * self.get_unit('sell')
 

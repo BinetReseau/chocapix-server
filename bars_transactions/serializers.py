@@ -118,7 +118,7 @@ class ItemQtySerializer(serializers.Serializer):
             total_price = 0
             for si in stockitems.all():
                 if total_qty != 0:
-                    delta = (si.qty * qty) / total_qty
+                    delta = (si.sell_qty * qty) / total_qty
                 else:
                     delta = qty / stockitems.count()
 
@@ -223,7 +223,26 @@ class BuyTransactionSerializer(BaseTransactionSerializer, ItemQtySerializer):
         return obj
 
 
-class ThrowTransactionSerializer(BaseTransactionSerializer, ItemQtySerializer):
+class ThrowTransactionSerializer(BaseTransactionSerializer):
+    stockitem = serializers.PrimaryKeyRelatedField(queryset=StockItem.objects.all())
+    qty = serializers.FloatField()
+
+    def validate_qty(self, value):
+        if value < 0:
+            raise ValidationError(ERROR_MESSAGES['negative'] % {'field':"Quantity"})
+        return value
+
+    def validate_stockitem(self, item):
+        err_params = {'model':'StockItem', 'id':item.id}
+        if item is not None and item.deleted:
+            raise ValidationError(ERROR_MESSAGES['deleted'] % err_params)
+
+        if item is not None and self.context['request'].bar.id != item.bar.id:
+            raise ValidationError(ERROR_MESSAGES['wrong_bar'] % err_params)
+
+        return item
+
+
     def create(self, data):
         t = super(ThrowTransactionSerializer, self).create(data)
         stockitem = data['stockitem']
@@ -241,7 +260,7 @@ class ThrowTransactionSerializer(BaseTransactionSerializer, ItemQtySerializer):
         iop = transaction.itemoperation_set.all()[0]
         stockitem = iop.target
         obj["stockitem"] = stockitem.id
-        obj["qty"] = -iop.delta / stockitem.get_unit('sell')
+        obj["qty"] = -iop.delta * stockitem.get_unit('sell')
 
         obj["moneyflow"] = iop.delta * stockitem.get_price()
 
@@ -420,7 +439,8 @@ class ApproTransactionSerializer(BaseTransactionSerializer):
         total = 0
         for i in data["items"]:
             buyitem = i["buyitem"]
-            qty = i["qty"] * buyitem.itemqty
+            qty = i["qty"]
+
             priceobj, _ = BuyItemPrice.objects.get_or_create(bar=t.bar, buyitem=buyitem)
             if "price" in i:
                 priceobj.price = i["price"] / qty
@@ -432,7 +452,7 @@ class ApproTransactionSerializer(BaseTransactionSerializer):
             stockitem = StockItem.objects.get(bar=t.bar, details=buyitem.details)
             if stockitem.id not in stockitem_map:
                 stockitem_map[stockitem.id] = {'stockitem': stockitem, 'delta': 0}
-            stockitem_map[stockitem.id]['delta'] += qty * stockitem.get_unit('buy')
+            stockitem_map[stockitem.id]['delta'] += qty * buyitem.itemqty
 
         for x in stockitem_map.values():
             x['stockitem'].create_operation(delta=x['delta'], unit='buy', transaction=t)
