@@ -10,8 +10,6 @@ class ItemDetails(models.Model):
     name_plural = models.CharField(max_length=100, blank=True)
     keywords = models.CharField(max_length=200, blank=True)  # Todo: length
 
-    unit_value = models.FloatField(default=1)
-
     def __unicode__(self):
         return self.name
 
