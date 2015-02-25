@@ -4,7 +4,7 @@ from rest_framework import viewsets, serializers, permissions
 from bars_django.utils import VirtualField, CurrentBarCreateOnlyDefault
 from bars_core.models.bar import Bar
 from bars_items.models.itemdetails import ItemDetails
-from bars_items.models.sellitem import SellItem
+# from bars_items.models.sellitem import SellItem
 
 
 class StockItem(models.Model):
@@ -13,7 +13,7 @@ class StockItem(models.Model):
         app_label = 'bars_items'
     bar = models.ForeignKey(Bar)
     details = models.ForeignKey(ItemDetails)
-    sellitem = models.ForeignKey(SellItem, related_name="stockitems")
+    sellitem = models.ForeignKey('SellItem', related_name="stockitems")
 
     qty = models.FloatField(default=0)
     unit_factor = models.FloatField(default=1)

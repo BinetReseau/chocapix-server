@@ -5,6 +5,7 @@ from rest_framework.response import Response
 
 from bars_django.utils import VirtualField, CurrentBarCreateOnlyDefault
 from bars_core.models.bar import Bar
+from bars_items.models.stockitem import StockItem
 
 
 class SellItem(models.Model):
@@ -55,9 +56,12 @@ class SellItemSerializer(serializers.ModelSerializer):
 
 
 
-class AddStockItemSerializer(serializers.BaseSerializer):
+class MergeSellItemSerializer(serializers.BaseSerializer):
     sellitem = serializers.PrimaryKeyRelatedField(queryset=SellItem.objects.all())
     unit_factor = serializers.FloatField()
+
+class RemoveStockItemSerializer(serializers.BaseSerializer):
+    stockitem = serializers.PrimaryKeyRelatedField(queryset=StockItem.objects.all())
 
 class SellItemViewSet(viewsets.ModelViewSet):
     queryset = SellItem.objects.all()
@@ -67,7 +71,7 @@ class SellItemViewSet(viewsets.ModelViewSet):
 
     @decorators.detail_route(methods=['put'])
     def merge(self, request, pk=None):
-        unsrz = AddStockItemSerializer(data=request.data)
+        unsrz = MergeSellItemSerializer(data=request.data)
         unsrz.is_valid(raise_exception=True)
         other = unsrz.validated_data['sellitem']
         unit_factor = unsrz.validated_data['unit_factor']
@@ -87,4 +91,35 @@ class SellItemViewSet(viewsets.ModelViewSet):
         other.delete()
 
         srz = SellItemSerializer(this)
+        return Response(srz.data, 200)
+
+    @decorators.detail_route(methods=['put'])
+    def remove(self, request, pk=None):
+        unsrz = RemoveStockItemSerializer(data=request.data)
+        unsrz.is_valid(raise_exception=True)
+        stockitem = unsrz.validated_data['stockitem']
+
+        try:
+            sellitem = SellItem.objects.get(pk=pk)
+        except SellItem.DoesNotExist:
+            raise Http404('SellItem (id=%d) does not exist' % pk)
+
+        if sellitem.bar != request.bar or stockitem.bar != sellitem.bar or stockitem.bar != request.bar:
+            raise exceptions.PermissionDenied('Cannot operate across bars')
+
+        if sellitem.stockitems.count() == 0:
+            return Response('Sellitem has only one stockitem; cannot split', 403)
+
+        if stockitem.sellitem != sellitem:
+            return Response('Supplied stockitem does not belong to the sellitem', 403)
+
+        # Clone current sellitem
+        new_sellitem = SellItem.objects.get(pk=sellitem.pk)
+        new_sellitem.pk = None
+        new_sellitem.save()
+
+        stockitem.sellitem = new_sellitem
+        stockitem.save()
+
+        srz = SellItemSerializer(new_sellitem)
         return Response(srz.data, 200)
