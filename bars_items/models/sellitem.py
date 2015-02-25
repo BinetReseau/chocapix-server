@@ -36,6 +36,16 @@ class SellItem(models.Model):
         else:
             return 0
 
+    @property
+    def unit_factor(self):
+        return 1
+
+    @unit_factor.setter
+    def unit_factor(self, factor):
+        for stockitem in self.stockitems:
+            stockitem.unit_factor *= factor
+            stockitem.save()
+
     def __unicode__(self):
         return self.name
 
@@ -51,8 +61,7 @@ class SellItemSerializer(serializers.ModelSerializer):
     bar = serializers.PrimaryKeyRelatedField(read_only=True, default=CurrentBarCreateOnlyDefault())
     fuzzy_qty = serializers.FloatField(read_only=True, source='calc_qty')
     fuzzy_price = serializers.FloatField(read_only=True, source='calc_price')
-
-
+    unit_factor = serializers.FloatField(write_only=True)
 
 
 
@@ -72,6 +81,7 @@ class SellItemViewSet(viewsets.ModelViewSet):
     serializer_class = SellItemSerializer
     permission_classes = (permissions.AllowAny,)  # TODO: temporary
     filter_fields = ['bar']
+
 
     @decorators.detail_route(methods=['put'])
     def merge(self, request, pk=None):
