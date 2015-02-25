@@ -409,7 +409,8 @@ class ApproTransactionSerializer(BaseTransactionSerializer):
         total = 0
         for i in data["items"]:
             buyitem = i["buyitem"]
-            qty = i["qty"] * buyitem.itemqty
+            qty = i["qty"]
+
             priceobj, _ = BuyItemPrice.objects.get_or_create(bar=t.bar, buyitem=buyitem)
             if "price" in i:
                 priceobj.price = i["price"] / qty
@@ -421,7 +422,7 @@ class ApproTransactionSerializer(BaseTransactionSerializer):
             stockitem = StockItem.objects.get(bar=t.bar, details=buyitem.details)
             if stockitem.id not in stockitem_map:
                 stockitem_map[stockitem.id] = {'stockitem': stockitem, 'delta': 0}
-            stockitem_map[stockitem.id]['delta'] += qty * stockitem.get_unit('buy')
+            stockitem_map[stockitem.id]['delta'] += qty * buyitem.itemqty * stockitem.get_unit('buy')
 
         for x in stockitem_map.values():
             x['stockitem'].create_operation(delta=x['delta'], unit='buy', transaction=t)
