@@ -30,9 +30,9 @@ class StockItem(models.Model):
     def create_operation(self, unit='', **kwargs):
         from bars_transactions.models import ItemOperation
         if 'delta' in kwargs:
-            kwargs['delta'] = kwargs['delta'] * self.get_unit(unit)
+            kwargs['delta'] = kwargs['delta'] / self.get_unit(unit)
         if 'next_value' in kwargs:
-            kwargs['next_value'] = kwargs['next_value'] * self.get_unit(unit)
+            kwargs['next_value'] = kwargs['next_value'] / self.get_unit(unit)
         io = ItemOperation(target=self, **kwargs)
         io.save()
         return io
