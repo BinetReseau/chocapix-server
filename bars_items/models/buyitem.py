@@ -76,7 +76,7 @@ class BuyItemPriceViewSet(viewsets.ModelViewSet):
 
         buyitemprice, created = BuyItemPrice.objects.get_or_create(bar=bar, buyitem=buyitem)
         if not created:
-            return Response('BuyItemPrice exists', 400)
+            return Response('BuyItemPrice exists', 409)
 
         other_prices = BuyItemPrice.objects.filter(bar=bar, buyitem__details=buyitem.details).exclude(pk=buyitemprice.pk)
         if other_prices.count() != 0:
