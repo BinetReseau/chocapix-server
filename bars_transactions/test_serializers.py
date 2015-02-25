@@ -137,7 +137,7 @@ class BuySerializerTests(SerializerTests):
         self.assertTrue(s.is_valid())
         s.save()
 
-        self.assertEqual(reload(self.stockitem).sell_qty(), self.stockitem.sell_qty() - data['qty'])
+        self.assertEqual(reload(self.stockitem).sell_qty, self.stockitem.sell_qty - data['qty'])
         self.assertEqual(reload(self.account).money, self.account.money - data['qty'] * self.stockitem.sell_price)
 
     def test_buy_sellitem(self):
@@ -151,9 +151,9 @@ class BuySerializerTests(SerializerTests):
         self.assertTrue(s.is_valid())
         s.save()
 
-        total_qty = self.stockitem.sell_qty() + stockitem3.sell_qty()
-        self.assertAlmostEqual(reload(self.stockitem).sell_qty(), self.stockitem.sell_qty() * (1 - data['qty'] / total_qty))
-        self.assertAlmostEqual(reload(stockitem3).sell_qty(), stockitem3.sell_qty() * (1 - data['qty'] / total_qty))
+        total_qty = self.stockitem.sell_qty + stockitem3.sell_qty
+        self.assertAlmostEqual(reload(self.stockitem).sell_qty, self.stockitem.sell_qty * (1 - data['qty'] / total_qty))
+        self.assertAlmostEqual(reload(stockitem3).sell_qty, stockitem3.sell_qty * (1 - data['qty'] / total_qty))
         self.assertEqual(reload(self.account).money, self.account.money - data['qty'] * self.sellitem.calc_price())
 
     def test_buy_itemdeleted(self):
@@ -218,7 +218,7 @@ class ThrowSerializerTests(SerializerTests):
         self.assertTrue(s.is_valid())
         s.save()
 
-        self.assertEqual(reload(self.stockitem).sell_qty(), self.stockitem.sell_qty() - data['qty'])
+        self.assertEqual(reload(self.stockitem).sell_qty, self.stockitem.sell_qty - data['qty'])
 
     def test_throw_other_bar(self):
         context = {'request': Mock(user=self.user, bar=self.wrong_bar)}
@@ -347,7 +347,7 @@ class MealSerializerTests(SerializerTests):
         self.assertTrue(s.is_valid())
         s.save()
 
-        self.assertEqual(reload(self.stockitem).sell_qty(), self.stockitem.sell_qty() - data['items'][0]['qty'])
+        self.assertEqual(reload(self.stockitem).sell_qty, self.stockitem.sell_qty - data['items'][0]['qty'])
         end_money = self.account.money - data['items'][0]['qty'] * self.stockitem.sell_price
         self.assertEqual(reload(self.account).money, end_money)
 
@@ -367,8 +367,8 @@ class MealSerializerTests(SerializerTests):
         self.assertTrue(s.is_valid())
         s.save()
 
-        self.assertEqual(reload(self.stockitem).sell_qty(), self.stockitem.sell_qty() - data['items'][0]['qty'])
-        self.assertEqual(reload(self.stockitem2).sell_qty(), self.stockitem2.sell_qty() - data['items'][1]['qty'])
+        self.assertEqual(reload(self.stockitem).sell_qty, self.stockitem.sell_qty - data['items'][0]['qty'])
+        self.assertEqual(reload(self.stockitem2).sell_qty, self.stockitem2.sell_qty - data['items'][1]['qty'])
 
         total_money = data['items'][0]['qty'] * self.stockitem.sell_price
         total_money += data['items'][1]['qty'] * self.stockitem2.sell_price
@@ -403,8 +403,8 @@ class ApproSerializerTests(SerializerTests):
         self.assertTrue(s.is_valid())
         s.save()
 
-        self.assertEqual(reload(self.stockitem).sell_qty(), self.stockitem.sell_qty() + data['items'][0]['qty'] * self.buyitem.itemqty / self.stockitem.sell_to_buy)
-        self.assertEqual(reload(self.stockitem2).sell_qty(), self.stockitem2.sell_qty() + data['items'][1]['qty'] * self.buyitem2.itemqty / self.stockitem2.sell_to_buy)
+        self.assertEqual(reload(self.stockitem).sell_qty, self.stockitem.sell_qty + data['items'][0]['qty'] * self.buyitem.itemqty / self.stockitem.sell_to_buy)
+        self.assertEqual(reload(self.stockitem2).sell_qty, self.stockitem2.sell_qty + data['items'][1]['qty'] * self.buyitem2.itemqty / self.stockitem2.sell_to_buy)
 
         end_money = self.bar_account.money
         end_money -= data['items'][0]['price']
@@ -443,8 +443,8 @@ class InventorySerializerTests(SerializerTests):
         self.assertTrue(s.is_valid())
         s.save()
 
-        self.assertEqual(reload(self.stockitem).sell_qty(), data['items'][0]['qty'])
-        self.assertEqual(reload(self.stockitem2).sell_qty(), data['items'][1]['qty'])
+        self.assertEqual(reload(self.stockitem).sell_qty, data['items'][0]['qty'])
+        self.assertEqual(reload(self.stockitem2).sell_qty, data['items'][1]['qty'])
 
     def test_inventory_no_staff(self):
         self.context = {'request': Mock(user=self.user, bar=self.bar)}
@@ -461,5 +461,5 @@ class InventorySerializerTests(SerializerTests):
         with self.assertRaises(exceptions.PermissionDenied):
             s.save()
 
-        self.assertEqual(reload(self.stockitem).sell_qty(), self.stockitem.sell_qty())
-        self.assertEqual(reload(self.stockitem2).sell_qty(), self.stockitem2.sell_qty())
+        self.assertEqual(reload(self.stockitem).sell_qty, self.stockitem.sell_qty)
+        self.assertEqual(reload(self.stockitem2).sell_qty, self.stockitem2.sell_qty)

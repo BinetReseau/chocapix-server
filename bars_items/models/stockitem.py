@@ -56,6 +56,7 @@ class StockItem(models.Model):
         self.price = value * self.get_unit('sell') / (1 + self.sellitem.tax)
 
 
+    @property
     def sell_qty(self):
         return self.qty * self.get_unit('sell')
 

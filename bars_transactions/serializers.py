@@ -116,7 +116,7 @@ class ItemQtySerializer(serializers.Serializer):
             total_price = 0
             for si in stockitems.all():
                 if total_qty != 0:
-                    delta = (si.sell_qty() * qty) / total_qty
+                    delta = (si.sell_qty * qty) / total_qty
                 else:
                     delta = qty / stockitems.count()
 

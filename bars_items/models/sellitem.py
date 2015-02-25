@@ -21,7 +21,7 @@ class SellItem(models.Model):
 
     def calc_qty(self):
         if not hasattr(self, '_qty'):
-            self._qty = sum(i.sell_qty() for i in self.stockitems.all())
+            self._qty = sum(i.sell_qty for i in self.stockitems.all())
         return self._qty
 
     def calc_price(self):
