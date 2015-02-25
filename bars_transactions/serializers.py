@@ -235,7 +235,7 @@ class ThrowTransactionSerializer(BaseTransactionSerializer, ItemQtySerializer):
         iop = transaction.itemoperation_set.all()[0]
         stockitem = iop.target
         obj["stockitem"] = stockitem.id
-        obj["qty"] = -iop.delta / stockitem.get_unit('sell')
+        obj["qty"] = -iop.delta * stockitem.get_unit('sell')
 
         obj["moneyflow"] = iop.delta * stockitem.get_price()
 
