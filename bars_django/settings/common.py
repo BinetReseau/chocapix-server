@@ -89,7 +89,7 @@ REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': [
         # 'rest_framework.permissions.AllowAny',
         # 'bars_core.perms.PerBarPermissionsOrAnonReadOnly',
-        'rest_framework.permissions.DjangoObjectPermissions',
+        #'rest_framework.permissions.DjangoObjectPermissions',
         # 'rest_framework.permissions.DjangoModelPermissionsOrAnonReadOnly',
     ],
     'DEFAULT_AUTHENTICATION_CLASSES': (
@@ -129,3 +129,11 @@ CORS_ORIGIN_ALLOW_ALL = True
 # API app
 
 AUTH_USER_MODEL = 'bars_core.User'
+
+# Redis settings
+
+REDIS = {
+        'host': 'localhost',
+        'port': 6379,
+        'db': 1,
+        }

@@ -13,6 +13,7 @@ from bars_base.models.account import AccountViewSet
 from bars_core.models.role import RoleViewSet
 from bars_news.models import NewsViewSet
 from bars_transactions.views import TransactionViewSet
+from bars_statistics.views import StatisticsViewSet
 
 from bars_items.models.sellitem import SellItemViewSet
 from bars_items.models.stockitem import StockItemViewSet
@@ -35,6 +36,8 @@ router.register('stockitem', StockItemViewSet)
 router.register('news', NewsViewSet)
 
 router.register('transaction', TransactionViewSet)
+
+router.register('statistics', StatisticsViewSet, 'statistics')
 
 
 urlpatterns = patterns(

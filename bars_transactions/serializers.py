@@ -9,6 +9,8 @@ from bars_items.models.stockitem import StockItem
 from bars_items.models.sellitem import SellItem
 from bars_transactions.models import Transaction
 
+from bars_statistics.utils import get_redis, redis_keys
+
 ERROR_MESSAGES = {
     'negative': "%(field)s must be positive",
     'wrong_bar': "%(model)s (id=%(id)d) is in the wrong bar",
@@ -197,6 +199,7 @@ class AccountRatioSerializer(serializers.Serializer):
 class BuyTransactionSerializer(BaseTransactionSerializer, ItemQtySerializer):
     def create(self, data):
         t = super(BuyTransactionSerializer, self).create(data)
+        r = get_redis()
 
         self.context["transaction"] = t
         money_delta = ItemQtySerializer.create(self, data)
@@ -204,6 +207,10 @@ class BuyTransactionSerializer(BaseTransactionSerializer, ItemQtySerializer):
         t.accountoperation_set.create(
             target=Account.objects.get(owner=t.author, bar=t.bar),
             delta=-money_delta)
+
+        print t.bar.id
+        r.zincrby(redis_keys['USER_RANKINGS'] % t.bar.id, t.author.username, money_delta)
+        print r.zrevrange(redis_keys['USER_RANKINGS'] % t.bar.id,0,-1)
 
         return t
 
@@ -353,6 +360,7 @@ class MealTransactionSerializer(BaseTransactionSerializer):
 
     def create(self, data):
         t = super(MealTransactionSerializer, self).create(data)
+        r = get_redis()
 
         self.context["transaction"] = t
 
@@ -367,6 +375,8 @@ class MealTransactionSerializer(BaseTransactionSerializer):
             t.accountoperation_set.create(
                 target=a["account"],
                 delta=-total_price * a["ratio"] / total_ratio)
+
+            r.zincrby(redis_keys['USER_RANKINGS'] % t.bar.id, a['account'].owner.username, total_price * a["ratio"] / total_ratio)
 
         t.transactiondata_set.create(
             label='name',
