@@ -84,7 +84,7 @@ class BuyItemPriceViewSet(viewsets.ModelViewSet):
         else:
             price = 0
 
-        buyitemprice.price = price / buyitemprice.itemqty
+        buyitemprice.price = price / buyitem.itemqty
         buyitemprice.save()
 
         return Response(BuyItemPriceSerializer(buyitemprice).data, 201)
