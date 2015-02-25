@@ -16,8 +16,10 @@ class VirtualField(fields.ReadOnlyField):
     def to_representation(self, attr):
         return self.value
 
+
 from django.http import Http404
 from bars_core.models.bar import Bar
+
 class BarMiddleware(object):
     def process_request(self, request):
         bar = request.GET.get('bar', None)
@@ -29,3 +31,24 @@ class BarMiddleware(object):
             except Bar.DoesNotExist:
                 raise Http404("Unknown bar: %s" % bar)
         return None
+
+
+class CurrentUserCreateOnlyDefault:
+    def set_context(self, serializer_field):
+        self.is_update = serializer_field.parent.instance is not None
+        self.user = serializer_field.context['request'].user
+
+    def __call__(self):
+        if self.is_update:
+            raise fields.SkipField()
+        return self.user
+
+class CurrentBarCreateOnlyDefault:
+    def set_context(self, serializer_field):
+        self.is_update = serializer_field.parent.instance is not None
+        self.bar = serializer_field.context['request'].bar
+
+    def __call__(self):
+        if self.is_update:
+            raise fields.SkipField()
+        return self.bar

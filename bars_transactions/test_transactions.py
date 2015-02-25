@@ -4,7 +4,7 @@ from bars_core.models.user import User
 from bars_core.models.role import Role
 from bars_core.models.bar import Bar
 # from bars_base.models.item import Item, ItemDetails
-from bars_base.models.account import Account
+from bars_core.models.account import Account
 from bars_transactions.models import Transaction
 
 

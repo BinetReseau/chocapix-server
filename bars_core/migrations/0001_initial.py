@@ -32,6 +32,18 @@ class Migration(migrations.Migration):
             bases=(models.Model,),
         ),
         migrations.CreateModel(
+            name='Account',
+            fields=[
+                ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
+                ('money', models.FloatField(default=0)),
+                ('deleted', models.BooleanField(default=False)),
+                ('last_modified', models.DateTimeField(auto_now=True)),
+            ],
+            options={
+            },
+            bases=(models.Model,),
+        ),
+        migrations.CreateModel(
             name='Bar',
             fields=[
                 ('id', models.CharField(max_length=50, serialize=False, primary_key=True)),
@@ -56,5 +68,21 @@ class Migration(migrations.Migration):
             options={
             },
             bases=(models.Model,),
+        ),
+        migrations.AddField(
+            model_name='account',
+            name='bar',
+            field=models.ForeignKey(to='bars_core.Bar'),
+            preserve_default=True,
+        ),
+        migrations.AddField(
+            model_name='account',
+            name='owner',
+            field=models.ForeignKey(to=settings.AUTH_USER_MODEL),
+            preserve_default=True,
+        ),
+        migrations.AlterUniqueTogether(
+            name='account',
+            unique_together=set([('bar', 'owner')]),
         ),
     ]

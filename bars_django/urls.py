@@ -9,7 +9,7 @@ permission.autodiscover()
 
 from bars_core.models.bar import BarViewSet
 from bars_core.models.user import UserViewSet
-from bars_base.models.account import AccountViewSet
+from bars_core.models.account import AccountViewSet
 from bars_core.models.role import RoleViewSet
 from bars_news.models import NewsViewSet
 from bars_transactions.views import TransactionViewSet
