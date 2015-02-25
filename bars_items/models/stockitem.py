@@ -27,11 +27,13 @@ class StockItem(models.Model):
     def get_price(self, unit=''):
         return self.price * (1 + self.sellitem.tax) / self.get_unit(unit)
 
-    def create_operation(self, delta=None, next_value=None, unit='', **kwargs):
+    def create_operation(self, unit='', **kwargs):
         from bars_transactions.models import ItemOperation
-        delta = delta * self.get_unit(unit) if delta else None
-        next_value = next_value * self.get_unit(unit) if next_value else None
-        io = ItemOperation(target=self, delta=delta, **kwargs)
+        if 'delta' in kwargs:
+            kwargs['delta'] = kwargs['delta'] * self.get_unit(unit)
+        if 'next_value' in kwargs:
+            kwargs['next_value'] = kwargs['next_value'] * self.get_unit(unit)
+        io = ItemOperation(target=self, **kwargs)
         io.save()
         return io
 
