@@ -204,7 +204,7 @@ class BuyTransactionSerializer(BaseTransactionSerializer, ItemQtySerializer):
             target=Account.objects.get(owner=t.author, bar=t.bar),
             delta=-money_delta)
 
-        r.zincrby(redis_keys['ITEMS_RANKING'] % t.bar.id, data['sellitem'].name, money_delta)
+        r.zincrby(redis_keys['ITEMS_RANKING'] % t.bar.id, data['stockitem'].sellitem.name, money_delta)
         r.zincrby(redis_keys['USERS_RANKING'] % t.bar.id, t.author.username, money_delta)
         
         return t
