@@ -89,7 +89,7 @@ class SerializerTests(APITestCase):
         self.itemdetails2, _ = ItemDetails.objects.get_or_create(name="Pizza")
         self.buyitem2, _ = BuyItem.objects.get_or_create(details=self.itemdetails2, itemqty=3)
         self.buyitemprice2, _ = BuyItemPrice.objects.get_or_create(buyitem=self.buyitem2, bar=self.bar, price=2)
-        self.stockitem2, _ = StockItem.objects.get_or_create(bar=self.bar, sellitem=self.sellitem2, details=self.itemdetails2, price=1)
+        self.stockitem2, _ = StockItem.objects.get_or_create(bar=self.bar, sellitem=self.sellitem2, details=self.itemdetails2, price=7)
         self.stockitem2.unit_factor = 2
         self.stockitem2.qty = 10
         self.stockitem2.save()
@@ -124,6 +124,9 @@ class SerializerTests(APITestCase):
 
 
 class BuySerializerTests(SerializerTests):
+    def setUp(self):
+        self.stockitem = reload(self.stockitem)
+
     def tearDown(self):
         self.stockitem.deleted = False
         self.stockitem.save()
@@ -136,6 +139,22 @@ class BuySerializerTests(SerializerTests):
 
         self.assertEqual(reload(self.stockitem).sell_qty(), self.stockitem.sell_qty() - data['qty'])
         self.assertEqual(reload(self.account).money, self.account.money - data['qty'] * self.stockitem.sell_price)
+
+    def test_buy_sellitem(self):
+        data = {'type':'buy', 'sellitem':self.sellitem.id, 'qty':23}
+        itemdetails3, _ = ItemDetails.objects.get_or_create(name="Thing")
+        stockitem3, _ = StockItem.objects.get_or_create(bar=self.bar, sellitem=self.sellitem, details=itemdetails3, price=0.5)
+        stockitem3.qty = 10
+        stockitem3.save()
+
+        s = BuyTransactionSerializer(data=data, context=self.context)
+        self.assertTrue(s.is_valid())
+        s.save()
+
+        total_qty = self.stockitem.sell_qty() + stockitem3.sell_qty()
+        self.assertAlmostEqual(reload(self.stockitem).sell_qty(), self.stockitem.sell_qty() * (1 - data['qty'] / total_qty))
+        self.assertAlmostEqual(reload(stockitem3).sell_qty(), stockitem3.sell_qty() * (1 - data['qty'] / total_qty))
+        self.assertEqual(reload(self.account).money, self.account.money - data['qty'] * self.sellitem.calc_price())
 
     def test_buy_itemdeleted(self):
         self.stockitem.deleted = True
