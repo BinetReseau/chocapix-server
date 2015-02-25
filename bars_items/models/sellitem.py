@@ -42,7 +42,7 @@ class SellItem(models.Model):
 
     @unit_factor.setter
     def unit_factor(self, factor):
-        for stockitem in self.stockitems:
+        for stockitem in self.stockitems.all():
             stockitem.unit_factor *= factor
             stockitem.save()
 
