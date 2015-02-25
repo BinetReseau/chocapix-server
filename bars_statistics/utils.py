@@ -11,5 +11,6 @@ def get_redis():
 	return r
 
 redis_keys = {
-	'USER_RANKINGS' : 'users_ranking_%s',
+	'USERS_RANKING' : 'users_ranking_%s',
+	'ITEMS_RANKING' : 'items_ranking_%s'
 }

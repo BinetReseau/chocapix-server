@@ -19,3 +19,13 @@ class StatisticsViewSet(viewsets.ViewSet):
 
 		serializer = UsersRankingSerializer(bar)
 		return Response(serializer.data)
+
+	@decorators.list_route(methods=['get'])
+	def items_ranking(self, request):
+		try:
+			bar = Bar.objects.get(id=request.bar)
+		except Bar.DoesNotExist:
+			raise Http404()
+
+		serializer = ItemsRankingSerializer(bar)
+		return Response(serializer.data)
