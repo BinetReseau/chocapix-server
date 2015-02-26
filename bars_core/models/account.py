@@ -13,6 +13,7 @@ from bars_core.perms import PerBarPermissionsOrAnonReadOnly
 class Account(models.Model):
     class Meta:
         unique_together = ("bar", "owner")
+        index_together = ["bar", "owner"]
         app_label = 'bars_core'
     bar = models.ForeignKey(Bar)
     owner = models.ForeignKey(User)
