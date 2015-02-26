@@ -203,11 +203,20 @@ class GiveSerializerTests(SerializerTests):
 
     def test_give_other_bar(self):
         data = {'type':'give', 'account':self.wrong_account.id, 'amount':10}
-        s = GiveTransactionSerializer(data=data, context=self.context)
+        context = {'request': Mock(user=self.user, bar=self.wrong_bar)}
 
+        s = GiveTransactionSerializer(data=data, context=context)
+        self.assertTrue(s.is_valid(raise_exception=True))
+        with self.assertRaises(exceptions.PermissionDenied):
+            s.save()
+
+    def test_give_other_bar2(self):
+        data = {'type':'give', 'account':self.wrong_account.id, 'amount':10}
+
+        s = GiveTransactionSerializer(data=data, context=self.context)
         with self.assertRaises(serializers.ValidationError) as err:
             s.is_valid(raise_exception=True)
-        self.assertEqual(err.exception.detail, {'account': ['Cannot give across bars']})
+        self.assertEqual(err.exception.detail, {'account': ['Cannot operate across bars']})
 
 
 class ThrowSerializerTests(SerializerTests):
@@ -271,12 +280,13 @@ class DepositSerializerTests(SerializerTests):
 
     def test_deposit_other_bar(self):
         data = {'type':'deposit', 'account':self.wrong_account.id, 'amount':30}
+        context = {'request': Mock(user=self.user, bar=self.wrong_bar)}
 
-        s = DepositTransactionSerializer(data=data, context=self.context)
+        s = DepositTransactionSerializer(data=data, context=context)
         self.assertTrue(s.is_valid(raise_exception=True))
-
         with self.assertRaises(exceptions.PermissionDenied):
             s.save()
+
         self.assertEqual(reload(self.wrong_account).money, self.wrong_account.money)
         self.assertEqual(reload(self.wrong_bar_account).money, self.wrong_bar_account.money)
 

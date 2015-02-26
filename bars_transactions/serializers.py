@@ -166,6 +166,8 @@ class AccountAmountSerializer(serializers.Serializer):
     def validate_account(self, account):
         if account.deleted:
             raise ValidationError("Account is deleted")
+        if self.context['request'].bar.id != account.bar.id:
+            raise serializers.ValidationError("Cannot operate across bars")
         return account
 
     def validate_amount(self, value):
@@ -181,6 +183,8 @@ class AccountRatioSerializer(serializers.Serializer):
     def validate_account(self, account):
         if account.deleted:
             raise ValidationError("Account is deleted")
+        if self.context['request'].bar.id != account.bar.id:
+            raise serializers.ValidationError("Cannot operate across bars")
         return account
 
     def validate_ratio(self, value):
@@ -279,11 +283,11 @@ class DepositTransactionSerializer(BaseTransactionSerializer, AccountAmountSeria
         if transaction is None:
             return obj
 
-        aop = transaction.accountoperation_set.all()[0]
-        obj["account"] = aop.target.id
-        obj["amount"] = aop.delta
-
-        obj["moneyflow"] = aop.delta
+        for aop in transaction.accountoperation_set.all():
+            if aop.target != get_default_account(transaction.bar):
+                obj["account"] = aop.target.id
+                obj["amount"] = aop.delta
+                obj["moneyflow"] = aop.delta
 
         return obj
 
@@ -294,9 +298,6 @@ class GiveTransactionSerializer(BaseTransactionSerializer, AccountAmountSerializ
 
         if self.context['request'].user == account.owner:
             raise serializers.ValidationError("Cannot give money to yourself")
-
-        if self.context['request'].bar.id != account.bar.id:
-            raise serializers.ValidationError("Cannot give across bars")
 
         return account
 
