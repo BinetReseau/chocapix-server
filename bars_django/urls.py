@@ -9,23 +9,33 @@ permission.autodiscover()
 
 from bars_core.models.bar import BarViewSet
 from bars_core.models.user import UserViewSet
-from bars_base.models.account import AccountViewSet
+from bars_core.models.account import AccountViewSet
 from bars_core.models.role import RoleViewSet
-from bars_base.models.item import ItemViewSet, ItemDetailsViewSet
 from bars_news.models import NewsViewSet
 from bars_transactions.views import TransactionViewSet
 
+from bars_items.models.sellitem import SellItemViewSet
+from bars_items.models.stockitem import StockItemViewSet
+from bars_items.models.itemdetails import ItemDetailsViewSet
+from bars_items.models.buyitem import BuyItemViewSet, BuyItemPriceViewSet
 
 router = routers.DefaultRouter()
 
 router.register('bar', BarViewSet)
 router.register('user', UserViewSet)
-router.register('account', AccountViewSet)
 router.register('role', RoleViewSet)
-router.register('item', ItemViewSet)
+router.register('account', AccountViewSet)
+
+router.register('buyitem', BuyItemViewSet)
+router.register('buyitemprice', BuyItemPriceViewSet)
 router.register('itemdetails', ItemDetailsViewSet)
+router.register('sellitem', SellItemViewSet)
+router.register('stockitem', StockItemViewSet)
+
 router.register('news', NewsViewSet)
+
 router.register('transaction', TransactionViewSet)
+
 
 urlpatterns = patterns(
     '',

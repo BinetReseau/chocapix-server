@@ -21,9 +21,23 @@ class Migration(migrations.Migration):
                 ('username', models.CharField(unique=True, max_length=128)),
                 ('full_name', models.CharField(max_length=128, blank=True)),
                 ('pseudo', models.CharField(max_length=128, blank=True)),
+                ('email', models.EmailField(max_length=254, blank=True)),
                 ('is_active', models.BooleanField(default=True)),
                 ('last_modified', models.DateTimeField(auto_now=True)),
                 ('is_superuser', models.BooleanField(default=False)),
+                ('is_staff', models.BooleanField(default=False)),
+            ],
+            options={
+            },
+            bases=(models.Model,),
+        ),
+        migrations.CreateModel(
+            name='Account',
+            fields=[
+                ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
+                ('money', models.FloatField(default=0)),
+                ('deleted', models.BooleanField(default=False)),
+                ('last_modified', models.DateTimeField(auto_now=True)),
             ],
             options={
             },
@@ -34,6 +48,8 @@ class Migration(migrations.Migration):
             fields=[
                 ('id', models.CharField(max_length=50, serialize=False, primary_key=True)),
                 ('name', models.CharField(max_length=100)),
+                ('next_scheduled_appro', models.DateTimeField(null=True)),
+                ('money_warning_threshold', models.FloatField(default=15)),
                 ('last_modified', models.DateTimeField(auto_now=True)),
             ],
             options={
@@ -44,7 +60,7 @@ class Migration(migrations.Migration):
             name='Role',
             fields=[
                 ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
-                ('name', models.CharField(max_length=127, choices=[(b'customer', b'customer'), (b'admin', b'admin'), (b'inventorymanager', b'inventorymanager'), (b'appromanager', b'appromanager'), (b'newsmanager', b'newsmanager'), (b'staff', b'staff')])),
+                ('name', models.CharField(max_length=127, choices=[(b'customer', b'customer'), (b'moneymanager', b'moneymanager'), (b'policeman', b'policeman'), (b'admin', b'admin'), (b'inventorymanager', b'inventorymanager'), (b'appromanager', b'appromanager'), (b'newsmanager', b'newsmanager'), (b'accountmanager', b'accountmanager'), (b'staff', b'staff')])),
                 ('last_modified', models.DateTimeField(auto_now=True)),
                 ('bar', models.ForeignKey(to='bars_core.Bar')),
                 ('user', models.ForeignKey(to=settings.AUTH_USER_MODEL)),
@@ -52,5 +68,21 @@ class Migration(migrations.Migration):
             options={
             },
             bases=(models.Model,),
+        ),
+        migrations.AddField(
+            model_name='account',
+            name='bar',
+            field=models.ForeignKey(to='bars_core.Bar'),
+            preserve_default=True,
+        ),
+        migrations.AddField(
+            model_name='account',
+            name='owner',
+            field=models.ForeignKey(to=settings.AUTH_USER_MODEL),
+            preserve_default=True,
+        ),
+        migrations.AlterUniqueTogether(
+            name='account',
+            unique_together=set([('bar', 'owner')]),
         ),
     ]

@@ -7,12 +7,12 @@ from django.db import models, migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('bars_base', '0004_auto_20150218_0257'),
+        ('bars_items', '0001_initial'),
     ]
 
     operations = [
         migrations.RemoveField(
-            model_name='item',
-            name='unavailable',
+            model_name='itemdetails',
+            name='unit_value',
         ),
     ]

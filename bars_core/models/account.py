@@ -2,9 +2,8 @@ from django.db import models
 from rest_framework import viewsets
 from rest_framework import serializers, decorators
 from rest_framework.response import Response
-from rest_framework.validators import UniqueTogetherValidator
 
-from bars_django.utils import VirtualField
+from bars_django.utils import VirtualField, CurrentBarCreateOnlyDefault
 from bars_core.models.bar import Bar
 from bars_core.models.user import User, get_default_user
 from bars_core.models.role import Role
@@ -15,7 +14,7 @@ class Account(models.Model):
     class Meta:
         unique_together = ("bar", "owner")
         index_together = ["bar", "owner"]
-        app_label = 'bars_base'
+        app_label = 'bars_core'
     bar = models.ForeignKey(Bar)
     owner = models.ForeignKey(User)
     money = models.FloatField(default=0)
@@ -37,21 +36,9 @@ class AccountSerializer(serializers.ModelSerializer):
     class Meta:
         model = Account
         read_only_fields = ('bar', 'money', 'last_modified')
-        extra_kwargs = {'bar': {'required': False}}
+
     _type = VirtualField("Account")
-
-    def get_validators(self):
-        validators = super(AccountSerializer, self).get_validators()
-        return filter(lambda v:not isinstance(v, UniqueTogetherValidator), validators)
-
-    def create(self, data):
-        request = self.context['request']
-
-        account = Account(**data)
-        account.money = 0
-        account.bar = request.bar
-        account.save()
-        return account
+    bar = serializers.PrimaryKeyRelatedField(read_only=True, default=CurrentBarCreateOnlyDefault())
 
 
 class AccountViewSet(viewsets.ModelViewSet):

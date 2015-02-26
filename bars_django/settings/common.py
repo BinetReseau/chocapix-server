@@ -38,7 +38,7 @@ INSTALLED_APPS = (
     'permission',
 
     'bars_core',
-    'bars_base',
+    'bars_items',
     'bars_transactions',
     'bars_news',
 )

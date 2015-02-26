@@ -30,8 +30,8 @@ role_map['policeman'] = [
     'bars_transactions.add_punishtransaction',
 ]
 role_map['accountmanager'] = [
-    'bars_base.add_account',
-    'bars_base.change_account',
+    'bars_core.add_account',
+    'bars_core.change_account',
 ]
 role_map['appromanager'] = role_map['inventorymanager'] + [
     'bars_transactions.add_transaction',
