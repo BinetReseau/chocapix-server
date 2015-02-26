@@ -609,7 +609,7 @@ class InventoryTransactionSerializer(BaseTransactionSerializer):
         for iop in transaction.itemoperation_set.all():
             obj["items"].append({
                 'stockitem': iop.target.id,
-                'qty': iop.delta
+                'qty': iop.next_value
             })
             total_price += iop.delta * iop.target.sell_price
 
