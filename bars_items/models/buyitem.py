@@ -18,7 +18,7 @@ class BuyItem(models.Model):
     itemqty = models.FloatField(default=1)
 
     def __unicode__(self):
-        return "%s * %f %s" % (unicode(self.details), self.itemqty * self.details.unit_value, self.details.unit_name)
+        return "%s * %f" % (unicode(self.details), self.itemqty)
 
 class BuyItemSerializer(serializers.ModelSerializer):
     class Meta:
@@ -78,7 +78,7 @@ class BuyItemPriceSerializer(serializers.ModelSerializer):
         return data
 
     def create(self, data):
-        data = {k:v for k,v in data.items() if k != 'barcode'}
+        data = {k:v for k, v in data.items() if k != 'barcode'}
         buyitemprice = super(BuyItemPriceSerializer, self).create(data)
         bar = buyitemprice.bar
         buyitem = buyitemprice.buyitem
