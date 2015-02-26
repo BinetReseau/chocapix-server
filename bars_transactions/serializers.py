@@ -38,7 +38,12 @@ class BaseTransactionSerializer(serializers.ModelSerializer):
             return obj
         else:
             serializer = serializers_class_map[transaction.type](transaction)
-            return serializer.data
+            try:
+                return serializer.data
+            except Exception as e:
+                obj = BaseTransactionSerializer(transaction, context={'ignore_type': True}).data
+                obj['error'] = str(e)
+                return obj
 
     def create(self, data):
         request = self.context['request']
