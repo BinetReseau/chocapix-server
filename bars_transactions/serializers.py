@@ -28,16 +28,16 @@ class BaseTransactionSerializer(serializers.ModelSerializer):
                 obj["author_account"] = author_account.id
             except:
                 pass
+
+            authed_user = self.context['request'].user
+            obj['can_cancel'] = authed_user.has_perm('bars_transactions.change_transaction', transaction)
+
             obj['_type'] = "Transaction"
 
             return obj
         else:
             serializer = serializers_class_map[transaction.type](transaction)
-            # serializer.is_valid(raise_exception=True)
-            try:
-                return serializer.data
-            except:
-                return
+            return serializer.data
 
     def create(self, data):
         request = self.context['request']
