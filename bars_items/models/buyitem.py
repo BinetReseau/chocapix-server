@@ -72,27 +72,24 @@ class BuyItemPriceSerializer(serializers.ModelSerializer):
             else:
                 try:
                     data['buyitem'] = BuyItem.objects.get(barcode=data['barcode'])
+                    data.pop('barcode')
                 except BuyItem.DoesNotExist:
-                    raise Http404('Barcode does not exist')
+                    raise ValidationError('Barcode does not exist')
 
         return data
 
     def create(self, data):
-        bar = data['bar']
-        buyitem = data['buyitem']
+        buyitemprice = super(BuyItemPriceSerializer, self).create(data)
+        bar = buyitemprice.bar
+        buyitem = buyitemprice.buyitem
 
-        buyitemprice, created = BuyItemPrice.objects.get_or_create(bar=bar, buyitem=buyitem)
-        if not created:
-            raise ValidationError('BuyItemPrice exists')
+        if "price" not in data:
+            other_prices = BuyItemPrice.objects.filter(bar=bar, buyitem__details=buyitem.details).exclude(pk=buyitemprice.pk)
+            if other_prices.count() != 0:
+                price = sum([bip.price / bip.buyitem.itemqty for bip in other_prices.all()]) / other_prices.count()
 
-        other_prices = BuyItemPrice.objects.filter(bar=bar, buyitem__details=buyitem.details).exclude(pk=buyitemprice.pk)
-        if other_prices.count() != 0:
-            price = sum([bip.price * bip.buyitem.itemqty for bip in other_prices.all()]) / other_prices.count()
-        else:
-            price = 0
-
-        buyitemprice.price = price / buyitem.itemqty
-        buyitemprice.save()
+                buyitemprice.price = price * buyitem.itemqty
+                buyitemprice.save()
 
         return buyitemprice
 
