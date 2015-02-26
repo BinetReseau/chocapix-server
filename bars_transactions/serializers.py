@@ -204,7 +204,12 @@ class BuyTransactionSerializer(BaseTransactionSerializer, ItemQtySerializer):
             target=Account.objects.get(owner=t.author, bar=t.bar),
             delta=-money_delta)
 
-        r.zincrby(redis_keys['ITEMS_RANKING'] % t.bar.id, data['stockitem'].sellitem.name, money_delta)
+        if "sellitem" in data:
+            item_name = data["sellitem"].name
+        else:
+            item_name = data["stockitem"].sellitem.name
+
+        r.zincrby(redis_keys['ITEMS_RANKING'] % t.bar.id, item_name, money_delta)
         r.zincrby(redis_keys['USERS_RANKING'] % t.bar.id, t.author.username, money_delta)
         
         return t
@@ -384,7 +389,7 @@ class MealTransactionSerializer(BaseTransactionSerializer):
         for i in data["items"]:
             price = ItemQtySerializer.create(s, i)
             total_price += price
-            r.zincrby(redis_keys['ITEMS_RANKING'] % t.bar.id, i['sellitem'].name, price)
+            r.zincrby(redis_keys['ITEMS_RANKING'] % t.bar.id, i['stockitem'].sellitem.name, price)
 
         total_ratio = 0
         for a in data["accounts"]:
