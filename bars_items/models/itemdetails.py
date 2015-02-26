@@ -1,7 +1,7 @@
 from django.db import models
 from rest_framework import viewsets, serializers, permissions
 from bars_django.utils import VirtualField
-
+from bars_items.models.stockitem import StockItem
 
 class ItemDetails(models.Model):
     class Meta:
@@ -13,10 +13,23 @@ class ItemDetails(models.Model):
     def __unicode__(self):
         return self.name
 
+
 class ItemDetailsSerializer(serializers.ModelSerializer):
     class Meta:
         model = ItemDetails
     _type = VirtualField("ItemDetails")
+
+    def to_representation(self, itemdetails):
+        obj = super(ItemDetailsSerializer, self).to_representation(itemdetails)
+
+        bar = self.context['request'].bar
+        try:
+            stockitem = StockItem.objects.get(bar=bar, details=itemdetails)
+            obj["stockitem"] = stockitem.id
+        except StockItem.DoesNotExist:
+            pass
+
+        return obj
 
 
 class ItemDetailsViewSet(viewsets.ModelViewSet):
