@@ -42,6 +42,7 @@ class BaseTransactionSerializer(serializers.ModelSerializer):
                 return serializer.data
             except Exception as e:
                 obj = BaseTransactionSerializer(transaction, context={'ignore_type': True}).data
+                obj['type'] = 'error'
                 obj['error'] = str(e)
                 return obj
 
