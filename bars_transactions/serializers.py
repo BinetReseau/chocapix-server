@@ -211,7 +211,8 @@ class BuyTransactionSerializer(BaseTransactionSerializer, ItemQtySerializer):
 
         r.zincrby(redis_keys['ITEMS_RANKING'] % t.bar.id, item_name, money_delta)
         r.zincrby(redis_keys['USERS_RANKING'] % t.bar.id, t.author.username, money_delta)
-        
+        r.zincrby(redis_keys['ITEMS_RANKING_BY_USER'] % (t.bar.id, item_name), t.author.username, money_delta)
+
         return t
 
     def to_representation(self, transaction):
@@ -385,15 +386,19 @@ class MealTransactionSerializer(BaseTransactionSerializer):
         s = ItemQtySerializer()
         s.context["transaction"] = t
 
+        total_ratio = 0
+        for a in data["accounts"]:
+            total_ratio += a["ratio"]
+
         total_price = 0
         for i in data["items"]:
             price = ItemQtySerializer.create(s, i)
             total_price += price
             r.zincrby(redis_keys['ITEMS_RANKING'] % t.bar.id, i['stockitem'].sellitem.name, price)
 
-        total_ratio = 0
-        for a in data["accounts"]:
-            total_ratio += a["ratio"]
+            for a in data["accounts"]:
+                r.zincrby(redis_keys['ITEMS_RANKING_BY_USER'] % (t.bar.id, i['stockitem'].sellitem.name), a['account'].owner.username, price * a["ratio"] / total_ratio)
+
         for a in data["accounts"]:
             t.accountoperation_set.create(
                 target=a["account"],

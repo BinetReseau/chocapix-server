@@ -29,3 +29,13 @@ class StatisticsViewSet(viewsets.ViewSet):
 
 		serializer = ItemsRankingSerializer(bar)
 		return Response(serializer.data)
+
+	@decorators.list_route(methods=['get'])
+	def total_by_hour(self, request):
+		try:
+			bar = Bar.objects.get(id=request.bar)
+		except Bar.DoesNotExist:
+			raise Http404()
+
+		serializer = TotalByHourSerializer(bar)
+		return Response(serializer.data)
