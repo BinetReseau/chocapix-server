@@ -72,13 +72,13 @@ class BuyItemPriceSerializer(serializers.ModelSerializer):
             else:
                 try:
                     data['buyitem'] = BuyItem.objects.get(barcode=data['barcode'])
-                    data.pop('barcode')
                 except BuyItem.DoesNotExist:
                     raise ValidationError('Barcode does not exist')
 
         return data
 
     def create(self, data):
+        data = {k:v for k,v in data.items() if k != 'barcode'}
         buyitemprice = super(BuyItemPriceSerializer, self).create(data)
         bar = buyitemprice.bar
         buyitem = buyitemprice.buyitem
