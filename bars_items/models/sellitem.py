@@ -61,7 +61,7 @@ class SellItemSerializer(serializers.ModelSerializer):
     bar = serializers.PrimaryKeyRelatedField(read_only=True, default=CurrentBarCreateOnlyDefault())
     fuzzy_qty = serializers.FloatField(read_only=True, source='calc_qty')
     fuzzy_price = serializers.FloatField(read_only=True, source='calc_price')
-    unit_factor = serializers.FloatField(write_only=True)
+    unit_factor = serializers.FloatField(write_only=True, default=1)
 
 
 
