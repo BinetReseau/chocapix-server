@@ -29,8 +29,9 @@ class BaseTransactionSerializer(serializers.ModelSerializer):
             except:
                 pass
 
-            authed_user = self.context['request'].user
-            obj['can_cancel'] = authed_user.has_perm('bars_transactions.change_transaction', transaction)
+            if self.context.get('request') is not None:
+                authed_user = self.context['request'].user
+                obj['can_cancel'] = authed_user.has_perm('bars_transactions.change_transaction', transaction)
 
             obj['_type'] = "Transaction"
 
@@ -203,7 +204,7 @@ class BuyTransactionSerializer(BaseTransactionSerializer, ItemQtySerializer):
         return t
 
     def to_representation(self, transaction):
-        obj = BaseTransactionSerializer(transaction, context={'ignore_type': True}).data
+        obj = BaseTransactionSerializer(transaction, context={'request':self.context.get('request'), 'ignore_type': True}).data
         if transaction is None:
             return obj
 
@@ -246,7 +247,7 @@ class ThrowTransactionSerializer(BaseTransactionSerializer):
         return t
 
     def to_representation(self, transaction):
-        obj = BaseTransactionSerializer(transaction, context={'ignore_type': True}).data
+        obj = BaseTransactionSerializer(transaction, context={'request':self.context.get('request'), 'ignore_type': True}).data
         if transaction is None:
             return obj
 
@@ -275,7 +276,7 @@ class DepositTransactionSerializer(BaseTransactionSerializer, AccountAmountSeria
         return t
 
     def to_representation(self, transaction):
-        obj = BaseTransactionSerializer(transaction, context={'ignore_type': True}).data
+        obj = BaseTransactionSerializer(transaction, context={'request':self.context.get('request'), 'ignore_type': True}).data
         if transaction is None:
             return obj
 
@@ -302,7 +303,7 @@ class WithdrawTransactionSerializer(BaseTransactionSerializer, AccountAmountSeri
         return t
 
     def to_representation(self, transaction):
-        obj = BaseTransactionSerializer(transaction, context={'ignore_type': True}).data
+        obj = BaseTransactionSerializer(transaction, context={'request':self.context.get('request'), 'ignore_type': True}).data
         if transaction is None:
             return obj
 
@@ -337,7 +338,7 @@ class GiveTransactionSerializer(BaseTransactionSerializer, AccountAmountSerializ
         return t
 
     def to_representation(self, transaction):
-        obj = BaseTransactionSerializer(transaction, context={'ignore_type': True}).data
+        obj = BaseTransactionSerializer(transaction, context={'request':self.context.get('request'), 'ignore_type': True}).data
         if transaction is None:
             return obj
 
@@ -369,7 +370,7 @@ class RefundTransactionSerializer(BaseTransactionSerializer, AccountAmountSerial
         return t
 
     def to_representation(self, transaction):
-        obj = BaseTransactionSerializer(transaction, context={'ignore_type': True}).data
+        obj = BaseTransactionSerializer(transaction, context={'request':self.context.get('request'), 'ignore_type': True}).data
         if transaction is None:
             return obj
 
@@ -400,7 +401,7 @@ class PunishTransactionSerializer(BaseTransactionSerializer, AccountAmountSerial
         return t
 
     def to_representation(self, transaction):
-        obj = BaseTransactionSerializer(transaction, context={'ignore_type': True}).data
+        obj = BaseTransactionSerializer(transaction, context={'request':self.context.get('request'), 'ignore_type': True}).data
         if transaction is None:
             return obj
 
@@ -427,7 +428,7 @@ class AgiosTransactionSerializer(BaseTransactionSerializer, AccountAmountSeriali
         return t
 
     def to_representation(self, transaction):
-        obj = BaseTransactionSerializer(transaction, context={'ignore_type': True}).data
+        obj = BaseTransactionSerializer(transaction, context={'request':self.context.get('request'), 'ignore_type': True}).data
         if transaction is None:
             return obj
 
@@ -457,7 +458,7 @@ class BarInvestmentTransactionSerializer(BaseTransactionSerializer):
         return t
 
     def to_representation(self, transaction):
-        obj = BaseTransactionSerializer(transaction, context={'ignore_type': True}).data
+        obj = BaseTransactionSerializer(transaction, context={'request':self.context.get('request'), 'ignore_type': True}).data
         if transaction is None:
             return obj
 
@@ -503,7 +504,7 @@ class MealTransactionSerializer(BaseTransactionSerializer):
         return t
 
     def to_representation(self, transaction):
-        obj = BaseTransactionSerializer(transaction, context={'ignore_type': True}).data
+        obj = BaseTransactionSerializer(transaction, context={'request':self.context.get('request'), 'ignore_type': True}).data
         if transaction is None:
             return obj
 
@@ -564,7 +565,7 @@ class ApproTransactionSerializer(BaseTransactionSerializer):
         return t
 
     def to_representation(self, transaction):
-        obj = BaseTransactionSerializer(transaction, context={'ignore_type': True}).data
+        obj = BaseTransactionSerializer(transaction, context={'request':self.context.get('request'), 'ignore_type': True}).data
         if transaction is None:
             return obj
 
@@ -593,7 +594,7 @@ class InventoryTransactionSerializer(BaseTransactionSerializer):
         return t
 
     def to_representation(self, transaction):
-        obj = BaseTransactionSerializer(transaction, context={'ignore_type': True}).data
+        obj = BaseTransactionSerializer(transaction, context={'request':self.context.get('request'), 'ignore_type': True}).data
         if transaction is None:
             return obj
 
@@ -635,7 +636,7 @@ class CollectivePaymentTransactionSerializer(BaseTransactionSerializer):
         return t
 
     def to_representation(self, transaction):
-        obj = BaseTransactionSerializer(transaction, context={'ignore_type': True}).data
+        obj = BaseTransactionSerializer(transaction, context={'request':self.context.get('request'), 'ignore_type': True}).data
         if transaction is None:
             return obj
 
