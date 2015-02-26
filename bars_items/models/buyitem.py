@@ -20,10 +20,23 @@ class BuyItem(models.Model):
     def __unicode__(self):
         return "%s * %f" % (unicode(self.details), self.itemqty)
 
+
 class BuyItemSerializer(serializers.ModelSerializer):
     class Meta:
         model = BuyItem
     _type = VirtualField("BuyItem")
+
+    def to_representation(self, buyitem):
+        obj = super(BuyItemSerializer, self).to_representation(buyitem)
+
+        bar = self.context['request'].bar
+        try:
+            buyitemprice = BuyItemPrice.objects.get(bar=bar, buyitem=buyitem)
+            obj["buyitemprice"] = buyitemprice.id
+        except BuyItemPrice.DoesNotExist:
+            pass
+
+        return obj
 
 
 class BuyItemViewSet(viewsets.ModelViewSet):
@@ -52,9 +65,6 @@ class BuyItemPriceSerializer(serializers.ModelSerializer):
         read_only_fields = ("bar",)
 
     _type = VirtualField("BuyItemPrice")
-    # bar = serializers.PrimaryKeyRelatedField(read_only=True, default=CurrentBarCreateOnlyDefault())
-
-# class BuyItemPriceUnSerializer(serializers.BaseSerializer):
     bar = serializers.PrimaryKeyRelatedField(read_only=True, default=CurrentBarCreateOnlyDefault())
     barcode = serializers.CharField(required=False, write_only=True)
     buyitem = serializers.PrimaryKeyRelatedField(required=False, queryset=BuyItem.objects.all())
@@ -99,29 +109,3 @@ class BuyItemPriceViewSet(viewsets.ModelViewSet):
     serializer_class = BuyItemPriceSerializer
     permission_classes = (permissions.AllowAny,)  # TODO: temporary
     filter_fields = ['bar', 'buyitem']
-
-    # def create(self, request):
-    #     bar = request.bar
-    #     s = BuyItemPriceUnSerializer(data=request.data, context={'request':request})
-    #     s.is_valid(raise_exception=True)
-    #     s.save()
-    #
-    #     try:
-    #         buyitem = BuyItem.objects.get(barcode=barcode)
-    #     except BuyItem.DoesNotExist:
-    #         raise Http404('Barcode does not exist')
-    #
-    #     buyitemprice, created = BuyItemPrice.objects.get_or_create(bar=bar, buyitem=buyitem)
-    #     if not created:
-    #         return Response('BuyItemPrice exists', 409)
-    #
-    #     other_prices = BuyItemPrice.objects.filter(bar=bar, buyitem__details=buyitem.details).exclude(pk=buyitemprice.pk)
-    #     if other_prices.count() != 0:
-    #         price = sum([bip.price * bip.buyitem.itemqty for bip in other_prices.all()]) / other_prices.count()
-    #     else:
-    #         price = 0
-    #
-    #     buyitemprice.price = price / buyitem.itemqty
-    #     buyitemprice.save()
-    #
-    #     return Response(BuyItemPriceSerializer(buyitemprice).data, 201)
