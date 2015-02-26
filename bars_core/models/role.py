@@ -16,6 +16,10 @@ role_map['customer'] = [
     'bars_transactions.add_givetransaction',
     'bars_transactions.add_mealtransaction',
 ]
+role_map['agios_daemon'] = [
+    'bars_transactions.add_transaction',
+    'bars_transactions.add_agiostransaction',
+]
 role_map['newsmanager'] = [
     'bars_news.add_news',
     'bars_news.change_news',
@@ -36,8 +40,8 @@ role_map['accountmanager'] = [
 role_map['appromanager'] = role_map['inventorymanager'] + [
     'bars_transactions.add_transaction',
     'bars_transactions.add_approtransaction',
-    'bars_base.add_item',
-    'bars_base.change_item',
+    # 'bars_base.add_item',
+    # 'bars_base.change_item',
 ]
 
 role_map['moneymanager'] = \
@@ -45,12 +49,15 @@ role_map['moneymanager'] = \
     role_map['inventorymanager'] + [
         'bars_transactions.add_transaction',
         'bars_transactions.add_deposittransaction',
+        'bars_transactions.add_withdrawtransaction',
+        'bars_transactions.add_refundtransaction',
 ]
 role_map['staff'] = \
     role_map['moneymanager'] + \
     role_map['policeman'] + [
-        'bars_transactions.add_transaction',
         'bars_transactions.change_transaction',
+        'bars_transactions.add_barInvestmenttransaction',
+        'bars_transactions.add_collectivePaymenttransaction',
 ]
 role_map['admin'] = \
     role_map['staff'] + \
