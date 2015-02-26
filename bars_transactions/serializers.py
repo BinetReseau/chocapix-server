@@ -37,7 +37,7 @@ class BaseTransactionSerializer(serializers.ModelSerializer):
 
             return obj
         else:
-            serializer = serializers_class_map[transaction.type](transaction)
+            serializer = serializers_class_map[transaction.type](transaction, context=self.context)
             try:
                 return serializer.data
             except Exception as e:
