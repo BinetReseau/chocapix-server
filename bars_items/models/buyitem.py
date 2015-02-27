@@ -67,7 +67,7 @@ class BuyItemPriceSerializer(serializers.ModelSerializer):
     _type = VirtualField("BuyItemPrice")
     bar = serializers.PrimaryKeyRelatedField(read_only=True, default=CurrentBarCreateOnlyDefault())
     barcode = serializers.CharField(required=False, write_only=True)
-    buyitem = serializers.PrimaryKeyRelatedField(required=False, queryset=BuyItem.objects.all())
+    buyitem = serializers.PrimaryKeyRelatedField(required=False, default=None, queryset=BuyItem.objects.all())
     price = serializers.FloatField(required=False)
 
     def validate_price(self, price):
@@ -76,8 +76,8 @@ class BuyItemPriceSerializer(serializers.ModelSerializer):
         return price
 
     def validate(self, data):
-        if "buyitem" not in data:
-            if "barcode" not in data:
+        if data.get('buyitem') is None:
+            if data.get('barcode') is None:
                 raise ValidationError("Specify a barcode or a buyitem")
             else:
                 try:
@@ -85,10 +85,11 @@ class BuyItemPriceSerializer(serializers.ModelSerializer):
                 except BuyItem.DoesNotExist:
                     raise ValidationError('Barcode does not exist')
 
+        data.pop('barcode')
         return data
 
     def create(self, data):
-        data = {k:v for k, v in data.items() if k != 'barcode'}
+        # data = {k:v for k, v in data.items() if k != 'barcode'}
         buyitemprice = super(BuyItemPriceSerializer, self).create(data)
         bar = buyitemprice.bar
         buyitem = buyitemprice.buyitem
