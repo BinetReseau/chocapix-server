@@ -3,6 +3,7 @@ from django.db import models
 from rest_framework import viewsets, serializers, permissions
 from rest_framework.response import Response
 from rest_framework.serializers import ValidationError
+from rest_framework.fields import CreateOnlyDefault
 
 from bars_django.utils import VirtualField, CurrentBarCreateOnlyDefault
 from bars_core.models.bar import Bar
@@ -67,7 +68,7 @@ class BuyItemPriceSerializer(serializers.ModelSerializer):
     _type = VirtualField("BuyItemPrice")
     bar = serializers.PrimaryKeyRelatedField(read_only=True, default=CurrentBarCreateOnlyDefault())
     barcode = serializers.CharField(required=False, write_only=True)
-    buyitem = serializers.PrimaryKeyRelatedField(required=False, default=None, queryset=BuyItem.objects.all())
+    buyitem = serializers.PrimaryKeyRelatedField(required=False, default=CreateOnlyDefault(None), queryset=BuyItem.objects.all())
     price = serializers.FloatField(required=False)
 
     def validate_price(self, price):
@@ -76,20 +77,22 @@ class BuyItemPriceSerializer(serializers.ModelSerializer):
         return price
 
     def validate(self, data):
-        if data.get('buyitem') is None:
-            if data.get('barcode') is None:
-                raise ValidationError("Specify a barcode or a buyitem")
-            else:
+        if data.get('barcode') is not None:
+            if data.get('buyitem') is None:
                 try:
                     data['buyitem'] = BuyItem.objects.get(barcode=data['barcode'])
                 except BuyItem.DoesNotExist:
                     raise ValidationError('Barcode does not exist')
 
-        data.pop('barcode')
+            if 'barcode' in data:
+                data.pop('barcode')
+
         return data
 
     def create(self, data):
-        # data = {k:v for k, v in data.items() if k != 'barcode'}
+        if data.get('buyitem') is None and data.get('barcode') is None:
+                raise ValidationError("Specify a barcode or a buyitem")
+
         buyitemprice = super(BuyItemPriceSerializer, self).create(data)
         bar = buyitemprice.bar
         buyitem = buyitemprice.buyitem
