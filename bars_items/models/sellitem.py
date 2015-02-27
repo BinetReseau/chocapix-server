@@ -66,15 +66,15 @@ class SellItemSerializer(serializers.ModelSerializer):
 
 
 
-class MergeSellItemSerializer(serializers.BaseSerializer):
+class MergeSellItemSerializer(serializers.Serializer):
     sellitem = serializers.PrimaryKeyRelatedField(queryset=SellItem.objects.all())
-    unit_factor = serializers.FloatField()
+    unit_factor = serializers.FloatField(default=1)
 
-class AddStockItemSerializer(serializers.BaseSerializer):
+class AddStockItemSerializer(serializers.Serializer):
     stockitem = serializers.PrimaryKeyRelatedField(queryset=StockItem.objects.all())
-    unit_factor = serializers.FloatField()
+    unit_factor = serializers.FloatField(default=1)
 
-class RemoveStockItemSerializer(serializers.BaseSerializer):
+class RemoveStockItemSerializer(serializers.Serializer):
     stockitem = serializers.PrimaryKeyRelatedField(queryset=StockItem.objects.all())
 
 class SellItemViewSet(viewsets.ModelViewSet):
@@ -98,6 +98,9 @@ class SellItemViewSet(viewsets.ModelViewSet):
 
         if this.bar != request.bar or other.bar != this.bar or other.bar != request.bar:
             raise exceptions.PermissionDenied('Cannot operate across bars')
+
+        if this.pk == other.pk:
+            raise exceptions.PermissionDenied('Cannot merge a sellitem with itself')
 
         for stockitem in other.stockitems.all():
             stockitem.sellitem = this
