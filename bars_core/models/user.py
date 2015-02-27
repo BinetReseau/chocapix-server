@@ -72,6 +72,12 @@ class UserSerializer(serializers.ModelSerializer):
         read_only_fields = ('id', '_type', 'is_active', 'last_login', 'last_modified')
     _type = VirtualField("User")
 
+    def create(self, data):
+        u = super(UserSerializer, self).create(data)
+        u.set_password(data.get('password', '0000'))
+        u.save()
+        return u
+
 
 class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
