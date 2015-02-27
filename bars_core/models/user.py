@@ -69,7 +69,7 @@ class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ('id', '_type', 'username', 'full_name', 'pseudo', 'is_active', 'last_login', 'last_modified')
-        read_only_fields = ('id', '_type', 'full_name', 'is_active', 'last_login', 'last_modified')
+        read_only_fields = ('id', '_type', 'is_active', 'last_login', 'last_modified')
     _type = VirtualField("User")
 
 
