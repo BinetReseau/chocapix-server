@@ -24,8 +24,9 @@ class StockItem(models.Model):
     def get_unit(self, unit=''):
         return {'':1., 'sell':self.unit_factor, 'buy':1.}[unit]
 
-    def get_price(self, unit=''):
-        return self.price * (1. + self.sellitem.tax) / self.get_unit(unit)
+    def get_price(self, unit='', tax=True):
+        taxfactor = 1. + (self.sellitem.tax if tax else 0)
+        return self.price * taxfactor / self.get_unit(unit)
 
     def create_operation(self, unit='', **kwargs):
         from bars_transactions.models import ItemOperation
@@ -48,17 +49,21 @@ class StockItem(models.Model):
 
 
     @property
-    def sell_price(self):
-        return self.get_price(unit='sell')
+    def display_price(self):
+        return self.get_price(unit='sell', tax=False)
 
-    @sell_price.setter
-    def sell_price(self, value):
-        self.price = value * self.get_unit('sell') / (1 + self.sellitem.tax)
+    @display_price.setter
+    def display_price(self, value):
+        self.price = value * self.get_unit('sell')
 
 
     @property
     def sell_qty(self):
         return self.qty * self.get_unit('sell')
+
+    @property
+    def sell_price(self):
+        return self.get_price(unit='sell')
 
     def __unicode__(self):
         return "%s (%s)" % (unicode(self.details), unicode(self.bar))
@@ -72,7 +77,7 @@ class StockItemSerializer(serializers.ModelSerializer):
     _type = VirtualField("StockItem")
     bar = serializers.PrimaryKeyRelatedField(read_only=True, default=CurrentBarCreateOnlyDefault())
     qty = serializers.FloatField(source='sell_qty', read_only=True)
-    price = serializers.FloatField(source='sell_price')
+    price = serializers.FloatField(source='display_price')
     sell_to_buy = serializers.FloatField()
 
 
