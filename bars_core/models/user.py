@@ -69,7 +69,7 @@ class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         read_only_fields = ('is_active', 'last_login', 'last_modified')
-        write_only_fields = ('username', 'password',)
+        write_only_fields = ('password',)
         exclude = ('is_staff', 'is_superuser')
     _type = VirtualField("User")
 
