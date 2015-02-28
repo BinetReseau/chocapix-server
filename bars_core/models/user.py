@@ -68,8 +68,9 @@ class User(AbstractBaseUser):
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ('id', '_type', 'username', 'full_name', 'pseudo', 'is_active', 'last_login', 'last_modified')
-        read_only_fields = ('id', '_type', 'is_active', 'last_login', 'last_modified')
+        read_only_fields = ('is_active', 'last_login', 'last_modified')
+        write_only_fields = ('username', 'password',)
+        exclude = ('is_staff', 'is_superuser')
     _type = VirtualField("User")
 
     def create(self, data):
