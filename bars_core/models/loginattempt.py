@@ -25,9 +25,8 @@ class LoginAttemptSerializer(serializers.ModelSerializer):
     _type = VirtualField("LoginAttempt")
 
 
-class LoginAttemptViewSet(viewsets.ModelViewSet):
+class LoginAttemptViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = LoginAttempt.objects.all()
     serializer_class = LoginAttemptSerializer
-    permission_classes = (permissions.DjangoModelPermissionsOrAnonReadOnly,)
     filter_fields = ['user', 'success']
     search_fields = ('ip',)
