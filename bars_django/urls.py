@@ -9,8 +9,9 @@ permission.autodiscover()
 
 from bars_core.models.bar import BarViewSet
 from bars_core.models.user import UserViewSet
-from bars_core.models.account import AccountViewSet
 from bars_core.models.role import RoleViewSet
+from bars_core.models.account import AccountViewSet
+from bars_core.models.loginattempt import LoginAttemptViewSet
 
 from bars_items.models.sellitem import SellItemViewSet
 from bars_items.models.stockitem import StockItemViewSet
@@ -29,6 +30,7 @@ router.register('bar', BarViewSet)
 router.register('user', UserViewSet)
 router.register('role', RoleViewSet)
 router.register('account', AccountViewSet)
+router.register('loginattempt', LoginAttemptViewSet)
 
 router.register('buyitem', BuyItemViewSet)
 router.register('buyitemprice', BuyItemPriceViewSet)
@@ -47,6 +49,7 @@ urlpatterns = patterns(
     '',
     url(r'^admin/', include(admin.site.urls)),
     url(r'^api-auth/', include('rest_framework.urls', namespace='rest_framework')),
-    url(r'^api-token-auth/', 'rest_framework_jwt.views.obtain_jwt_token'),
+    # url(r'^api-token-auth/', 'rest_framework_jwt.views.obtain_jwt_token'),
+    url(r'^api-token-auth/', 'bars_core.auth.obtain_jwt_token'),
     url(r'^', include(router.urls)),
 )
