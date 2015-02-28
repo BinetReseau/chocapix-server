@@ -71,6 +71,7 @@ class UserSerializer(serializers.ModelSerializer):
         read_only_fields = ('is_active', 'last_login', 'last_modified')
         write_only_fields = ('password',)
         exclude = ('is_staff', 'is_superuser')
+        extra_kwargs = {'password':{'required':False}}
     _type = VirtualField("User")
 
     def create(self, data):
