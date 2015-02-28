@@ -56,7 +56,8 @@ class SellItemSerializer(serializers.ModelSerializer):
         model = SellItem
         fields = ("id", "bar", "stockitems", "name", "name_plural", "unit_name", "unit_name_plural", "tax", "deleted", "fuzzy_qty", "fuzzy_price", "unit_factor", "_type")
         read_only_fields = ("id", "bar")
-        extra_kwargs = {'stockitems': {'required': False}}
+        extra_kwargs = {'stockitems': {'required': False},
+                        'unit_factor': {'required': False}}
 
     _type = VirtualField("SellItem")
     bar = serializers.PrimaryKeyRelatedField(read_only=True, default=CurrentBarCreateOnlyDefault())
