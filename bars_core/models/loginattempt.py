@@ -9,7 +9,7 @@ class LoginAttempt(models.Model):
     class Meta:
         app_label = 'bars_core'
     user = models.ForeignKey(User, null=True)
-    success = models.BooleanField()
+    success = models.BooleanField(default=False)
     sent_username = models.CharField(max_length=128)
     timestamp = models.DateTimeField(auto_now_add=True)
     ip = models.CharField(max_length=15)
