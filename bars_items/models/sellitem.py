@@ -160,6 +160,8 @@ class SellItemViewSet(viewsets.ModelViewSet):
         # Clone current sellitem
         new_sellitem = SellItem.objects.get(pk=sellitem.pk)
         new_sellitem.pk = None
+        new_sellitem.name = stockitem.details.name
+        new_sellitem.name_plural = stockitem.details.name_plural
         new_sellitem.save()
 
         stockitem.sellitem = new_sellitem
