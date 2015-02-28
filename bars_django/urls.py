@@ -11,13 +11,17 @@ from bars_core.models.bar import BarViewSet
 from bars_core.models.user import UserViewSet
 from bars_core.models.account import AccountViewSet
 from bars_core.models.role import RoleViewSet
-from bars_news.models import NewsViewSet
-from bars_transactions.views import TransactionViewSet
 
 from bars_items.models.sellitem import SellItemViewSet
 from bars_items.models.stockitem import StockItemViewSet
 from bars_items.models.itemdetails import ItemDetailsViewSet
 from bars_items.models.buyitem import BuyItemViewSet, BuyItemPriceViewSet
+
+from bars_transactions.views import TransactionViewSet
+
+from bars_news.models import NewsViewSet
+
+from bars_bugtracker.models import BugReportViewSet
 
 router = routers.DefaultRouter()
 
@@ -32,9 +36,11 @@ router.register('itemdetails', ItemDetailsViewSet)
 router.register('sellitem', SellItemViewSet)
 router.register('stockitem', StockItemViewSet)
 
+router.register('transaction', TransactionViewSet)
+
 router.register('news', NewsViewSet)
 
-router.register('transaction', TransactionViewSet)
+router.register('bugreport', BugReportViewSet)
 
 
 urlpatterns = patterns(
