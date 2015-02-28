@@ -28,7 +28,7 @@ class ObtainJSONWebTokenWrapper(ObtainJSONWebToken):
         try:
             user = User.objects.get(username=sent_username)
         except User.DoesNotExist:
-            user=None
+            user = None
         LoginAttempt.objects.create(user=user, success=success, ip=ip, sent_username=sent_username)
 
         return response
