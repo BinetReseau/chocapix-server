@@ -14,3 +14,13 @@ class AuthenticationBackend(object):
             return User.objects.get(pk=user_id)
         except User.DoesNotExist:
             return None
+
+from rest_framework_jwt.views import ObtainJSONWebToken
+# from bars_django.utils import get_client_ip
+class ObtainJSONWebTokenWrapper(ObtainJSONWebToken):
+    def post(self, request):
+        response = super(ObtainJSONWebTokenWrapper, self).post(request)
+        # print get_client_ip(request)
+        return response
+
+obtain_jwt_token = ObtainJSONWebTokenWrapper.as_view()
