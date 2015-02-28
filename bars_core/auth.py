@@ -16,11 +16,21 @@ class AuthenticationBackend(object):
             return None
 
 from rest_framework_jwt.views import ObtainJSONWebToken
-# from bars_django.utils import get_client_ip
+from bars_django.utils import get_client_ip
+from bars_core.models.loginattempt import LoginAttempt
 class ObtainJSONWebTokenWrapper(ObtainJSONWebToken):
     def post(self, request):
         response = super(ObtainJSONWebTokenWrapper, self).post(request)
-        # print get_client_ip(request)
+
+        ip = get_client_ip(request)
+        success = response.status_code != 400
+        sent_username=request.data.get('username')
+        try:
+            user = User.objects.get(username=sent_username)
+        except User.DoesNotExist:
+            user=None
+        LoginAttempt.objects.create(user=user, success=success, ip=ip, sent_username=sent_username)
+
         return response
 
 obtain_jwt_token = ObtainJSONWebTokenWrapper.as_view()
