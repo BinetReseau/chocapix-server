@@ -49,7 +49,10 @@ class UserTests(APITestCase):
     def setUpClass(self):
         self.admin = User.objects.create_user("admin", "admin")
 
-        self.user = User.objects.create_user("bob", "password")
+        self.user, _ = User.objects.get_or_create(username="bob")
+        self.user.set_password("password")
+        self.user.save()
+
         serializer = UserSerializer(self.user)
         self.data = serializer.data
         self.user_url = '/user/%d/' % self.user.id
@@ -110,17 +113,17 @@ class UserTests(APITestCase):
 
 class AccountTests(APITestCase):
     def setUp(self):
-        self.bar = Bar.objects.create(id='natationjone')
-        Bar.objects.create(id='avironjone')
+        self.bar, _ = Bar.objects.get_or_create(id='natationjone')
+        Bar.objects.get_or_create(id='avironjone')
 
-        self.user = User.objects.create(username='nadrieril')
-        self.user2 = User.objects.create(username='ntag')
+        self.user, _ = User.objects.get_or_create(username='nadrieril')
+        self.user2, _ = User.objects.get_or_create(username='ntag')
 
-        Role.objects.create(name='admin', bar=self.bar, user=self.user2)
+        Role.objects.get_or_create(name='admin', bar=self.bar, user=self.user2)
         self.user2 = User.objects.get(username='ntag')
 
         self.create_data = {'owner': self.user2.id}
-        self.account = Account.objects.create(owner=self.user, bar=self.bar)
+        self.account, _ = Account.objects.get_or_create(owner=self.user, bar=self.bar)
         self.update_data = self.client.get('/account/%d/' % self.account.id).data
         self.update_data['money'] = 100
 
