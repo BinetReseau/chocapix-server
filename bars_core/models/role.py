@@ -15,7 +15,7 @@ role_map['customer'] = [
     'bars_transactions.add_throwtransaction',
     'bars_transactions.add_givetransaction',
     'bars_transactions.add_mealtransaction',
-    'bars_bugreport.add_bugreport',
+    'bars_bugtracker.add_bugreport',
 ]
 role_map['agios_daemon'] = [
     'bars_transactions.add_transaction',
