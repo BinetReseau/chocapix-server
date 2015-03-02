@@ -73,7 +73,7 @@ class ItemQtySerializer(serializers.Serializer):
     qty = serializers.FloatField()
 
     def validate_qty(self, value):
-        if value <= 0:
+        if value < 0:
             raise ValidationError(ERROR_MESSAGES['negative'] % {'field':"Quantity"})
         return value
 
