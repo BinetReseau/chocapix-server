@@ -103,8 +103,12 @@ class UserViewSet(viewsets.ModelViewSet):
         return Response('Password changed', 200)
 
 
+default_user = None
 def get_default_user():
-    try:
-        return User.objects.get(username="bar")
-    except User.DoesNotExist:
-        return User.objects.create(username="bar", full_name="Bar", is_active=False)
+    global default_user
+    if default_user is None:
+        try:
+            default_user = User.objects.get(username="bar")
+        except User.DoesNotExist:
+            default_user = User.objects.create(username="bar", full_name="Bar", is_active=False)
+    return default_user
