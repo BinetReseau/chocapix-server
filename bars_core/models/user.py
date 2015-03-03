@@ -7,6 +7,9 @@ from bars_django.utils import VirtualField
 
 
 class UserManager(BaseUserManager):
+    def get_queryset(self):
+        return super(UserManager, self).get_queryset().prefetch_related('role_set')
+
     def create_user(self, username, password):
         user = self.model(username=username)
         user.set_password(password)

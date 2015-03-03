@@ -35,12 +35,11 @@ class PerBarPermissionsOrAnonReadOnly(DjangoObjectPermissions):
 
 
 from bars_core.models.bar import Bar
-from bars_core.models.role import Role
+# from bars_core.models.role import Role
 
 def _has_perm_in_bar(user, perm, bar):
-    roles = Role.objects.filter(user=user, bar=bar)
-    for r in roles:
-        if perm in r.get_permissions():
+    for r in user.role_set.all():
+        if r.bar_id == bar.id and perm in r.get_permissions():
             return True
     return False
 

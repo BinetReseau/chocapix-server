@@ -94,7 +94,7 @@ class SerializerTests(APITestCase):
         self.stockitem2.qty = 10
         self.stockitem2.save()
 
-
+        self.user = reload(self.user)  # Avoid role caching
         self.context = {'request': Mock(user=self.user, bar=self.bar)}
 
     @classmethod
