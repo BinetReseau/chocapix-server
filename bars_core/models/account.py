@@ -65,8 +65,5 @@ def get_default_account(bar):
     global default_account_map
     user = get_default_user()
     if bar.id not in default_account_map:
-        try:
-            default_account_map[bar.id] = Account.objects.get(owner=user, bar=bar)
-        except Account.DoesNotExist:
-            default_account_map[bar.id] = Account.objects.create(owner=user, bar=bar)
+        default_account_map[bar.id], _ = Account.objects.get_or_create(owner=user, bar=bar)
     return default_account_map[bar.id]

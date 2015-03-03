@@ -110,8 +110,5 @@ default_user = None
 def get_default_user():
     global default_user
     if default_user is None:
-        try:
-            default_user = User.objects.get(username="bar")
-        except User.DoesNotExist:
-            default_user = User.objects.create(username="bar", full_name="Bar", is_active=False)
+        default_user, _ = User.objects.get_or_create(username="bar", full_name="Bar", is_active=False)
     return default_user
