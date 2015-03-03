@@ -23,11 +23,10 @@ class BaseTransactionSerializer(serializers.ModelSerializer):
     def to_representation(self, transaction):
         if 'ignore_type' in self.context or transaction.type == "":
             obj = super(BaseTransactionSerializer, self).to_representation(transaction)
-            try:
-                author_account = Account.objects.get(owner=transaction.author, bar=transaction.bar)
-                obj["author_account"] = author_account.id
-            except:
-                pass
+
+            for a in transaction.author.account_set.all():
+                if a.bar_id == transaction.bar_id:
+                    obj["author_account"] = a.id
 
             if self.context.get('request') is not None:
                 authed_user = self.context['request'].user

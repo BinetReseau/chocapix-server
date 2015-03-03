@@ -6,6 +6,7 @@ from rest_framework.response import Response
 from bars_core.perms import PerBarPermissionsOrAnonReadOnly
 from bars_core.models.bar import Bar
 from bars_core.models.user import User
+from bars_core.models.account import Account
 from bars_transactions.models import Transaction
 from bars_transactions.serializers import serializers_class_map
 
@@ -42,6 +43,7 @@ class TransactionViewSet(viewsets.ModelViewSet):
     queryset = Transaction.objects.prefetch_related(
         Prefetch('bar', Bar.objects.only('id')),
         Prefetch('author', User.objects.only('id')),
+        Prefetch('author__account_set', queryset=Account.objects.only('id', 'bar_id', 'owner_id')),
         'accountoperation_set',
         'accountoperation_set__target',
         'accountoperation_set__target__owner',
