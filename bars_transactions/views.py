@@ -28,8 +28,8 @@ class TransactionFilterBackend(filters.BaseFilterBackend):
             if x is not None:
                 queryset = queryset.filter(q(x))
 
-        queryset = queryset.order_by('-timestamp')
-        # queryset = queryset.order_by('-timestamp').distinct('timestamp')
+        queryset = queryset.order_by('-timestamp', '-id')
+        # queryset = queryset.order_by('-timestamp', '-id').distinct('timestamp', 'id')
 
         page = int(request.query_params.get('page', 0))
         if page != 0:
