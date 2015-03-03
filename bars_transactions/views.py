@@ -1,9 +1,11 @@
 from django.http import Http404
-from django.db.models import Q
+from django.db.models import Q, Prefetch
 from rest_framework import viewsets, decorators, exceptions, filters
 from rest_framework.response import Response
 
 from bars_core.perms import PerBarPermissionsOrAnonReadOnly
+from bars_core.models.bar import Bar
+from bars_core.models.user import User
 from bars_transactions.models import Transaction
 from bars_transactions.serializers import serializers_class_map
 
@@ -37,7 +39,16 @@ class TransactionFilterBackend(filters.BaseFilterBackend):
 
 
 class TransactionViewSet(viewsets.ModelViewSet):
-    queryset = Transaction.objects.all()
+    queryset = Transaction.objects.prefetch_related(
+        Prefetch('bar', Bar.objects.only('id')),
+        Prefetch('author', User.objects.only('id')),
+        'accountoperation_set',
+        'accountoperation_set__target',
+        'accountoperation_set__target__owner',
+        'itemoperation_set',
+        'itemoperation_set__target',
+        'itemoperation_set__target__sellitem',
+        'transactiondata_set')
     permission_classes = (PerBarPermissionsOrAnonReadOnly,)
     filter_backends = (TransactionFilterBackend,)
 

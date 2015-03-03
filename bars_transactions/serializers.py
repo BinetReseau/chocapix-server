@@ -56,7 +56,6 @@ class BaseTransactionSerializer(serializers.ModelSerializer):
             fields = Transaction._meta.get_all_field_names()
             attrs = {k: v for k, v in data.items() if k in fields}
             t = Transaction(**attrs)
-            # t.author = User.objects.all()[0]
             t.author = request.user
             t.bar = bar
             t.save()
@@ -215,7 +214,7 @@ class BuyTransactionSerializer(BaseTransactionSerializer, ItemQtySerializer):
             return obj
 
         force_fuzzy = True
-        obj["items"] = ItemQtySerializer.serializeOperations(transaction.itemoperation_set.select_related(), force_fuzzy)
+        obj["items"] = ItemQtySerializer.serializeOperations(transaction.itemoperation_set.all(), force_fuzzy)
 
         aop = transaction.accountoperation_set.all()[0]
         obj["moneyflow"] = -aop.delta
@@ -515,7 +514,7 @@ class MealTransactionSerializer(BaseTransactionSerializer):
             return obj
 
         force_fuzzy = True
-        obj["items"] = ItemQtySerializer.serializeOperations(transaction.itemoperation_set.select_related(), force_fuzzy)
+        obj["items"] = ItemQtySerializer.serializeOperations(transaction.itemoperation_set.all(), force_fuzzy)
 
         total_price = 0
         obj["accounts"] = []
