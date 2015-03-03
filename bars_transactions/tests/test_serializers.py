@@ -99,8 +99,8 @@ class SerializerTests(APITestCase):
 
     @classmethod
     def tearDownClass(self):
-        self.bar.delete()
-        self.wrong_bar.delete()
+        # self.bar.delete()
+        # self.wrong_bar.delete()
 
         self.user.delete()
         self.account.delete()
