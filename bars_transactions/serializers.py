@@ -23,11 +23,10 @@ class BaseTransactionSerializer(serializers.ModelSerializer):
     def to_representation(self, transaction):
         if 'ignore_type' in self.context or transaction.type == "":
             obj = super(BaseTransactionSerializer, self).to_representation(transaction)
-            try:
-                author_account = Account.objects.get(owner=transaction.author, bar=transaction.bar)
-                obj["author_account"] = author_account.id
-            except:
-                pass
+
+            for a in transaction.author.account_set.all():
+                if a.bar_id == transaction.bar_id:
+                    obj["author_account"] = a.id
 
             if self.context.get('request') is not None:
                 authed_user = self.context['request'].user
@@ -56,7 +55,6 @@ class BaseTransactionSerializer(serializers.ModelSerializer):
             fields = Transaction._meta.get_all_field_names()
             attrs = {k: v for k, v in data.items() if k in fields}
             t = Transaction(**attrs)
-            # t.author = User.objects.all()[0]
             t.author = request.user
             t.bar = bar
             t.save()
@@ -215,7 +213,7 @@ class BuyTransactionSerializer(BaseTransactionSerializer, ItemQtySerializer):
             return obj
 
         force_fuzzy = True
-        obj["items"] = ItemQtySerializer.serializeOperations(transaction.itemoperation_set.select_related(), force_fuzzy)
+        obj["items"] = ItemQtySerializer.serializeOperations(transaction.itemoperation_set.all(), force_fuzzy)
 
         aop = transaction.accountoperation_set.all()[0]
         obj["moneyflow"] = -aop.delta
@@ -515,7 +513,7 @@ class MealTransactionSerializer(BaseTransactionSerializer):
             return obj
 
         force_fuzzy = True
-        obj["items"] = ItemQtySerializer.serializeOperations(transaction.itemoperation_set.select_related(), force_fuzzy)
+        obj["items"] = ItemQtySerializer.serializeOperations(transaction.itemoperation_set.all(), force_fuzzy)
 
         total_price = 0
         obj["accounts"] = []

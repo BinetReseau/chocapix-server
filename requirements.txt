@@ -11,3 +11,4 @@ django-permission==0.8.3
 mysql-python==1.2.5
 markdown==2.5.2
 werkzeug==0.10.1
+django-debug-toolbar==1.2.2

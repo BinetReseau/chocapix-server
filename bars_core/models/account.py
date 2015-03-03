@@ -60,9 +60,10 @@ class AccountViewSet(viewsets.ModelViewSet):
         return Response(serializer.data)
 
 
+default_account_map = {}
 def get_default_account(bar):
+    global default_account_map
     user = get_default_user()
-    try:
-        return Account.objects.get(owner=user, bar=bar)
-    except Account.DoesNotExist:
-        return Account.objects.create(owner=user, bar=bar)
+    if bar.id not in default_account_map:
+        default_account_map[bar.id], _ = Account.objects.get_or_create(owner=user, bar=bar)
+    return default_account_map[bar.id]

@@ -1,9 +1,12 @@
 from django.http import Http404
-from django.db.models import Q
+from django.db.models import Q, Prefetch
 from rest_framework import viewsets, decorators, exceptions, filters
 from rest_framework.response import Response
 
 from bars_core.perms import PerBarPermissionsOrAnonReadOnly
+from bars_core.models.bar import Bar
+from bars_core.models.user import User
+from bars_core.models.account import Account
 from bars_transactions.models import Transaction
 from bars_transactions.serializers import serializers_class_map
 
@@ -25,8 +28,8 @@ class TransactionFilterBackend(filters.BaseFilterBackend):
             if x is not None:
                 queryset = queryset.filter(q(x))
 
-        queryset = queryset.order_by('-timestamp')
-        # queryset = queryset.order_by('-timestamp').distinct('timestamp')
+        queryset = queryset.order_by('-timestamp', '-id')
+        # queryset = queryset.order_by('-timestamp', '-id').distinct('timestamp', 'id')
 
         page = int(request.query_params.get('page', 0))
         if page != 0:
@@ -37,7 +40,17 @@ class TransactionFilterBackend(filters.BaseFilterBackend):
 
 
 class TransactionViewSet(viewsets.ModelViewSet):
-    queryset = Transaction.objects.all()
+    queryset = Transaction.objects.prefetch_related(
+        Prefetch('bar', Bar.objects.only('id')),
+        Prefetch('author', User.objects.only('id')),
+        Prefetch('author__account_set', queryset=Account.objects.only('id', 'bar_id', 'owner_id')),
+        'accountoperation_set',
+        'accountoperation_set__target',
+        'accountoperation_set__target__owner',
+        'itemoperation_set',
+        'itemoperation_set__target',
+        'itemoperation_set__target__sellitem',
+        'transactiondata_set')
     permission_classes = (PerBarPermissionsOrAnonReadOnly,)
     filter_backends = (TransactionFilterBackend,)
 

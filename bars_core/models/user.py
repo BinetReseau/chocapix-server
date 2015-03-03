@@ -7,6 +7,9 @@ from bars_django.utils import VirtualField
 
 
 class UserManager(BaseUserManager):
+    def get_queryset(self):
+        return super(UserManager, self).get_queryset().prefetch_related('role_set')
+
     def create_user(self, username, password):
         user = self.model(username=username)
         user.set_password(password)
@@ -103,8 +106,9 @@ class UserViewSet(viewsets.ModelViewSet):
         return Response('Password changed', 200)
 
 
+default_user = None
 def get_default_user():
-    try:
-        return User.objects.get(username="bar")
-    except User.DoesNotExist:
-        return User.objects.create(username="bar", full_name="Bar", is_active=False)
+    global default_user
+    if default_user is None:
+        default_user, _ = User.objects.get_or_create(username="bar", full_name="Bar", is_active=False)
+    return default_user
