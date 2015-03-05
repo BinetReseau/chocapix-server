@@ -17,6 +17,9 @@ class Bar(models.Model):
     def __unicode__(self):
         return self.id
 
+    def apply_agios(self, account):
+        return 0
+
 
 class BarSerializer(serializers.ModelSerializer):
     class Meta:
