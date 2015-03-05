@@ -82,7 +82,7 @@ class BuyItemPriceSerializer(serializers.ModelSerializer):
                 try:
                     data['buyitem'] = BuyItem.objects.get(barcode=data['barcode'])
                 except BuyItem.DoesNotExist:
-                    raise ValidationError('Barcode does not exist')
+                    raise Http404('Barcode does not exist')
 
             if 'barcode' in data:
                 data.pop('barcode')
