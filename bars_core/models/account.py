@@ -19,6 +19,7 @@ class Account(models.Model):
     owner = models.ForeignKey(User)
     money = models.FloatField(default=0)
 
+    overdrawn_since = models.DateField(null=True)
     deleted = models.BooleanField(default=False)
     last_modified = models.DateTimeField(auto_now=True)
 
@@ -35,7 +36,7 @@ class Account(models.Model):
 class AccountSerializer(serializers.ModelSerializer):
     class Meta:
         model = Account
-        read_only_fields = ('bar', 'money', 'last_modified')
+        read_only_fields = ('bar', 'money', 'overdrawn_since', 'last_modified')
 
     _type = VirtualField("Account")
     bar = serializers.PrimaryKeyRelatedField(read_only=True, default=CurrentBarCreateOnlyDefault())
