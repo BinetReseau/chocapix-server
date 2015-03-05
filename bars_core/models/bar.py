@@ -14,6 +14,7 @@ class Bar(models.Model):
     next_scheduled_appro = models.DateTimeField(null=True)
     money_warning_threshold = models.FloatField(default=15)
     agios_threshold = models.FloatField(default=2)  # In days
+    agios_factor = models.FloatField(default=0.05)
 
     last_modified = models.DateTimeField(auto_now=True)
 
@@ -31,7 +32,7 @@ class Bar(models.Model):
                 account.save()
 
             if datetime.now() - account.overdrawn_since >= timedelta(self.agios_threshold):
-                delta = abs(account.money) * 0.05
+                delta = abs(account.money) * self.agios_factor
                 makeAgiosTransaction(self, account, delta)
                 return delta
 
