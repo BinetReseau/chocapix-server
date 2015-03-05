@@ -12,3 +12,4 @@ mysql-python==1.2.5
 markdown==2.5.2
 werkzeug==0.10.1
 django-debug-toolbar==1.2.2
+mock==1.0.1
