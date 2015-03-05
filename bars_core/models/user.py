@@ -105,6 +105,16 @@ class UserViewSet(viewsets.ModelViewSet):
         user.save()
         return Response('Password changed', 200)
 
+    @decorators.detail_route(methods=['put'])
+    def reset_password(self, request, pk=None):
+        user = User.objects.get(pk=pk)
+        # password = User.objects.make_random_password()
+        password = "0000"
+
+        user.set_password(password)
+        user.save()
+        return Response('Password changed', 200)
+
 
 default_user = None
 def get_default_user():
