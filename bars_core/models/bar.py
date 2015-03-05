@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 from mock import Mock
 from django.db import models
 from rest_framework import viewsets, serializers, permissions
@@ -13,6 +13,7 @@ class Bar(models.Model):
 
     next_scheduled_appro = models.DateTimeField(null=True)
     money_warning_threshold = models.FloatField(default=15)
+    agios_threshold = models.FloatField(default=2)  # In days
 
     last_modified = models.DateTimeField(auto_now=True)
 
@@ -29,9 +30,10 @@ class Bar(models.Model):
                 account.overdrawn_since = datetime.now()
                 account.save()
 
-            delta = abs(account.money) * 0.05
-            makeAgiosTransaction(self, account, delta)
-            return delta
+            if datetime.now() - account.overdrawn_since >= timedelta(self.agios_threshold):
+                delta = abs(account.money) * 0.05
+                makeAgiosTransaction(self, account, delta)
+                return delta
 
         return 0
 
