@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import date, timedelta
 from mock import Mock
 from django.db import models
 from rest_framework import viewsets, serializers, permissions
@@ -28,10 +28,10 @@ class Bar(models.Model):
 
         elif account.money < 0:
             if account.overdrawn_since is None:
-                account.overdrawn_since = datetime.now()
+                account.overdrawn_since = date.today()
                 account.save()
 
-            if datetime.now() - account.overdrawn_since >= timedelta(self.agios_threshold):
+            if date.today() - account.overdrawn_since >= timedelta(self.agios_threshold):
                 delta = abs(account.money) * self.agios_factor
                 makeAgiosTransaction(self, account, delta)
                 return delta
