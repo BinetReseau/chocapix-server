@@ -207,7 +207,7 @@ class BuyTransactionSerializer(BaseTransactionSerializer, ItemQtySerializer):
         if "sellitem" in data:
             item_name = data["sellitem"].name
         else:
-            item_name = data["stockitem"].sellitem.name
+            item_name = data["stockitem"].details.name
 
         r.zincrby(redis_keys['ITEMS_RANKING'] % t.bar.id, item_name, money_delta)
         r.zincrby(redis_keys['USERS_RANKING'] % t.bar.id, t.author.username, money_delta)
@@ -394,10 +394,16 @@ class MealTransactionSerializer(BaseTransactionSerializer):
         for i in data["items"]:
             price = ItemQtySerializer.create(s, i)
             total_price += price
-            r.zincrby(redis_keys['ITEMS_RANKING'] % t.bar.id, i['stockitem'].sellitem.name, price)
+
+            if "sellitem" in i:
+                item_name = i["sellitem"].name
+            else:
+                item_name = i["stockitem"].details.name
+            
+            r.zincrby(redis_keys['ITEMS_RANKING'] % t.bar.id, item_name, price)
 
             for a in data["accounts"]:
-                r.zincrby(redis_keys['ITEMS_RANKING_BY_USER'] % (t.bar.id, i['stockitem'].sellitem.name), a['account'].owner.username, price * a["ratio"] / total_ratio)
+                r.zincrby(redis_keys['ITEMS_RANKING_BY_USER'] % (t.bar.id, item_name), a['account'].owner.username, price * a["ratio"] / total_ratio)
 
         for a in data["accounts"]:
             t.accountoperation_set.create(
