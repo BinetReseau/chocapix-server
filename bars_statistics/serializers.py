@@ -22,22 +22,6 @@ class ItemsRankingSerializer(serializers.BaseSerializer):
 			'ranking': r.zrevrange(redis_keys['ITEMS_RANKING'] % bar.id, 0, -1, withscores=True)
 		}
 
-
-class TotalByHourSerializer(serializers.BaseSerializer):
-	def to_representation(self, bar):
-		r = get_redis()
-
-		items_list = r.zrevrange(redis_keys['ITEMS_RANKING'] % bar.id, 0, -1, withscores=True)
-
-		total = 0
-		for item in items_list:
-			total += item[1]
-
-		return {
-			'average': total
-		}
-
-
 class UsersRankingByItemSerializer(serializers.BaseSerializer):
 	def to_representation(self, bar, item):
 		r = get_redis()
