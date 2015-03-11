@@ -88,7 +88,7 @@ REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': [
         # 'rest_framework.permissions.AllowAny',
         # 'bars_core.perms.PerBarPermissionsOrAnonReadOnly',
-        #'rest_framework.permissions.DjangoObjectPermissions',
+        'rest_framework.permissions.DjangoObjectPermissions',
         # 'rest_framework.permissions.DjangoModelPermissionsOrAnonReadOnly',
     ],
     'DEFAULT_AUTHENTICATION_CLASSES': (
