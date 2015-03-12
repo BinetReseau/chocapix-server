@@ -16,35 +16,28 @@ class StatisticsViewSet(viewsets.ViewSet):
 
 	@decorators.list_route(methods=['get'])
 	def users_ranking(self, request):
-		try:
-			bar = Bar.objects.get(id=request.bar)
-		except Bar.DoesNotExist:
+		if request.bar is not None:
+			serializer = UsersRankingSerializer(request.bar)
+		else:
 			raise Http404()
-
-		serializer = UsersRankingSerializer(bar)
+		
 		return Response(serializer.data)
 
 	@decorators.list_route(methods=['get'])
 	def items_ranking(self, request):
-		try:
-			bar = Bar.objects.get(id=request.bar)
-		except Bar.DoesNotExist:
+		if request.bar is not None:
+			serializer = ItemsRankingSerializer(request.bar)
+		else:
 			raise Http404()
 
-		serializer = ItemsRankingSerializer(bar)
 		return Response(serializer.data)
 
 	@decorators.list_route(methods=['get'])
 	def users_ranking_by_item(self, request):
 		try:
-			bar = Bar.objects.get(id=request.bar)
-		except Bar.DoesNotExist:
-			raise Http404()
-
-		try:
 			sellitem = SellItem.objects.get(bar=request.bar, id=request.QUERY_PARAMS.get('sellitem', None))
 		except SellItem.DoesNotExist:
 			raise Http404()
 
-		serializer = UsersRankingByItemSerializer(bar, item)
+		serializer = UsersRankingByItemSerializer(request.bar, sellitem)
 		return Response(serializer.data)
