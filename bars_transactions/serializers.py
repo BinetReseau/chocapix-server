@@ -3,6 +3,7 @@ from rest_framework import serializers
 from rest_framework.serializers import ValidationError
 from rest_framework import exceptions
 
+from bars_core.models.user import get_default_user
 from bars_core.models.account import Account, get_default_account
 from bars_items.models.buyitem import BuyItem, BuyItemPrice
 from bars_items.models.stockitem import StockItem
@@ -285,7 +286,7 @@ class DepositTransactionSerializer(BaseTransactionSerializer, AccountAmountSeria
             return obj
 
         for aop in transaction.accountoperation_set.all():
-            if aop.target != get_default_account(transaction.bar):
+            if aop.target.owner != get_default_user():
                 obj["account"] = aop.target.id
                 obj["amount"] = aop.delta
                 obj["moneyflow"] = aop.delta
@@ -312,7 +313,7 @@ class WithdrawTransactionSerializer(BaseTransactionSerializer, AccountAmountSeri
             return obj
 
         for aop in transaction.accountoperation_set.all():
-            if aop.target != get_default_account(transaction.bar):
+            if aop.target.owner != get_default_user():
                 obj["account"] = aop.target.id
                 obj["amount"] = -aop.delta
                 obj["moneyflow"] = -aop.delta

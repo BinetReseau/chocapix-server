@@ -61,10 +61,11 @@ class AccountViewSet(viewsets.ModelViewSet):
         return Response(serializer.data)
 
 
-default_account_map = {}
+# default_account_map = {}
 def get_default_account(bar):
-    global default_account_map
+    # global default_account_map
     user = get_default_user()
-    if bar.id not in default_account_map:
-        default_account_map[bar.id], _ = Account.objects.get_or_create(owner=user, bar=bar)
-    return default_account_map[bar.id]
+    # if bar.id not in default_account_map:
+    #     default_account_map[bar.id], _ = Account.objects.get_or_create(owner=user, bar=bar)
+    x, _ = Account.objects.get_or_create(owner=user, bar=bar)
+    return x
