@@ -19,7 +19,6 @@ class TransactionFilterBackend(filters.BaseFilterBackend):
         'item': lambda item: Q(itemoperation__target=item),
         'stockitem': lambda stockitem: Q(itemoperation__target=stockitem),
         'sellitem': lambda sellitem: Q(itemoperation__target__sellitem=sellitem),
-        'type': lambda t: Q(type=t),
     }
 
     def filter_queryset(self, request, queryset, view):
@@ -27,6 +26,10 @@ class TransactionFilterBackend(filters.BaseFilterBackend):
             x = request.query_params.get(param, None)
             if x is not None:
                 queryset = queryset.filter(q(x))
+
+        types = request.query_params.getlist("type")
+        if len(types) != 0:
+            queryset = queryset.filter(type__in=types)
 
         queryset = queryset.order_by('-timestamp', '-id').distinct()
 
