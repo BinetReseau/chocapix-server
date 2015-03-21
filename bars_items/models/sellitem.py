@@ -14,6 +14,7 @@ class SellItem(models.Model):
     bar = models.ForeignKey(Bar)
     name = models.CharField(max_length=100)
     name_plural = models.CharField(max_length=100, blank=True)
+    keywords = models.CharField(max_length=200, blank=True)  # Todo: length
 
     unit_name = models.CharField(max_length=100, blank=True)
     unit_name_plural = models.CharField(max_length=100, blank=True)
@@ -54,7 +55,7 @@ class SellItem(models.Model):
 class SellItemSerializer(serializers.ModelSerializer):
     class Meta:
         model = SellItem
-        fields = ("id", "bar", "stockitems", "name", "name_plural", "unit_name", "unit_name_plural", "tax", "deleted", "fuzzy_qty", "fuzzy_price", "unit_factor", "_type")
+        fields = ("id", "bar", "stockitems", "name", "name_plural", "keywords", "unit_name", "unit_name_plural", "tax", "deleted", "fuzzy_qty", "fuzzy_price", "unit_factor", "_type")
         read_only_fields = ("id", "bar")
         extra_kwargs = {'stockitems': {'required': False},
                         'unit_factor': {'required': False}}
