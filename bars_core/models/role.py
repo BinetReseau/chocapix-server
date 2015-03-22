@@ -65,6 +65,7 @@ role_map['staff'] = \
         'bars_transactions.change_transaction',
         'bars_transactions.add_barInvestmenttransaction',
         'bars_transactions.add_collectivePaymenttransaction',
+        'bars_bugtracker.change_bugreport',
 ]
 role_map['admin'] = \
     role_map['staff'] + \
