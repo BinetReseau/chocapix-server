@@ -42,8 +42,13 @@ role_map['accountmanager'] = [
 role_map['appromanager'] = role_map['inventorymanager'] + [
     'bars_transactions.add_transaction',
     'bars_transactions.add_approtransaction',
-    # 'bars_base.add_item',
-    # 'bars_base.change_item',
+
+    'bars_items.add_buyitemprice',
+    'bars_items.change_buyitemprice',
+    'bars_items.add_sellitem',
+    'bars_items.change_sellitem',
+    'bars_items.add_stockitem',
+    'bars_items.change_stockitem',
 ]
 
 role_map['moneymanager'] = \

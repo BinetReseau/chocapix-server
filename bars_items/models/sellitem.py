@@ -3,11 +3,13 @@ from django.db import models
 from rest_framework import viewsets, serializers, permissions, decorators, exceptions
 from rest_framework.response import Response
 
-from bars_django.utils import VirtualField, CurrentBarCreateOnlyDefault
+from bars_django.utils import VirtualField, permission_logic, CurrentBarCreateOnlyDefault
+from bars_core.perms import PerBarPermissionsOrAnonReadOnly, BarRolePermissionLogic
 from bars_core.models.bar import Bar
 from bars_items.models.stockitem import StockItem
 
 
+@permission_logic(BarRolePermissionLogic())
 class SellItem(models.Model):
     class Meta:
         app_label = 'bars_items'
@@ -82,7 +84,7 @@ class RemoveStockItemSerializer(serializers.Serializer):
 class SellItemViewSet(viewsets.ModelViewSet):
     queryset = SellItem.objects.all()
     serializer_class = SellItemSerializer
-    permission_classes = (permissions.AllowAny,)  # TODO: temporary
+    permission_classes = (PerBarPermissionsOrAnonReadOnly,)
     filter_fields = ['bar']
 
 

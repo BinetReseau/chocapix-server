@@ -5,9 +5,9 @@ from rest_framework.response import Response
 from rest_framework.serializers import ValidationError
 from rest_framework.fields import CreateOnlyDefault
 
-from bars_django.utils import VirtualField, CurrentBarCreateOnlyDefault
+from bars_django.utils import VirtualField, permission_logic, CurrentBarCreateOnlyDefault
+from bars_core.perms import PerBarPermissionsOrAnonReadOnly, BarRolePermissionLogic
 from bars_core.models.bar import Bar
-# from bars_core.perms import PerBarPermissionsOrAnonReadOnly
 from bars_items.models.itemdetails import ItemDetails
 
 
@@ -48,6 +48,7 @@ class BuyItemViewSet(viewsets.ModelViewSet):
 
 
 
+@permission_logic(BarRolePermissionLogic())
 class BuyItemPrice(models.Model):
     class Meta:
         unique_together = ("bar", "buyitem")
@@ -111,5 +112,5 @@ class BuyItemPriceSerializer(serializers.ModelSerializer):
 class BuyItemPriceViewSet(viewsets.ModelViewSet):
     queryset = BuyItemPrice.objects.all()
     serializer_class = BuyItemPriceSerializer
-    permission_classes = (permissions.AllowAny,)  # TODO: temporary
+    permission_classes = (PerBarPermissionsOrAnonReadOnly,)
     filter_fields = ['bar', 'buyitem']
