@@ -91,11 +91,3 @@ class PermissionBackend(PermissionBackend_):
 
         # print "Backend (%s): " % method, perm, repr(obj), res
         return res
-
-
-
-PERMISSION_LOGICS = (
-    ('bars_core.User', OneselfPermissionLogic()),
-    ('bars_core.Role', BarRolePermissionLogic()),
-    ('bars_core.Account', BarRolePermissionLogic()),
-)

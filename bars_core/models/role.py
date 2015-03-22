@@ -3,9 +3,10 @@ from rest_framework import viewsets
 from rest_framework import serializers, decorators
 from rest_framework.response import Response
 
-from bars_django.utils import VirtualField
+from bars_django.utils import VirtualField, permission_logic
 from bars_core.models.bar import Bar
 from bars_core.models.user import User
+from bars_core.perms import BarRolePermissionLogic
 
 
 role_map = {}
@@ -71,6 +72,7 @@ role_map['admin'] = \
 role_list = list(role_map.keys())
 
 
+@permission_logic(BarRolePermissionLogic())
 class Role(models.Model):
     class Meta:
         app_label = 'bars_core'

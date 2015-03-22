@@ -2,8 +2,8 @@ from django.db import models
 from django.contrib.auth.models import BaseUserManager, AbstractBaseUser, _user_has_module_perms, _user_has_perm
 from rest_framework import viewsets, serializers, decorators, exceptions
 from rest_framework.response import Response
-
-from bars_django.utils import VirtualField
+from permission.logics import OneselfPermissionLogic
+from bars_django.utils import VirtualField, permission_logic
 
 
 class UserManager(BaseUserManager):
@@ -24,6 +24,7 @@ class UserManager(BaseUserManager):
         return user
 
 
+@permission_logic(OneselfPermissionLogic())
 class User(AbstractBaseUser):
     class Meta:
         app_label = 'bars_core'

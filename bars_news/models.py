@@ -1,15 +1,13 @@
 from django.db import models
-from rest_framework import exceptions
-from rest_framework import serializers
-from rest_framework import viewsets
-from django.http import Http404
+from rest_framework import serializers, viewsets
 
-from bars_django.utils import VirtualField, CurrentBarCreateOnlyDefault, CurrentUserCreateOnlyDefault
+from bars_django.utils import VirtualField, permission_logic, CurrentBarCreateOnlyDefault, CurrentUserCreateOnlyDefault
 from bars_core.models.bar import Bar
 from bars_core.models.user import User
-from bars_core.perms import PerBarPermissionsOrAnonReadOnly
+from bars_core.perms import PerBarPermissionsOrAnonReadOnly, BarRolePermissionLogic
 
 
+@permission_logic(BarRolePermissionLogic())
 class News(models.Model):
     class Meta:
         app_label = 'bars_news'

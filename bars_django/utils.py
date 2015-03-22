@@ -17,6 +17,14 @@ class VirtualField(fields.ReadOnlyField):
         return self.value
 
 
+from permission import add_permission_logic
+def permission_logic(logic):
+    def decorator(model):
+        add_permission_logic(model, logic)
+        return model
+    return decorator
+
+
 from django.http import Http404
 from bars_core.models.bar import Bar
 
