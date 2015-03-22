@@ -2,7 +2,11 @@ from rest_framework.test import APITestCase
 from bars_core.models.user import User, UserSerializer
 from bars_core.models.role import Role
 from bars_core.models.bar import Bar
-from bars_core.models.account import Account
+from bars_core.models.account import Account, AccountSerializer
+
+
+def reload(obj):
+    return obj.__class__.objects.get(pk=obj.pk)
 
 
 class BackendTests(APITestCase):
@@ -112,7 +116,8 @@ class UserTests(APITestCase):
 
 
 class AccountTests(APITestCase):
-    def setUp(self):
+    @classmethod
+    def setUpClass(self):
         self.bar, _ = Bar.objects.get_or_create(id='natationjone')
         Bar.objects.get_or_create(id='avironjone')
 
@@ -124,14 +129,18 @@ class AccountTests(APITestCase):
 
         self.create_data = {'owner': self.user2.id}
         self.account, _ = Account.objects.get_or_create(owner=self.user, bar=self.bar)
-        self.update_data = self.client.get('/account/%d/' % self.account.id).data
-        self.update_data['money'] = 100
+        self.update_data = AccountSerializer(self.account).data
+        self.update_data['deleted'] = True
+
+    def setUp(self):
+        self.account.deleted = False
+        self.account.save()
 
 
     def test_get_account(self):
         response = self.client.get('/account/')
         self.assertEqual(len(response.data), Account.objects.all().count())
-        self.assertEqual(response.data[0]['money'], self.account.money)
+        self.assertEqual(response.data[0]['deleted'], self.account.deleted)
 
 
     def test_create_account(self):
@@ -168,33 +177,25 @@ class AccountTests(APITestCase):
         # Unauthenticated
         response = self.client.put('/account/%d/?bar=natationjone' % self.account.id, self.update_data)
         self.assertEqual(response.status_code, 401)
+        self.assertEqual(reload(self.account).deleted, self.account.deleted)
 
     def test_change_account2(self):
         # Wrong permissions
         self.client.force_authenticate(user=self.user)
         response = self.client.put('/account/%d/?bar=natationjone' % self.account.id, self.update_data)
         self.assertEqual(response.status_code, 403)
-
-    def test_change_account3(self):
-        # No bar
-        self.client.force_authenticate(user=self.user)
-        response = self.client.put('/account/%d/' % self.account.id, self.update_data)
-        self.assertEqual(response.status_code, 403)
+        self.assertEqual(reload(self.account).deleted, self.account.deleted)
 
     def test_change_account4(self):
         # Correct permissions
         self.client.force_authenticate(user=self.user2)
         response = self.client.put('/account/%d/?bar=natationjone' % self.account.id, self.update_data)
         self.assertEqual(response.status_code, 200)
+        self.assertEqual(reload(self.account).deleted, self.update_data['deleted'])
 
     def test_change_account5(self):
         # Wrong bar
         self.client.force_authenticate(user=self.user2)
         response = self.client.put('/account/%d/?bar=avironjone' % self.account.id, self.update_data)
-        self.assertEqual(response.status_code, 404)
-
-    def test_change_account6(self):
-        # No bar
-        self.client.force_authenticate(user=self.user2)
-        response = self.client.put('/account/%d/' % self.account.id, self.update_data)
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, 403)
+        self.assertEqual(reload(self.account).deleted, self.account.deleted)
