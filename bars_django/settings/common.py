@@ -105,8 +105,8 @@ REST_FRAMEWORK = {
 
 AUTHENTICATION_BACKENDS = (
     'bars_core.auth.AuthenticationBackend',
-    'bars_core.perms.BarPermissionBackend',
-    'permission.backends.PermissionBackend',
+    'bars_core.perms.PermissionBackend',
+    # 'permission.backends.PermissionBackend',
 )
 
 import datetime
