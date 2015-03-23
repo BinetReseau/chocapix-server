@@ -1,8 +1,8 @@
 from rest_framework.test import APITestCase
 from bars_django.utils import get_root_bar
+from bars_core.models.bar import Bar, BarSerializer
 from bars_core.models.user import User, UserSerializer
 from bars_core.models.role import Role
-from bars_core.models.bar import Bar
 from bars_core.models.account import Account, AccountSerializer
 
 
@@ -47,6 +47,56 @@ class BackendTests(APITestCase):
         self.assertTrue(u.is_superuser)
         self.assertTrue(u.is_staff)
 
+
+
+class BarTests(APITestCase):
+    @classmethod
+    def setUpClass(self):
+        get_root_bar._cache = None  # Workaround
+        root_bar = get_root_bar()
+        self.admin, _ = User.objects.get_or_create(username="admin")
+        Role.objects.get_or_create(bar=root_bar, user=self.admin, name="admin")
+        self.admin = reload(self.admin)  # prevent role caching
+
+        self.bar, _ = Bar.objects.get_or_create(id="barrouje")
+
+        serializer = BarSerializer(self.bar)
+        self.data = serializer.data
+        del self.data['next_scheduled_appro']
+        self.data['name'] = "barjone"
+        self.bar_url = '/bar/%s/' % self.bar.id
+
+    def setUp(self):
+        self.bar.name = "barrouje"
+        self.bar.save()
+
+
+    def test_get_bar_not_authed(self):
+        # Not authenticated
+        response = self.client.get(self.bar_url)
+        self.assertEqual(response.status_code, 200)
+
+    def test_get_bar_authed(self):
+        # Authenticated
+        self.client.force_authenticate(user=User())
+        response = self.client.get(self.bar_url)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data['name'], self.bar.name)
+
+
+    def test_change_bar_no_perms(self):
+        # Not authenticated
+        self.client.force_authenticate(user=User())
+        response = self.client.put(self.bar_url, self.data)
+        self.assertEqual(response.status_code, 403)
+
+    def test_change_bar_admin(self):
+        # Authenticated as admin
+        self.client.force_authenticate(user=self.admin)
+        response = self.client.put(self.bar_url, self.data)
+        self.assertEqual(response.status_code, 200)
+
+        self.assertEqual(reload(self.bar).name, self.data['name'])
 
 
 class UserTests(APITestCase):

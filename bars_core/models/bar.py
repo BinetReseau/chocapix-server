@@ -1,10 +1,14 @@
 from datetime import date, timedelta
 from mock import Mock
 from django.db import models
-from rest_framework import viewsets, serializers, permissions
-from bars_django.utils import VirtualField
+from rest_framework import viewsets, serializers
+
+from bars_django.utils import VirtualField, permission_logic
+from bars_core.perms import RootBarRolePermissionLogic
 
 
+
+@permission_logic(RootBarRolePermissionLogic())
 class Bar(models.Model):
     class Meta:
         app_label = 'bars_core'
@@ -41,18 +45,6 @@ class Bar(models.Model):
         return 0
 
 
-class BarSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Bar
-    _type = VirtualField("Bar")
-
-
-class BarViewSet(viewsets.ModelViewSet):
-    queryset = Bar.objects.all()
-    serializer_class = BarSerializer
-    permission_classes = (permissions.AllowAny,)  # TODO: temporary
-
-
 def makeAgiosTransaction(bar, account, amount):
     from bars_transactions.serializers import AgiosTransactionSerializer
     from bars_core.models.user import get_default_user
@@ -64,3 +56,16 @@ def makeAgiosTransaction(bar, account, amount):
     s = AgiosTransactionSerializer(data=data, context=context)
     s.is_valid(raise_exception=True)
     s.save()
+
+
+class BarSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Bar
+    _type = VirtualField("Bar")
+
+
+from bars_core.perms import RootBarPermissionsOrAnonReadOnly
+class BarViewSet(viewsets.ModelViewSet):
+    queryset = Bar.objects.all()
+    serializer_class = BarSerializer
+    permission_classes = (RootBarPermissionsOrAnonReadOnly,)
