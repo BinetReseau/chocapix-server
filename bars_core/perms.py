@@ -88,6 +88,19 @@ class BarRolePermissionLogic(PermissionLogic):
         return False
 
 
+class RootBarRolePermissionLogic(PermissionLogic):
+    def __init__(self, field_name=None):
+        self.field_name = field_name or 'bar'
+
+    def has_perm(self, user, perm, obj=None):
+        if not user.is_authenticated() or not user.is_active:
+            return False
+
+        # print "Logic: ", perm, obj
+        bar = get_root_bar()
+        return user.has_perm(perm, bar)
+
+
 
 ## Bar-related permissions
 from permission.backends import PermissionBackend as PermissionBackend_
@@ -108,11 +121,11 @@ class PermissionBackend(PermissionBackend_):
             return False
 
         if isinstance(obj, Bar):
-            # method = "bar"
+            method = "bar"
             res = _has_perm_in_bar(user, perm, obj)
         else:
-            # method = "obj"
+            method = "obj"
             res = super(PermissionBackend, self).has_perm(user, perm, obj)
 
-        # print "Backend (%s): " % method, perm, repr(obj), res
+        # print "Backend (%s): " % method, perm, repr(obj), res, user.role_set.all()
         return res
