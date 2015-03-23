@@ -2,8 +2,8 @@ from django.db import models
 from django.contrib.auth.models import BaseUserManager, AbstractBaseUser, _user_has_module_perms, _user_has_perm
 from rest_framework import viewsets, serializers, decorators, exceptions
 from rest_framework.response import Response
-from permission.logics import OneselfPermissionLogic
 
+from permission.logics import OneselfPermissionLogic
 from bars_django.utils import VirtualField, permission_logic
 from bars_core.perms import RootBarRolePermissionLogic
 

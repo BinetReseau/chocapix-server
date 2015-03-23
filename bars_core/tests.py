@@ -158,8 +158,7 @@ class UserTests(APITestCase):
         response = self.client.put(self.user_url, self.data)
         self.assertEqual(response.status_code, 200)
 
-        response2 = self.client.get(self.user_url)
-        self.assertEqual(response2.data['username'], self.data['username'])
+        self.assertEqual(reload(self.user).username, self.data['username'])
 
 
     def test_change_password(self):
