@@ -128,9 +128,8 @@ class UserViewSet(viewsets.ModelViewSet):
         return Response('Password changed', 200)
 
 
-default_user = None
 def get_default_user():
-    global default_user
-    if default_user is None:
-        default_user, _ = User.objects.get_or_create(username="bar", full_name="Bar", is_active=False)
-    return default_user
+    if get_default_user._cache is None:
+        get_default_user._cache, _ = User.objects.get_or_create(username="bar", full_name="Bar", is_active=False)
+    return get_default_user._cache
+get_default_user._cache = None

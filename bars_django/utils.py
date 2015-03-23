@@ -26,13 +26,12 @@ def permission_logic(logic):
 
 
 
-root_bar = None
 def get_root_bar():
-    global root_bar
-    if root_bar is None:
+    if get_root_bar._cache is None:
         from bars_core.models.bar import Bar
-        root_bar, _ = Bar.objects.get_or_create(id="root", name="Root")
-    return root_bar
+        get_root_bar._cache, _ = Bar.objects.get_or_create(id="root", name="Root")
+    return get_root_bar._cache
+get_root_bar._cache = None
 
 
 
