@@ -5,6 +5,8 @@ from restfw_composed_permissions.generic.components import AllowAll, AllowOnlyAu
 from restfw_composed_permissions.generic.components import ObjectAttrEqualToObjectAttr as ObjectAttrEqualToObjectAttr_
 from bars_django.utils import get_root_bar
 
+DEBUG = False
+
 # Fix library
 class ObjectAttrEqualToObjectAttr(ObjectAttrEqualToObjectAttr_):
     def has_permission(self, perm_obj, request, view):
@@ -43,11 +45,13 @@ class PerBarPermission(BasePermissionComponent, DjangoObjectPermissions):
             return False
 
         perms = self.get_required_permissions(request.method, view)
-        # print "View: ", request.method, bar, perms
+        if DEBUG:
+            print "View: ", request.method, bar, perms
         return request.user.has_perms(perms, bar)
 
     def has_object_permission(self, perm_obj, request, view, obj):
-        # print "View (obj): ", request.method, obj
+        if DEBUG:
+            print "View (obj): ", request.method, obj
         return DjangoObjectPermissions.has_object_permission(self, request, view, obj)
 
 
@@ -61,7 +65,8 @@ class RootBarPermission(PerBarPermission):
     def has_permission(self, perm_obj, request, view):
         bar = get_root_bar()
         perms = self.get_required_permissions(request.method, view)
-        # print "View: ", request.method, bar, perms
+        if DEBUG:
+            print "View (root): ", request.method, bar, perms
         return request.user.has_perms(perms, bar)
 
 
@@ -77,7 +82,8 @@ class BarRolePermissionLogic(PermissionLogic):
         if not user.is_authenticated() or not user.is_active:
             return False
 
-        # print "Logic: ", perm, obj
+        if DEBUG:
+            print "Logic: ", perm, obj
         if obj is None:
             method = perm.split(".")[1].split("_")[0]
             return method in ('change', 'delete')
@@ -96,7 +102,8 @@ class RootBarRolePermissionLogic(PermissionLogic):
         if not user.is_authenticated() or not user.is_active:
             return False
 
-        # print "Logic: ", perm, obj
+        if DEBUG:
+            print "Logic: ", perm, obj
         bar = get_root_bar()
         return user.has_perm(perm, bar)
 
@@ -127,5 +134,6 @@ class PermissionBackend(PermissionBackend_):
             method = "obj"
             res = super(PermissionBackend, self).has_perm(user, perm, obj)
 
-        # print "Backend (%s): " % method, perm, repr(obj), res, user.role_set.all()
+        if DEBUG:
+            print "Backend (%s): " % method, perm, repr(obj), res, list(reduce(lambda x, y:x | set(y), [r.get_permissions() for r in user.role_set.all()], set()))
         return res
