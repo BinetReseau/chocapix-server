@@ -3,7 +3,9 @@ from django.contrib.auth.models import BaseUserManager, AbstractBaseUser, _user_
 from rest_framework import viewsets, serializers, decorators, exceptions
 from rest_framework.response import Response
 from permission.logics import OneselfPermissionLogic
+
 from bars_django.utils import VirtualField, permission_logic
+from bars_core.perms import RootBarRolePermissionLogic
 
 
 class UserManager(BaseUserManager):
@@ -25,6 +27,7 @@ class UserManager(BaseUserManager):
 
 
 @permission_logic(OneselfPermissionLogic())
+@permission_logic(RootBarRolePermissionLogic())
 class User(AbstractBaseUser):
     class Meta:
         app_label = 'bars_core'
@@ -85,9 +88,17 @@ class UserSerializer(serializers.ModelSerializer):
         return u
 
 
+from restfw_composed_permissions.generic.components import AllowOnlyAuthenticated
+from bars_core.perms import BaseComposedPermission, RootBarPermission, ObjectAttrEqualToObjectAttr
+class UserPermissions(BaseComposedPermission):
+    permission_set = lambda self: \
+        AllowOnlyAuthenticated() & (RootBarPermission() | ObjectAttrEqualToObjectAttr("request.user", "obj"))
+
+
 class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer
+    permission_classes = (UserPermissions,)
 
     @decorators.list_route()
     def me(self, request):

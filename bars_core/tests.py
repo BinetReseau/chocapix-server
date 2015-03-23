@@ -1,4 +1,5 @@
 from rest_framework.test import APITestCase
+from bars_django.utils import get_root_bar
 from bars_core.models.user import User, UserSerializer
 from bars_core.models.role import Role
 from bars_core.models.bar import Bar
@@ -51,7 +52,10 @@ class BackendTests(APITestCase):
 class UserTests(APITestCase):
     @classmethod
     def setUpClass(self):
-        self.admin = User.objects.create_user("admin", "admin")
+        root_bar = get_root_bar()
+        self.admin, _ = User.objects.get_or_create(username="admin")
+        Role.objects.get_or_create(bar=root_bar, user=self.admin, name="admin")
+        self.admin = reload(self.admin)  # prevent role caching
 
         self.user, _ = User.objects.get_or_create(username="bob")
         self.user.set_password("password")
@@ -74,17 +78,27 @@ class UserTests(APITestCase):
 
     def test_get_user_authed(self):
         # Authenticated
-        self.client.force_authenticate(user=self.admin)
+        self.client.force_authenticate(user=User())
         response = self.client.get(self.user_url)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data['username'], self.data['username'])
 
 
-    def test_change_user_not_authed(self):
+    def test_change_user_no_perms(self):
         # Not authenticated
+        self.client.force_authenticate(user=User())
         self.data['username'] = 'alice'
-        response = self.client.post(self.user_url, self.data)
-        self.assertEqual(response.status_code, 401)
+        response = self.client.put(self.user_url, self.data)
+        self.assertEqual(response.status_code, 403)
+
+    def test_change_user_admin(self):
+        # Authenticated as admin
+        self.data['username'] = 'alice'
+        self.client.force_authenticate(user=self.admin)
+        response = self.client.put(self.user_url, self.data)
+        self.assertEqual(response.status_code, 200)
+
+        self.assertEqual(reload(self.user).username, self.data['username'])
 
     def test_change_user_self(self):
         # Authenticated as self
