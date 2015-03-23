@@ -52,6 +52,7 @@ class BackendTests(APITestCase):
 class UserTests(APITestCase):
     @classmethod
     def setUpClass(self):
+        get_root_bar._cache = None  # Workaround
         root_bar = get_root_bar()
         self.admin, _ = User.objects.get_or_create(username="admin")
         Role.objects.get_or_create(bar=root_bar, user=self.admin, name="admin")
