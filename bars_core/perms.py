@@ -127,7 +127,8 @@ class PermissionBackend(PermissionBackend_):
         if not user.is_authenticated() or not user.is_active:
             return False
 
-        if isinstance(obj, Bar):
+        bar_perm = "bar" == perm.split(".")[1].split("_")[1]
+        if isinstance(obj, Bar) and (obj == get_root_bar() or not bar_perm):
             method = "bar"
             res = _has_perm_in_bar(user, perm, obj)
         else:
