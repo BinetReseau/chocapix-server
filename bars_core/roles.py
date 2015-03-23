@@ -77,4 +77,30 @@ roles_map['admin'] = \
         'bars_core.delete_role',
 ]
 
-roles_list = list(roles_map.keys())
+
+# Root
+root_roles_map = {}
+root_roles_map['barmanager'] = [
+    'bars_core.add_bar',
+    'bars_core.change_bar',
+    'bars_core.delete_bar',
+]
+root_roles_map['usermanager'] = [
+    'bars_core.add_user',
+    'bars_core.change_user',
+    'bars_core.delete_user',
+]
+root_roles_map['itemmanager'] = [
+    'bars_items.add_buyitem',
+    'bars_items.change_buyitem',
+    'bars_items.add_itemdetails',
+    'bars_items.change_itemdetails',
+]
+
+root_roles_map['admin'] = \
+    root_roles_map['barmanager'] + \
+    root_roles_map['usermanager'] + \
+    root_roles_map['itemmanager']
+
+
+roles_list = list(set(roles_map.keys()) | set(root_roles_map.keys()))

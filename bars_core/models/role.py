@@ -3,12 +3,12 @@ from rest_framework import viewsets
 from rest_framework import serializers, decorators
 from rest_framework.response import Response
 
-from bars_django.utils import VirtualField, permission_logic
+from bars_django.utils import VirtualField, permission_logic, get_root_bar
 from bars_core.models.bar import Bar
 from bars_core.models.user import User
 from bars_core.perms import PerBarPermissionsOrAnonReadOnly, BarRolePermissionLogic
 
-from bars_core.roles import roles_map, roles_list
+from bars_core.roles import roles_map, root_roles_map, roles_list
 
 
 @permission_logic(BarRolePermissionLogic())
@@ -21,7 +21,11 @@ class Role(models.Model):
     last_modified = models.DateTimeField(auto_now=True)
 
     def get_permissions(self):
-        return sorted(set(roles_map[self.name])) if self.name in role_map else []
+        if self.bar == get_root_bar():
+            rmap = root_roles_map
+        else:
+            rmap = roles_map
+        return sorted(set(rmap[self.name])) if self.name in roles_map else []
 
     def __unicode__(self):
         return self.user.username + " : " + self.name + " (" + self.bar.id + ")"
