@@ -22,7 +22,7 @@ class BaseComposedPermission(BaseComposedPermision):
 
 class PerBarPermissionsOrAnonReadOnly(BaseComposedPermission):
     permission_set = lambda self: \
-        And(AllowOnlyAuthenticated, ObjectAttrEqualToObjectAttr("request.bar", "obj.bar"), PerBarPermission) \
+        And(AllowOnlyAuthenticated, PerBarPermission) \
         | And(AllowOnlySafeHttpMethod, AllowAll)
 
 
@@ -41,9 +41,6 @@ class PerBarPermission(BasePermissionComponent, DjangoObjectPermissions):
 
     def has_permission(self, perm_obj, request, view):
         bar = request.bar
-        if bar is None:
-            return False
-
         perms = self.get_required_permissions(request.method, view)
         if DEBUG:
             print "View: ", request.method, bar, perms
