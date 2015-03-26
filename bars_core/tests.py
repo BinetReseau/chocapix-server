@@ -54,9 +54,9 @@ class BarTests(APITestCase):
     def setUpClass(self):
         get_root_bar._cache = None  # Workaround
         root_bar = get_root_bar()
-        self.admin, _ = User.objects.get_or_create(username="admin")
-        Role.objects.get_or_create(bar=root_bar, user=self.admin, name="admin")
-        self.admin = reload(self.admin)  # prevent role caching
+        self.manager, _ = User.objects.get_or_create(username="manager")
+        Role.objects.get_or_create(bar=root_bar, user=self.manager, name="admin")
+        self.manager = reload(self.manager)  # prevent role caching
 
         self.bar, _ = Bar.objects.get_or_create(id="barrouje")
 
@@ -91,8 +91,8 @@ class BarTests(APITestCase):
         self.assertEqual(response.status_code, 403)
 
     def test_change_bar_admin(self):
-        # Authenticated as admin
-        self.client.force_authenticate(user=self.admin)
+        # Authenticated as manager
+        self.client.force_authenticate(user=self.manager)
         response = self.client.put(self.bar_url, self.data)
         self.assertEqual(response.status_code, 200)
 
@@ -104,9 +104,9 @@ class UserTests(APITestCase):
     def setUpClass(self):
         get_root_bar._cache = None  # Workaround
         root_bar = get_root_bar()
-        self.admin, _ = User.objects.get_or_create(username="admin")
-        Role.objects.get_or_create(bar=root_bar, user=self.admin, name="admin")
-        self.admin = reload(self.admin)  # prevent role caching
+        self.manager, _ = User.objects.get_or_create(username="manager")
+        Role.objects.get_or_create(bar=root_bar, user=self.manager, name="admin")
+        self.manager = reload(self.manager)  # prevent role caching
 
         self.user, _ = User.objects.get_or_create(username="bob")
         self.user.set_password("password")
@@ -143,9 +143,9 @@ class UserTests(APITestCase):
         self.assertEqual(response.status_code, 403)
 
     def test_change_user_admin(self):
-        # Authenticated as admin
+        # Authenticated as manager
         self.data['username'] = 'alice'
-        self.client.force_authenticate(user=self.admin)
+        self.client.force_authenticate(user=self.manager)
         response = self.client.put(self.user_url, self.data)
         self.assertEqual(response.status_code, 200)
 

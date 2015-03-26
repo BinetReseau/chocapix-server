@@ -25,7 +25,7 @@ class Role(models.Model):
             rmap = root_roles_map
         else:
             rmap = roles_map
-        return sorted(set(rmap[self.name])) if self.name in roles_map else []
+        return sorted(set(rmap[self.name])) if self.name in rmap else []
 
     def __unicode__(self):
         return self.user.username + " : " + self.name + " (" + self.bar.id + ")"
