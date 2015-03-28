@@ -142,7 +142,6 @@ class UserTests(APITestCase):
         response = self.client.post('/user/', data)
         self.assertEqual(response.status_code, 403)
 
-
     def test_create_user_admin(self):
         # Authenticated as admin
         data = {'username': "charles2"}
@@ -203,9 +202,8 @@ class AccountTests(APITestCase):
 
         self.user, _ = User.objects.get_or_create(username='nadrieril')
         self.user2, _ = User.objects.get_or_create(username='ntag')
-
         Role.objects.get_or_create(name='admin', bar=self.bar, user=self.user2)
-        self.user2 = User.objects.get(username='ntag')
+        self.user2 = reload(self.user2)
 
         self.create_data = {'owner': self.user2.id}
         self.account, _ = Account.objects.get_or_create(owner=self.user, bar=self.bar)
@@ -246,12 +244,6 @@ class AccountTests(APITestCase):
         response = self.client.post('/account/?bar=avironjone', self.create_data)
         self.assertEqual(response.status_code, 403)
 
-    def test_create_account4(self):
-        # Non-existing bar
-        self.client.force_authenticate(user=self.user2)
-        response = self.client.post('/account/?bar=rugbyrouje', self.create_data)
-        self.assertEqual(response.status_code, 404)
-
 
     def test_change_account(self):
         # Unauthenticated
@@ -279,3 +271,62 @@ class AccountTests(APITestCase):
         response = self.client.put('/account/%d/?bar=avironjone' % self.account.id, self.update_data)
         self.assertEqual(response.status_code, 403)
         self.assertEqual(reload(self.account).deleted, self.account.deleted)
+
+
+
+class RoleTests(APITestCase):
+    @classmethod
+    def setUpClass(self):
+        self.bar, _ = Bar.objects.get_or_create(id='natationjone')
+        Bar.objects.get_or_create(id='avironjone')
+
+        self.user, _ = User.objects.get_or_create(username='nadrieril')
+        self.user2, _ = User.objects.get_or_create(username='ntag')
+        self.root, _ = User.objects.get_or_create(username='root')
+
+        Role.objects.get_or_create(name='admin', bar=self.bar, user=self.user2)
+        self.user2 = reload(self.user2)
+        Role.objects.get_or_create(name='admin', bar=get_root_bar(), user=self.root)
+        self.root = reload(self.root)
+
+        self.create_data = {'user': self.user.id, 'name': 'customer'}
+        self.create_data_root = {'user': self.user.id, 'name': 'usermanager'}
+
+
+    def test_get_role(self):
+        response = self.client.get('/role/')
+        self.assertEqual(len(response.data), Role.objects.count())
+
+
+    def test_create_role(self):
+        # Unauthenticated
+        response = self.client.post('/role/?bar=natationjone', self.create_data)
+        self.assertEqual(response.status_code, 401)
+
+    def test_create_role1(self):
+        # Wrong permissions
+        self.client.force_authenticate(user=self.user)
+        response = self.client.post('/role/?bar=natationjone', self.create_data)
+        self.assertEqual(response.status_code, 403)
+
+    def test_create_role2(self):
+        # Correct permissions
+        self.client.force_authenticate(user=self.user2)
+        response = self.client.post('/role/?bar=natationjone', self.create_data)
+        self.assertEqual(response.status_code, 201)
+
+    def test_create_role3(self):
+        # Wrong bar
+        self.client.force_authenticate(user=self.user2)
+        response = self.client.post('/role/?bar=avironjone', self.create_data)
+        self.assertEqual(response.status_code, 403)
+
+    def test_create_role_root(self):
+        self.client.force_authenticate(user=self.user2)
+        response = self.client.post('/role/?bar=root', self.create_data_root)
+        self.assertEqual(response.status_code, 403)
+
+    def test_create_role_root2(self):
+        self.client.force_authenticate(user=self.root)
+        response = self.client.post('/role/?bar=root', self.create_data_root)
+        self.assertEqual(response.status_code, 201)
