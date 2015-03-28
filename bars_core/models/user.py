@@ -88,11 +88,11 @@ class UserSerializer(serializers.ModelSerializer):
         return u
 
 
-from restfw_composed_permissions.generic.components import AllowOnlyAuthenticated
-from bars_core.perms import BaseComposedPermission, RootBarPermission, ObjectAttrEqualToObjectAttr
+from restfw_composed_permissions.generic.components import AllowOnlyAuthenticated, ObjectAttrEqualToObjectAttr
+from bars_core.perms import BaseComposedPermission, RootBarPermissionComponent
 class UserPermissions(BaseComposedPermission):
     permission_set = lambda self: \
-        AllowOnlyAuthenticated() & (RootBarPermission() | ObjectAttrEqualToObjectAttr("request.user", "obj"))
+        AllowOnlyAuthenticated() & (RootBarPermissionComponent() | ObjectAttrEqualToObjectAttr("request.user", "obj"))
 
 
 class UserViewSet(viewsets.ModelViewSet):
