@@ -25,20 +25,18 @@ roles_map['policeman'] = [
     'bars_transactions.add_punishtransaction',
 ]
 roles_map['accountmanager'] = [
-    'bars_transactions.add_transaction',
-    'bars_transactions.add_deposittransaction',
-    'bars_transactions.add_withdrawtransaction',
-    'bars_transactions.add_refundtransaction',
     'bars_core.add_account',
     'bars_core.change_account',
 ]
 roles_map['treasurer'] = \
-    roles_map['policeman'] + \
-    roles_map['accountmanager'] + [
+    roles_map['policeman'] + [
+        'bars_transactions.add_transaction',
+        'bars_transactions.add_deposittransaction',
+        'bars_transactions.add_withdrawtransaction',
+        'bars_transactions.add_refundtransaction',
         'bars_transactions.add_barInvestmenttransaction',
         'bars_transactions.add_collectivePaymenttransaction',
 ]
-roles_map['moneymanager'] = roles_map['treasurer']  # TODO: rename
 
 # Items
 roles_map['itemmanager'] = [
@@ -65,6 +63,7 @@ roles_map['stockmanager'] = \
 # Staff
 roles_map['staff'] = \
     roles_map['treasurer'] + \
+    roles_map['accountmanager'] + \
     roles_map['stockmanager'] + \
     roles_map['newsmanager'] + [
         'bars_transactions.change_transaction',
@@ -73,7 +72,6 @@ roles_map['staff'] = \
 roles_map['admin'] = \
     roles_map['staff'] + [
         'bars_core.add_role',
-        'bars_core.change_role',
         'bars_core.delete_role',
 ]
 
@@ -85,22 +83,37 @@ root_roles_map['barmanager'] = [
     'bars_core.change_bar',
     'bars_core.delete_bar',
 ]
-root_roles_map['usermanager'] = [
+root_roles_map['usercreator'] = [
     'bars_core.add_user',
+]
+root_roles_map['usermanager'] = \
+    root_roles_map['usercreator'] + [
     'bars_core.change_user',
     'bars_core.delete_user',
 ]
-root_roles_map['itemmanager'] = [
+root_roles_map['itemcreator'] = [
     'bars_items.add_buyitem',
-    'bars_items.change_buyitem',
     'bars_items.add_itemdetails',
-    'bars_items.change_itemdetails',
+]
+root_roles_map['itemmanager'] = \
+    root_roles_map['itemcreator'] + [
+        'bars_items.change_buyitem',
+        'bars_items.change_itemdetails',
+]
+
+root_roles_map['staff'] = \
+    root_roles_map['usercreator'] + \
+    root_roles_map['itemcreator'] + [
+        # 'bars_core.add_limitedrole',
 ]
 
 root_roles_map['admin'] = \
     root_roles_map['barmanager'] + \
     root_roles_map['usermanager'] + \
-    root_roles_map['itemmanager']
+    root_roles_map['itemmanager'] + [
+        'bars_core.add_role',
+        'bars_core.delete_role',
+]
 
 
 roles_list = list(set(roles_map.keys()) | set(root_roles_map.keys()))
