@@ -97,30 +97,6 @@ class SerializerTests(APITestCase):
         self.user = reload(self.user)  # Avoid role caching
         self.context = {'request': Mock(user=self.user, bar=self.bar)}
 
-    @classmethod
-    def tearDownClass(self):
-        # self.bar.delete()
-        # self.wrong_bar.delete()
-
-        self.user.delete()
-        self.account.delete()
-        self.wrong_user.delete()
-        self.wrong_account.delete()
-
-        self.staff_user.delete()
-        self.staff_account.delete()
-        self.staff_role.delete()
-
-        self.sellitem.delete()
-        self.itemdetails.delete()
-        self.buyitem.delete()
-        self.stockitem.delete()
-
-        self.sellitem2.delete()
-        self.itemdetails2.delete()
-        self.stockitem2.delete()
-        self.buyitem2.delete()
-        self.buyitemprice2.delete()
 
 
 class BuySerializerTests(SerializerTests):
