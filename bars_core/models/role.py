@@ -3,7 +3,7 @@ from rest_framework import viewsets
 from rest_framework import serializers, decorators
 from rest_framework.response import Response
 
-from bars_django.utils import VirtualField, permission_logic, get_root_bar
+from bars_django.utils import VirtualField, permission_logic, get_root_bar, CurrentBarCreateOnlyDefault
 from bars_core.models.bar import Bar
 from bars_core.models.user import User
 from bars_core.perms import PerBarPermissionsOrAnonReadOnly, BarRolePermissionLogic
@@ -35,6 +35,7 @@ class RoleSerializer(serializers.ModelSerializer):
     class Meta:
         model = Role
     _type = VirtualField("Role")
+    bar = serializers.PrimaryKeyRelatedField(read_only=True, default=CurrentBarCreateOnlyDefault())
     perms = serializers.ListField(child=serializers.CharField(max_length=127), read_only=True, source='get_permissions')
 
 
