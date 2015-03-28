@@ -135,6 +135,22 @@ class UserTests(APITestCase):
         self.assertEqual(response.data['username'], self.data['username'])
 
 
+    def test_create_user_no_perms(self):
+        # Not authenticated
+        data = {'username': "charles1"}
+        self.client.force_authenticate(user=User())
+        response = self.client.post('/user/', data)
+        self.assertEqual(response.status_code, 403)
+
+
+    def test_create_user_admin(self):
+        # Authenticated as admin
+        data = {'username': "charles2"}
+        self.client.force_authenticate(user=self.manager)
+        response = self.client.post('/user/', data)
+        self.assertEqual(response.status_code, 201)
+
+
     def test_change_user_no_perms(self):
         # Not authenticated
         self.client.force_authenticate(user=User())
