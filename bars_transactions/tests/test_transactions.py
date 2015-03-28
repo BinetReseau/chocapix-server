@@ -1,3 +1,5 @@
+from datetime import timedelta
+from django.utils import timezone
 from rest_framework.test import APITestCase
 
 from bars_core.models.bar import Bar
@@ -41,13 +43,15 @@ class TransactionTests(APITestCase):
         self.stockitem.qty = 5
         self.stockitem.save()
 
-        self.transaction, _ = Transaction.objects.get_or_create(bar=self.bar, author=self.user)
+        self.transaction = Transaction.objects.create(bar=self.bar, author=self.user)
         self.transaction_url = '/transaction/%d/' % self.transaction.id
 
 
     def setUp(self):
         self.transaction.canceled = False
         self.transaction.save()
+        self.user = reload(self.user)
+        self.staff_user = reload(self.staff_user)
 
     def test_cancel_transaction(self):
         self.client.force_authenticate(user=self.user)
@@ -81,7 +85,7 @@ class TransactionTests(APITestCase):
 
     def test_cancel_transaction_staff_wrong_bar(self):
         self.client.force_authenticate(user=self.staff_user)
-        transaction, _ = Transaction.objects.get_or_create(bar=self.wrong_bar, author=self.wrong_user)
+        transaction = Transaction.objects.create(bar=self.wrong_bar, author=self.wrong_user)
 
         response = self.client.put('/transaction/%d/cancel/' % transaction.id, {})
         self.assertEqual(response.status_code, 403)
@@ -111,3 +115,21 @@ class TransactionTests(APITestCase):
         response4 = self.client.put('/transaction/%d/restore/' % transaction_id, {})
         self.assertEqual(response4.status_code, 200)
         self.assertEqual(reload(self.stockitem).qty, end_qty)
+
+
+    def test_cancel_transaction_after_threshold(self):
+        self.bar.cancel_transaction_threshold = 48
+        self.bar.save()
+        transaction = Transaction.objects.create(bar=self.bar, author=self.user)
+        transaction.timestamp = timezone.now() - timedelta(hours=49)
+        transaction.save()
+
+        self.client.force_authenticate(user=self.user)
+        response = self.client.put('/transaction/%d/cancel/' % transaction.id, {})
+        self.assertEqual(response.status_code, 403)
+        self.assertFalse(reload(transaction).canceled)
+
+        self.client.force_authenticate(user=self.staff_user)
+        response = self.client.put('/transaction/%d/cancel/' % transaction.id, {})
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(reload(transaction).canceled)

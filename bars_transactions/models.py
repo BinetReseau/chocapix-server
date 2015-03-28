@@ -1,16 +1,15 @@
 from django.db import models
-from permission.logics import AuthorPermissionLogic
-
 from bars_django.utils import VirtualField, permission_logic
 from bars_core.perms import BarRolePermissionLogic
 from bars_core.models.bar import Bar
 from bars_core.models.user import User
 from bars_items.models.stockitem import StockItem
 from bars_core.models.account import Account
+from bars_transactions.perms import TransactionAuthorPermissionLogic
 
 
 @permission_logic(BarRolePermissionLogic())
-@permission_logic(AuthorPermissionLogic(field_name='author'))
+@permission_logic(TransactionAuthorPermissionLogic(field_name='author'))
 class Transaction(models.Model):
     class Meta:
         app_label = 'bars_transactions'
