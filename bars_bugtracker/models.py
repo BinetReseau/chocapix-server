@@ -1,12 +1,13 @@
 from django.db import models
-from rest_framework import exceptions, serializers, viewsets
+from rest_framework import serializers, viewsets
 
-from bars_core.models.user import User
-from bars_django.utils import VirtualField, CurrentBarCreateOnlyDefault, CurrentUserCreateOnlyDefault
-from bars_core.perms import PerBarPermissionsOrAnonReadOnly
+from bars_django.utils import VirtualField, permission_logic, CurrentBarCreateOnlyDefault, CurrentUserCreateOnlyDefault
+from bars_core.perms import PerBarPermissionsOrAnonReadOnly, BarRolePermissionLogic
 from bars_core.models.bar import Bar
 from bars_core.models.user import User
 
+
+@permission_logic(BarRolePermissionLogic())
 class BugReport(models.Model):
     bar = models.ForeignKey(Bar)
     author = models.ForeignKey(User)

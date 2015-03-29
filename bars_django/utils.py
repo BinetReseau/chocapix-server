@@ -1,5 +1,4 @@
 from rest_framework import fields
-
 class VirtualField(fields.ReadOnlyField):
     type_name = 'VirtualField'
     type_label = 'virtual'
@@ -17,11 +16,29 @@ class VirtualField(fields.ReadOnlyField):
         return self.value
 
 
-from django.http import Http404
-from bars_core.models.bar import Bar
 
+from permission import add_permission_logic
+def permission_logic(logic):
+    def decorator(model):
+        add_permission_logic(model, logic)
+        return model
+    return decorator
+
+
+
+def get_root_bar():
+    if get_root_bar._cache is None:
+        from bars_core.models.bar import Bar
+        get_root_bar._cache, _ = Bar.objects.get_or_create(id="root", name="Root")
+    return get_root_bar._cache
+get_root_bar._cache = None
+
+
+
+from django.http import Http404
 class BarMiddleware(object):
     def process_request(self, request):
+        from bars_core.models.bar import Bar
         bar = request.GET.get('bar', None)
         if bar is None:
             request.bar = None
@@ -31,6 +48,7 @@ class BarMiddleware(object):
             except Bar.DoesNotExist:
                 raise Http404("Unknown bar: %s" % bar)
         return None
+
 
 
 class CurrentUserCreateOnlyDefault:
@@ -52,6 +70,7 @@ class CurrentBarCreateOnlyDefault:
         if self.is_update:
             raise fields.SkipField()
         return self.bar
+
 
 
 def get_client_ip(request):

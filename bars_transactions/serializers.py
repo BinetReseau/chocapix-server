@@ -146,7 +146,7 @@ class ItemQtySerializer(serializers.Serializer):
             else:
                 stockitems.append({'stockitem':stockitem.id, 'qty':delta})
 
-        return stockitems + sellitem_map.values()
+        return stockitems + list(sellitem_map.values())
 
 
 class BuyItemQtyPriceSerializer(serializers.Serializer):

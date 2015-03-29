@@ -3,7 +3,9 @@ from django.contrib.auth.models import BaseUserManager, AbstractBaseUser, _user_
 from rest_framework import viewsets, serializers, decorators, exceptions
 from rest_framework.response import Response
 
-from bars_django.utils import VirtualField
+from permission.logics import OneselfPermissionLogic
+from bars_django.utils import VirtualField, permission_logic
+from bars_core.perms import RootBarRolePermissionLogic
 
 
 class UserManager(BaseUserManager):
@@ -24,6 +26,8 @@ class UserManager(BaseUserManager):
         return user
 
 
+@permission_logic(OneselfPermissionLogic())
+@permission_logic(RootBarRolePermissionLogic())
 class User(AbstractBaseUser):
     class Meta:
         app_label = 'bars_core'
@@ -84,9 +88,17 @@ class UserSerializer(serializers.ModelSerializer):
         return u
 
 
+from restfw_composed_permissions.generic.components import AllowOnlyAuthenticated
+from bars_core.perms import BaseComposedPermission, RootBarPermissionComponent, DjangoObjectPermissionComponent
+class UserPermissions(BaseComposedPermission):
+    permission_set = lambda self: \
+        AllowOnlyAuthenticated() & (RootBarPermissionComponent() | DjangoObjectPermissionComponent())
+
+
 class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer
+    permission_classes = (UserPermissions,)
 
     @decorators.list_route()
     def me(self, request):
@@ -116,9 +128,8 @@ class UserViewSet(viewsets.ModelViewSet):
         return Response('Password changed', 200)
 
 
-default_user = None
 def get_default_user():
-    global default_user
-    if default_user is None:
-        default_user, _ = User.objects.get_or_create(username="bar", full_name="Bar", is_active=False)
-    return default_user
+    if get_default_user._cache is None:
+        get_default_user._cache, _ = User.objects.get_or_create(username="bar", full_name="Bar", is_active=False)
+    return get_default_user._cache
+get_default_user._cache = None

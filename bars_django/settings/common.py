@@ -114,6 +114,7 @@ REST_FRAMEWORK = {
         'rest_framework.serializers.HyperlinkedModelSerializer',
 
     'DEFAULT_PERMISSION_CLASSES': [
+        # 'bars_core.perms.RootBarPermissionsOrAnonReadOnly',
         # 'rest_framework.permissions.AllowAny',
         # 'bars_core.perms.PerBarPermissionsOrAnonReadOnly',
         'rest_framework.permissions.DjangoObjectPermissions',
@@ -132,8 +133,7 @@ REST_FRAMEWORK = {
 
 AUTHENTICATION_BACKENDS = (
     'bars_core.auth.AuthenticationBackend',
-    'bars_core.perms.BarPermissionBackend',
-    'permission.backends.PermissionBackend',
+    'bars_core.perms.PermissionBackend',
 )
 
 import datetime

@@ -3,13 +3,14 @@ from rest_framework import viewsets
 from rest_framework import serializers, decorators
 from rest_framework.response import Response
 
-from bars_django.utils import VirtualField, CurrentBarCreateOnlyDefault
+from bars_django.utils import VirtualField, permission_logic, CurrentBarCreateOnlyDefault
 from bars_core.models.bar import Bar
 from bars_core.models.user import User, get_default_user
 from bars_core.models.role import Role
-from bars_core.perms import PerBarPermissionsOrAnonReadOnly
+from bars_core.perms import PerBarPermissionsOrAnonReadOnly, BarRolePermissionLogic
 
 
+@permission_logic(BarRolePermissionLogic())
 class Account(models.Model):
     class Meta:
         unique_together = ("bar", "owner")

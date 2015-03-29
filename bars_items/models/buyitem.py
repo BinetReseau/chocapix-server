@@ -5,12 +5,13 @@ from rest_framework.response import Response
 from rest_framework.serializers import ValidationError
 from rest_framework.fields import CreateOnlyDefault
 
-from bars_django.utils import VirtualField, CurrentBarCreateOnlyDefault
+from bars_django.utils import VirtualField, permission_logic, CurrentBarCreateOnlyDefault
+from bars_core.perms import PerBarPermissionsOrAnonReadOnly, BarRolePermissionLogic, RootBarRolePermissionLogic, RootBarPermissionsOrAnonReadOnly
 from bars_core.models.bar import Bar
-# from bars_core.perms import PerBarPermissionsOrAnonReadOnly
 from bars_items.models.itemdetails import ItemDetails
 
 
+@permission_logic(RootBarRolePermissionLogic())
 class BuyItem(models.Model):
     class Meta:
         app_label = 'bars_items'
@@ -30,11 +31,11 @@ class BuyItemSerializer(serializers.ModelSerializer):
     def to_representation(self, buyitem):
         obj = super(BuyItemSerializer, self).to_representation(buyitem)
 
-        bar = self.context['request'].bar
         try:
+            bar = self.context['request'].bar
             buyitemprice = BuyItemPrice.objects.get(bar=bar, buyitem=buyitem)
             obj["buyitemprice"] = buyitemprice.id
-        except BuyItemPrice.DoesNotExist:
+        except (KeyError, BuyItemPrice.DoesNotExist):
             pass
 
         return obj
@@ -43,11 +44,12 @@ class BuyItemSerializer(serializers.ModelSerializer):
 class BuyItemViewSet(viewsets.ModelViewSet):
     queryset = BuyItem.objects.all()
     serializer_class = BuyItemSerializer
-    permission_classes = (permissions.AllowAny,)  # TODO: temporary
+    permission_classes = (RootBarPermissionsOrAnonReadOnly,)
     filter_fields = ['barcode', 'details']
 
 
 
+@permission_logic(BarRolePermissionLogic())
 class BuyItemPrice(models.Model):
     class Meta:
         unique_together = ("bar", "buyitem")
@@ -111,5 +113,5 @@ class BuyItemPriceSerializer(serializers.ModelSerializer):
 class BuyItemPriceViewSet(viewsets.ModelViewSet):
     queryset = BuyItemPrice.objects.all()
     serializer_class = BuyItemPriceSerializer
-    permission_classes = (permissions.AllowAny,)  # TODO: temporary
+    permission_classes = (PerBarPermissionsOrAnonReadOnly,)
     filter_fields = ['bar', 'buyitem']

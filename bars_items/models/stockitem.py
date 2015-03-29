@@ -1,12 +1,14 @@
 from django.db import models
 from rest_framework import viewsets, serializers, permissions
 
-from bars_django.utils import VirtualField, CurrentBarCreateOnlyDefault
+from bars_django.utils import VirtualField, permission_logic, CurrentBarCreateOnlyDefault
+from bars_core.perms import PerBarPermissionsOrAnonReadOnly, BarRolePermissionLogic
 from bars_core.models.bar import Bar
 # from bars_items.models.itemdetails import ItemDetails
 # from bars_items.models.sellitem import SellItem
 
 
+@permission_logic(BarRolePermissionLogic())
 class StockItem(models.Model):
     class Meta:
         unique_together = ("bar", "details")
@@ -84,5 +86,5 @@ class StockItemSerializer(serializers.ModelSerializer):
 class StockItemViewSet(viewsets.ModelViewSet):
     queryset = StockItem.objects.all()
     serializer_class = StockItemSerializer
-    permission_classes = (permissions.AllowAny,)  # TODO: temporary
+    permission_classes = (PerBarPermissionsOrAnonReadOnly,)
     filter_fields = ['bar', 'details', 'sellitem']
