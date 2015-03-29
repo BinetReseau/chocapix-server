@@ -7,7 +7,7 @@ admin.autodiscover()
 import permission
 permission.autodiscover()
 
-from bars_core.models.bar import BarViewSet
+from bars_core.models.bar import BarViewSet, BarSettingsViewSet
 from bars_core.models.user import UserViewSet
 from bars_core.models.role import RoleViewSet
 from bars_core.models.account import AccountViewSet
@@ -27,6 +27,7 @@ from bars_bugtracker.models import BugReportViewSet
 router = routers.DefaultRouter()
 
 router.register('bar', BarViewSet)
+router.register('barsettings', BarSettingsViewSet)
 router.register('user', UserViewSet)
 router.register('role', RoleViewSet)
 router.register('account', AccountViewSet)

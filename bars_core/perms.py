@@ -1,5 +1,5 @@
 from rest_framework.permissions import DjangoObjectPermissions
-from restfw_composed_permissions.base import BasePermissionComponent, BaseComposedPermision, And
+from restfw_composed_permissions.base import BasePermissionComponent, BaseComposedPermision, And, Or
 from restfw_composed_permissions.generic.components import AllowAll, AllowOnlyAuthenticated, AllowOnlySafeHttpMethod
 from bars_django.utils import get_root_bar
 
@@ -33,6 +33,13 @@ class PerBarPermissionsOrAnonReadOnly(BaseComposedPermission):
         And(AllowOnlyAuthenticated, PerBarPermissionComponent) \
         | And(AllowOnlySafeHttpMethod, AllowAll)
 
+class PerBarPermissionsOrAuthedReadOnly(BaseComposedPermission):
+    permission_set = lambda self: \
+        And(AllowOnlyAuthenticated, Or(PerBarPermissionComponent, AllowOnlySafeHttpMethod))
+
+class PerBarPermissions(BaseComposedPermission):
+    permission_set = lambda self: \
+        And(AllowOnlyAuthenticated, PerBarPermissionComponent)
 
 class PerBarPermissionComponent(DjangoObjectPermissionComponent):
     def has_permission(self, perm_obj, request, view):

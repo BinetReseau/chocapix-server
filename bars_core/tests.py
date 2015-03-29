@@ -1,6 +1,6 @@
 from rest_framework.test import APITestCase
 from bars_django.utils import get_root_bar
-from bars_core.models.bar import Bar, BarSerializer
+from bars_core.models.bar import Bar, BarSerializer, BarSettingsSerializer
 from bars_core.models.user import User, UserSerializer
 from bars_core.models.role import Role
 from bars_core.models.account import Account, AccountSerializer
@@ -62,7 +62,6 @@ class BarTests(APITestCase):
 
         serializer = BarSerializer(self.bar)
         self.data = serializer.data
-        del self.data['next_scheduled_appro']
         self.data['name'] = "barjone"
         self.bar_url = '/bar/%s/' % self.bar.id
 
@@ -97,6 +96,56 @@ class BarTests(APITestCase):
         self.assertEqual(response.status_code, 200)
 
         self.assertEqual(reload(self.bar).name, self.data['name'])
+
+
+class BarSettingsTests(APITestCase):
+    @classmethod
+    def setUpClass(self):
+        self.bar, _ = Bar.objects.get_or_create(id="barjone")
+        self.manager, _ = User.objects.get_or_create(username="manager")
+        self.manager.role_set.all().delete()
+        Role.objects.get_or_create(bar=self.bar, user=self.manager, name="staff")
+        self.manager = reload(self.manager)  # prevent role caching
+
+        self.barsettings = self.bar.settings
+
+        serializer = BarSettingsSerializer(self.barsettings)
+        self.data = serializer.data
+        del self.data['next_scheduled_appro']
+        self.data['agios_enabled'] = True
+        self.barsettings_url = '/barsettings/%s/' % self.barsettings.pk
+
+    def setUp(self):
+        self.barsettings.agios_enabled = False
+        self.barsettings.save()
+
+
+    def test_get_not_authed(self):
+        # Not authenticated
+        response = self.client.get(self.barsettings_url)
+        self.assertEqual(response.status_code, 401)
+
+    def test_get_authed(self):
+        # Authenticated
+        self.client.force_authenticate(user=User())
+        response = self.client.get(self.barsettings_url)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(reload(self.barsettings).agios_enabled, response.data['agios_enabled'])
+
+
+    def test_change_no_perms(self):
+        # Not authenticated
+        self.client.force_authenticate(user=User())
+        response = self.client.put(self.barsettings_url, self.data)
+        self.assertEqual(response.status_code, 403)
+
+    def test_change_admin(self):
+        # Authenticated as manager
+        self.client.force_authenticate(user=self.manager)
+        response = self.client.put(self.barsettings_url, self.data)
+        self.assertEqual(response.status_code, 200)
+
+        self.assertEqual(reload(self.barsettings).agios_enabled, self.data['agios_enabled'])
 
 
 class UserTests(APITestCase):

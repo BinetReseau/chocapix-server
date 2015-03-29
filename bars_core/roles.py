@@ -66,6 +66,7 @@ roles_map['staff'] = \
     roles_map['accountmanager'] + \
     roles_map['stockmanager'] + \
     roles_map['newsmanager'] + [
+        'bars_core.change_barsettings',
         'bars_transactions.change_transaction',
         'bars_bugtracker.change_bugreport',
 ]
