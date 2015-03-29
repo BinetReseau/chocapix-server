@@ -32,8 +32,8 @@ class User(AbstractBaseUser):
     class Meta:
         app_label = 'bars_core'
     username = models.CharField(max_length=128, unique=True)
-    first_name = models.CharField(max_length=128, blank=True)
-    last_name = models.CharField(max_length=128, blank=True)
+    firstname = models.CharField(max_length=128, blank=True)
+    lastname = models.CharField(max_length=128, blank=True)
     pseudo = models.CharField(max_length=128, blank=True)
     email = models.EmailField(max_length=254, blank=True)
 
@@ -70,7 +70,7 @@ class User(AbstractBaseUser):
         return self.username
 
     def get_full_name(self):
-        return "%s %s" % (self.first_name, self.last_name)
+        return "%s %s" % (self.firstname, self.lastname)
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -131,6 +131,6 @@ class UserViewSet(viewsets.ModelViewSet):
 
 def get_default_user():
     if get_default_user._cache is None:
-        get_default_user._cache, _ = User.objects.get_or_create(username="bar", first_name="Bar", is_active=False)
+        get_default_user._cache, _ = User.objects.get_or_create(username="bar", firstname="Bar", is_active=False)
     return get_default_user._cache
 get_default_user._cache = None
