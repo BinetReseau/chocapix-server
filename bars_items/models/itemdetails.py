@@ -1,8 +1,11 @@
 from django.db import models
 from rest_framework import viewsets, serializers, permissions
-from bars_django.utils import VirtualField
+from bars_django.utils import VirtualField, permission_logic
+from bars_core.perms import RootBarRolePermissionLogic, RootBarPermissionsOrAnonReadOnly
 from bars_items.models.stockitem import StockItem
 
+
+@permission_logic(RootBarRolePermissionLogic())
 class ItemDetails(models.Model):
     class Meta:
         app_label = 'bars_items'
@@ -22,11 +25,11 @@ class ItemDetailsSerializer(serializers.ModelSerializer):
     def to_representation(self, itemdetails):
         obj = super(ItemDetailsSerializer, self).to_representation(itemdetails)
 
-        bar = self.context['request'].bar
         try:
+            bar = self.context['request'].bar
             stockitem = StockItem.objects.get(bar=bar, details=itemdetails)
             obj["stockitem"] = stockitem.id
-        except StockItem.DoesNotExist:
+        except (KeyError, StockItem.DoesNotExist):
             pass
 
         return obj
@@ -35,5 +38,5 @@ class ItemDetailsSerializer(serializers.ModelSerializer):
 class ItemDetailsViewSet(viewsets.ModelViewSet):
     queryset = ItemDetails.objects.all()
     serializer_class = ItemDetailsSerializer
-    permission_classes = (permissions.AllowAny,)  # TODO: temporary
+    permission_classes = (RootBarPermissionsOrAnonReadOnly,)
     search_fields = ('name', 'keywords')
