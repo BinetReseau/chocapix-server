@@ -95,6 +95,7 @@ class BarSettingsSerializer(serializers.ModelSerializer):
     class Meta:
         model = BarSettings
     _type = VirtualField("BarSettings")
+    id = serializers.PrimaryKeyRelatedField(read_only=True, source='bar')  # To help the client
     bar = serializers.PrimaryKeyRelatedField(read_only=True)
 
 
