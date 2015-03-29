@@ -1,5 +1,5 @@
 from django.db import models
-from rest_framework import viewsets, serializers, permissions
+from rest_framework import viewsets, serializers
 from bars_django.utils import VirtualField, permission_logic
 from bars_core.perms import RootBarRolePermissionLogic, RootBarPermissionsOrAnonReadOnly
 from bars_items.models.stockitem import StockItem
@@ -11,6 +11,13 @@ class ItemDetails(models.Model):
         app_label = 'bars_items'
     name = models.CharField(max_length=100)
     name_plural = models.CharField(max_length=100, blank=True)
+    brand = models.CharField(max_length=100, blank=True)
+    container = models.CharField(max_length=100, blank=True)
+    container_plural = models.CharField(max_length=100, blank=True)
+    unit = models.CharField(max_length=100, blank=True)
+    unit_plural = models.CharField(max_length=100, blank=True)
+    container_qty = models.FloatField(default=1)
+
     keywords = models.CharField(max_length=200, blank=True)  # Todo: length
 
     def __unicode__(self):
