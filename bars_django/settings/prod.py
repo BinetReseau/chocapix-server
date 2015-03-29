@@ -1,7 +1,11 @@
 from .common import *
 
-DEBUG = False
-TEMPLATE_DEBUG = False
+# TODO : temporary
+DEBUG = True
+TEMPLATE_DEBUG = True
+# REST_FRAMEWORK['DEFAULT_PERMISSION_CLASSES'] = [
+#     'rest_framework.permissions.AllowAny',
+# ]
 
 DATABASES = {
     'default': {
