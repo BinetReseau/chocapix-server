@@ -17,12 +17,12 @@ class BaseComposedPermission(BaseComposedPermision):
 class DjangoObjectPermissionComponent(BasePermissionComponent, DjangoObjectPermissions):
     def has_permission(self, perm_obj, request, view):
         if DEBUG:
-            print "View: ", request.method
+            print("View: ", request.method)
         return DjangoObjectPermissions.has_permission(self, request, view)
 
     def has_object_permission(self, perm_obj, request, view, obj):
         if DEBUG:
-            print "View (obj): ", request.method, obj
+            print("View (obj): ", request.method, obj)
         return DjangoObjectPermissions.has_object_permission(self, request, view, obj)
 
 
@@ -72,7 +72,7 @@ class BarRolePermissionLogic(PermissionLogic):
             return False
 
         if DEBUG:
-            print "Logic: ", perm, obj
+            print("Logic: ", perm, obj)
         if obj is None:
             method = perm.split(".")[1].split("_")[0]
             return method in ('change', 'delete')
@@ -92,7 +92,7 @@ class RootBarRolePermissionLogic(PermissionLogic):
             return False
 
         if DEBUG:
-            print "Logic: ", perm, obj
+            print("Logic: ", perm, obj)
         bar = get_root_bar()
         return user.has_perm(perm, bar)
 
@@ -125,5 +125,5 @@ class PermissionBackend(PermissionBackend_):
             res = super(PermissionBackend, self).has_perm(user, perm, obj)
 
         if DEBUG:
-            print "Backend (%s): " % method, perm, repr(obj), res, list(reduce(lambda x, y:x | set(y), [r.get_permissions() for r in user.role_set.all()], set()))
+            print("Backend (%s): " % method, perm, repr(obj), res, list(reduce(lambda x, y:x | set(y), [r.get_permissions() for r in user.role_set.all()], set())))
         return res
