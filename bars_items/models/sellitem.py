@@ -55,13 +55,13 @@ class SellItem(models.Model):
 class SellItemSerializer(serializers.ModelSerializer):
     class Meta:
         model = SellItem
-        fields = ("id", "bar", "stockitems", "name", "name_plural", "keywords", "unit_name", "unit_name_plural", "tax", "deleted", "fuzzy_qty", "fuzzy_price", "unit_factor", "_type")
         read_only_fields = ("id", "bar")
         extra_kwargs = {'stockitems': {'required': False},
                         'unit_factor': {'required': False}}
 
     _type = VirtualField("SellItem")
     bar = serializers.PrimaryKeyRelatedField(read_only=True, default=CurrentBarCreateOnlyDefault())
+    stockitems = serializers.PrimaryKeyRelatedField(many=True, read_only=True)
     fuzzy_qty = serializers.FloatField(read_only=True, source='calc_qty')
     fuzzy_price = serializers.FloatField(read_only=True, source='calc_price')
     unit_factor = serializers.FloatField(write_only=True, default=1)
