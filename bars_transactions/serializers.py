@@ -30,8 +30,8 @@ class BaseTransactionSerializer(serializers.ModelSerializer):
                     obj["author_account"] = a.id
 
             if self.context.get('request') is not None:
-                authed_user = self.context['request'].user
-                obj['can_cancel'] = authed_user.has_perm('bars_transactions.change_transaction', transaction)
+                user = self.context['request'].user
+                obj['can_cancel'] = user.has_perm('bars_transactions.change_transaction', transaction)
 
             obj['_type'] = "Transaction"
 
@@ -107,29 +107,13 @@ class ItemQtySerializer(serializers.Serializer):
     def create(self, data):
         t = self.context['transaction']
         qty = data['qty']
+        item = data.get('stockitem', data.get('sellitem'))
 
-        if "stockitem" in data:
-            stockitem = data['stockitem']
-            stockitem.create_operation(delta=-qty, unit='sell', transaction=t)
-
-            return qty * stockitem.get_price(unit='sell')
-
-        elif "sellitem" in data:
-            sellitem = data['sellitem']
-            total_qty = sellitem.calc_qty()
-            stockitems = sellitem.stockitems.all()
-
-            total_price = 0
-            for si in stockitems.all():
-                if total_qty != 0:
-                    delta = (si.sell_qty * qty) / total_qty
-                else:
-                    delta = qty / stockitems.count()
-
-                si.create_operation(delta=-delta, unit='sell', transaction=t, fuzzy=True)
-                total_price += delta * si.get_price(unit='sell')
-
-            return total_price
+        if item:
+            ops = item.create_operation(delta=-qty, unit='sell', transaction=t)
+            return sum(-op.delta * op.target.get_price() for op in ops)
+        else:
+            return
 
     @staticmethod
     def serializeOperations(iops, force_fuzzy=True):
@@ -270,13 +254,11 @@ class ThrowTransactionSerializer(BaseTransactionSerializer):
 class DepositTransactionSerializer(BaseTransactionSerializer, AccountAmountSerializer):
     def create(self, data):
         t = super(DepositTransactionSerializer, self).create(data)
+        amount = data["amount"]
+        account = data["account"]
 
-        t.accountoperation_set.create(
-            target=data["account"],
-            delta=data["amount"])
-        t.accountoperation_set.create(
-            target=get_default_account(t.bar),
-            delta=data["amount"])
+        account.create_operation(delta=amount, transaction=t)
+        get_default_account(t.bar).create_operation(delta=amount, transaction=t)
 
         return t
 
@@ -297,13 +279,11 @@ class DepositTransactionSerializer(BaseTransactionSerializer, AccountAmountSeria
 class WithdrawTransactionSerializer(BaseTransactionSerializer, AccountAmountSerializer):
     def create(self, data):
         t = super(WithdrawTransactionSerializer, self).create(data)
+        amount = data["amount"]
+        account = data["account"]
 
-        t.accountoperation_set.create(
-            target=data["account"],
-            delta=-data["amount"])
-        t.accountoperation_set.create(
-            target=get_default_account(t.bar),
-            delta=-data["amount"])
+        account.create_operation(delta=-amount, transaction=t)
+        get_default_account(t.bar).create_operation(delta=-amount, transaction=t)
 
         return t
 
@@ -332,13 +312,12 @@ class GiveTransactionSerializer(BaseTransactionSerializer, AccountAmountSerializ
 
     def create(self, data):
         t = super(GiveTransactionSerializer, self).create(data)
+        amount = data["amount"]
+        account = data["account"]
+        author_account = Account.objects.get(owner=t.author, bar=t.bar)
 
-        t.accountoperation_set.create(
-            target=Account.objects.get(owner=t.author, bar=t.bar),
-            delta=-data["amount"])
-        t.accountoperation_set.create(
-            target=data["account"],
-            delta=data["amount"])
+        account.create_operation(delta=amount, transaction=t)
+        author_account.create_operation(delta=-amount, transaction=t)
 
         return t
 
@@ -364,10 +343,11 @@ class RefundTransactionSerializer(BaseTransactionSerializer, AccountAmountSerial
 
     def create(self, data):
         t = super(RefundTransactionSerializer, self).create(data)
+        amount = data["amount"]
+        account = data["account"]
 
-        t.accountoperation_set.create(
-            target=data["account"],
-            delta=data["amount"])
+        account.create_operation(delta=amount, transaction=t)
+
         t.transactiondata_set.create(
             label='motive',
             data=data["motive"])
@@ -395,10 +375,11 @@ class PunishTransactionSerializer(BaseTransactionSerializer, AccountAmountSerial
 
     def create(self, data):
         t = super(PunishTransactionSerializer, self).create(data)
+        amount = data["amount"]
+        account = data["account"]
 
-        t.accountoperation_set.create(
-            target=data["account"],
-            delta=-data["amount"])
+        account.create_operation(delta=-amount, transaction=t)
+
         t.transactiondata_set.create(
             label='motive',
             data=data["motive"])
@@ -425,10 +406,10 @@ class PunishTransactionSerializer(BaseTransactionSerializer, AccountAmountSerial
 class AgiosTransactionSerializer(BaseTransactionSerializer, AccountAmountSerializer):
     def create(self, data):
         t = super(AgiosTransactionSerializer, self).create(data)
+        amount = data["amount"]
+        account = data["account"]
 
-        t.accountoperation_set.create(
-            target=data["account"],
-            delta=-data["amount"])
+        account.create_operation(delta=-amount, transaction=t)
 
         return t
 
@@ -439,7 +420,7 @@ class AgiosTransactionSerializer(BaseTransactionSerializer, AccountAmountSeriali
 
         aop = transaction.accountoperation_set.all()[0]
         obj["account"] = aop.target.id
-        obj["amount"] = -aop.delta
+        obj["amount"] = abs(aop.delta)
 
         obj["moneyflow"] = aop.delta
 
@@ -452,10 +433,10 @@ class BarInvestmentTransactionSerializer(BaseTransactionSerializer):
 
     def create(self, data):
         t = super(BarInvestmentTransactionSerializer, self).create(data)
+        amount = data["amount"]
 
-        t.accountoperation_set.create(
-            target=get_default_account(t.bar),
-            delta=-data["amount"])
+        get_default_account(t.bar).create_operation(delta=-amount, transaction=t)
+
         t.transactiondata_set.create(
             label='motive',
             data=data["motive"])
@@ -498,9 +479,8 @@ class MealTransactionSerializer(BaseTransactionSerializer):
         for a in data["accounts"]:
             total_ratio += a["ratio"]
         for a in data["accounts"]:
-            t.accountoperation_set.create(
-                target=a["account"],
-                delta=-total_price * a["ratio"] / total_ratio)
+            delta=-total_price * a["ratio"] / total_ratio
+            a["account"].create_operation(delta=delta, transaction=t)
 
         t.transactiondata_set.create(
             label='name',
@@ -567,9 +547,7 @@ class ApproTransactionSerializer(BaseTransactionSerializer):
         for x in stockitem_map.values():
             x['stockitem'].create_operation(delta=x['delta'], unit='buy', transaction=t)
 
-        t.accountoperation_set.create(
-            target=get_default_account(t.bar),
-            delta=-total)
+        get_default_account(t.bar).create_operation(delta=-total, transaction=t)
 
         return t
 
@@ -634,9 +612,8 @@ class CollectivePaymentTransactionSerializer(BaseTransactionSerializer):
         for a in data["accounts"]:
             total_ratio += a["ratio"]
         for a in data["accounts"]:
-            t.accountoperation_set.create(
-                target=a["account"],
-                delta=-amount * a["ratio"] / total_ratio)
+            delta=-amount * a["ratio"] / total_ratio
+            a["account"].create_operation(delta=delta, transaction=t)
 
         t.transactiondata_set.create(
             label='motive',
