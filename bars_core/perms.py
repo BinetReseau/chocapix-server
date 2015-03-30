@@ -1,91 +1,129 @@
 from rest_framework.permissions import DjangoObjectPermissions
-from permission.utils.field_lookup import field_lookup
-from permission.logics import PermissionLogic, OneselfPermissionLogic
+from restfw_composed_permissions.base import BasePermissionComponent, BaseComposedPermision, And, Or
+from restfw_composed_permissions.generic.components import AllowAll, AllowOnlyAuthenticated, AllowOnlySafeHttpMethod
+from bars_django.utils import get_root_bar
+
+DEBUG = False
 
 
-# ## Per-bar permissions
-# Django restframework module
-class PerBarPermissionsOrAnonReadOnly(DjangoObjectPermissions):
-    # Already handled by BarRolePermissionLogic
-    # def has_object_permission(self, request, view, obj):
+class BaseComposedPermission(BaseComposedPermision):
+    def global_permission_set(self):
+        return self.permission_set()
 
-    def has_permission(self, request, view):
-        if request.method in ('GET', 'OPTIONS', 'HEAD'):
-            return True
+    def object_permission_set(self):
+        return self.permission_set()
 
+
+class DjangoObjectPermissionComponent(BasePermissionComponent, DjangoObjectPermissions):
+    def has_permission(self, perm_obj, request, view):
+        if DEBUG:
+            print("View: ", request.method)
+        return DjangoObjectPermissions.has_permission(self, request, view)
+
+    def has_object_permission(self, perm_obj, request, view, obj):
+        if DEBUG:
+            print("View (obj): ", request.method, obj)
+        return DjangoObjectPermissions.has_object_permission(self, request, view, obj)
+
+
+
+## View-related permissions; forwards to bar- or object-related permissions
+class PerBarPermissionsOrAnonReadOnly(BaseComposedPermission):
+    permission_set = lambda self: \
+        And(AllowOnlyAuthenticated, PerBarPermissionComponent) \
+        | And(AllowOnlySafeHttpMethod, AllowAll)
+
+class PerBarPermissionsOrAuthedReadOnly(BaseComposedPermission):
+    permission_set = lambda self: \
+        And(AllowOnlyAuthenticated, Or(PerBarPermissionComponent, AllowOnlySafeHttpMethod))
+
+class PerBarPermissions(BaseComposedPermission):
+    permission_set = lambda self: \
+        And(AllowOnlyAuthenticated, PerBarPermissionComponent)
+
+class PerBarPermissionComponent(DjangoObjectPermissionComponent):
+    def has_permission(self, perm_obj, request, view):
         bar = request.bar
-        if bar is not None:
-            model_cls = getattr(view, 'model', None)
-            queryset = getattr(view, 'queryset', None)
-
-            if model_cls is None and queryset is not None:
-                model_cls = queryset.model
-
-            assert model_cls, ('Cannot apply permissions on a view that'
-                               ' does not have `.model` or `.queryset` property.')
-
-            perms = self.get_required_permissions(request.method, model_cls)
-
-            # print "Rest: ", perms, bar
-            for perm in perms:
-                if request.user.has_perm(perm, bar):
-                    return True
-
-        return super(DjangoObjectPermissions, self).has_permission(request, view)
+        return self.has_object_permission(perm_obj, request, view, bar)
 
 
-from bars_core.models.bar import Bar
-from bars_core.models.role import Role
-
-def _has_perm_in_bar(user, perm, bar):
-    roles = Role.objects.filter(user=user, bar=bar)
-    for r in roles:
-        if perm in r.get_permissions():
-            return True
-    return False
-
-# Django model permissions
-class BarPermissionBackend(object):
-    def authenticate(self, *args, **kwargs):
-        return None
-
-    def has_perm(self, user, perm, obj=None):
-        if not user.is_authenticated():
-            return False
-
-        # print "Backend: ", perm, obj
-        if obj is None:
-            return False
-        elif user.is_active and isinstance(obj, Bar):
-            return _has_perm_in_bar(user, perm, obj)
-
-        return False
+class RootBarPermissionsOrAnonReadOnly(BaseComposedPermission):
+    permission_set = lambda self: \
+        And(AllowOnlyAuthenticated, RootBarPermissionComponent) \
+        | And(AllowOnlySafeHttpMethod, AllowAll)
 
 
-# ## Per-object permissions
-# Django permissions module
+class RootBarPermissionComponent(DjangoObjectPermissionComponent):
+    def has_permission(self, perm_obj, request, view):
+        bar = get_root_bar()
+        return self.has_object_permission(perm_obj, request, view, bar)
+
+
+
+## Object-related permissions; forwards to bar-related permissions
+from permission.utils.field_lookup import field_lookup
+from permission.logics import PermissionLogic
 class BarRolePermissionLogic(PermissionLogic):
     def __init__(self, field_name=None):
         self.field_name = field_name or 'bar'
 
     def has_perm(self, user, perm, obj=None):
-        if not user.is_authenticated():
+        if not user.is_authenticated() or not user.is_active:
             return False
 
-        # print "Logic: ", perm, obj
+        if DEBUG:
+            print("Logic: ", perm, obj)
         if obj is None:
             method = perm.split(".")[1].split("_")[0]
             return method in ('change', 'delete')
-        elif user.is_active:
+        else:
             bar = field_lookup(obj, self.field_name)
-            if bar is None:
-                return False
-            return _has_perm_in_bar(user, perm, bar)
+            return user.has_perm(perm, bar)
 
         return False
 
 
-PERMISSION_LOGICS = (
-    ('bars_core.User', OneselfPermissionLogic()),
-    ('bars_core.Role', BarRolePermissionLogic()),
-)
+class RootBarRolePermissionLogic(PermissionLogic):
+    def __init__(self, field_name=None):
+        self.field_name = field_name or 'bar'
+
+    def has_perm(self, user, perm, obj=None):
+        if not user.is_authenticated() or not user.is_active:
+            return False
+
+        if DEBUG:
+            print("Logic: ", perm, obj)
+        bar = get_root_bar()
+        return user.has_perm(perm, bar)
+
+
+
+## Bar-related permissions
+from permission.backends import PermissionBackend as PermissionBackend_
+from bars_core.models.bar import Bar
+
+def _has_perm_in_bar(user, perm, bar):
+    for r in user.role_set.all():
+        if r.bar_id == bar.id and perm in r.get_permissions():
+            return True
+    return False
+
+class PermissionBackend(PermissionBackend_):
+    def authenticate(self, *args, **kwargs):
+        return None
+
+    def has_perm(self, user, perm, obj=None):
+        if not user.is_authenticated() or not user.is_active:
+            return False
+
+        bar_perm = "bar" == perm.split(".")[1].split("_")[1]
+        if isinstance(obj, Bar) and (obj == get_root_bar() or not bar_perm):
+            method = "bar"
+            res = _has_perm_in_bar(user, perm, obj)
+        else:
+            method = "obj"
+            res = super(PermissionBackend, self).has_perm(user, perm, obj)
+
+        if DEBUG:
+            print("Backend (%s): " % method, perm, repr(obj), res, list(reduce(lambda x, y:x | set(y), [r.get_permissions() for r in user.role_set.all()], set())))
+        return res

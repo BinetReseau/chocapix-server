@@ -8,17 +8,17 @@ from bars_news.models import News
 
 class NewsTests(APITestCase):
     def setUp(self):
-        self.bar = Bar.objects.create(id='natationjone')
-        self.bar2 = Bar.objects.create(id='avironjone')
+        self.bar, _ = Bar.objects.get_or_create(id='natationjone')
+        self.bar2, _ = Bar.objects.get_or_create(id='avironjone')
 
-        self.user = User.objects.create(username='nadrieril')
-        self.user2 = User.objects.create(username='ntag')
+        self.user, _ = User.objects.get_or_create(username='nadrieril')
+        self.user2, _ = User.objects.get_or_create(username='ntag')
 
-        Role.objects.create(name='newsmanager', bar=self.bar, user=self.user2)
+        Role.objects.get_or_create(name='newsmanager', bar=self.bar, user=self.user2)
         self.user2 = User.objects.get(username='ntag')
 
         self.create_data = {'name': 'test', 'text': 'example'}
-        self.news = News.objects.create(bar=self.bar, author=self.user, name='', text='')
+        self.news, _ = News.objects.get_or_create(bar=self.bar, author=self.user, name='', text='')
 
 
     def test_get_news(self):

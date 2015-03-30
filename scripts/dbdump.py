@@ -75,9 +75,9 @@ class BasicImportHelper(object):
         #   if the_class == StaffGroup:
         #       pk_value=8
 
-        search_data = { pk_name: pk_value }
+        search_data = {pk_name: pk_value}
         the_obj = the_class.objects.get(**search_data)
-        #print(the_obj)
+        # print(the_obj)
         return the_obj
 
 
@@ -105,7 +105,7 @@ try:
     import import_helper
     # We need this so ImportHelper can extend BasicImportHelper, although import_helper.py
     # has no knowlodge of this class
-    importer = type("DynamicImportHelper", (import_helper.ImportHelper, BasicImportHelper ) , {} )()
+    importer = type("DynamicImportHelper", (import_helper.ImportHelper, BasicImportHelper), {})()
 except ImportError as e:
     if str(e) == "No module named import_helper":
         importer = BasicImportHelper()
@@ -152,35 +152,39 @@ def import_data():
     user_1 = User()
     user_1.username = u'nadri'
     user_1.set_password('nadri')
-    user_1.full_name = u'Nadrieril'
+    user_1.firstname = u'Guillaume'
+    user_1.lastname = u'Boisseau'
     user_1.pseudo = u'Nadri'
     user_1 = importer.save_or_locate(user_1)
 
     user_2 = User()
     user_2.username = u'ntag'
     user_2.set_password('ntag')
-    user_2.full_name = u'Basile Bruneau'
+    user_2.firstname = u'Basile'
+    user_2.lastname = u'Bruneau'
     user_2.pseudo = u'NTag'
     user_2 = importer.save_or_locate(user_2)
 
     user_3 = User()
     user_3.username = u'tizot'
     user_3.set_password('tizot')
-    user_3.full_name = u'Camille Masset'
+    user_3.firstname = u'Camille'
+    user_3.lastname = u'Masset'
     user_3.pseudo = u'Tizot'
     user_3 = importer.save_or_locate(user_3)
 
     user_4 = User()
     user_4.username = u'denis'
     user_4.set_password('denis')
-    user_4.full_name = u'Denis M\xe9rigoux'
+    user_4.firstname = u'Denis M'
+    user_4.lastname = u'M\xe9rigoux'
     user_4.pseudo = u''
     user_4 = importer.save_or_locate(user_4)
 
 
     # Processing model: Account
 
-    from bars_base.models.account import Account
+    from bars_core.models.account import Account
 
     account_1 = Account()
     account_1.bar = bar_1
@@ -212,8 +216,26 @@ def import_data():
     account_6.owner = user_4
     account_6 = importer.save_or_locate(account_6)
 
+    # Processing model: SellItem
+
+    from bars_items.models.sellitem import SellItem
+
+    sellitem_1 = SellItem()
+    sellitem_1.bar = bar_1
+    sellitem_1.name = "Chocolat"
+    sellitem_1.unit_name = u'carre'
+    sellitem_1.unit_name_plural = u'carres'
+    sellitem_1.tax = 0.2
+    sellitem_1 = importer.save_or_locate(sellitem_1)
+
+    sellitem_2 = SellItem()
+    sellitem_2.bar = bar_1
+    sellitem_2.name = "Pizza"
+    sellitem_2 = importer.save_or_locate(sellitem_2)
+
     # Processing model: ItemDetails
-    from bars_base.models.item import ItemDetails
+
+    from bars_items.models.itemdetails import ItemDetails
 
     itemdetails_1 = ItemDetails()
     itemdetails_1.name = u'Chocolat'
@@ -227,25 +249,35 @@ def import_data():
     itemdetails_2.unit_name_plural = u''
     itemdetails_2 = importer.save_or_locate(itemdetails_2)
 
-    # Processing model: Item
+    # Processing model: BuyItem
 
-    from bars_base.models.item import Item
+    from bars_items.models.buyitem import BuyItem
 
-    item_1 = Item()
-    item_1.bar = bar_1
-    item_1.details = itemdetails_1
-    item_1.unit_name = u'carre'
-    item_1.unit_name_plural = u'carres'
-    item_1.price = 1.0
-    item_1.buy_price = 1.0
-    item_1 = importer.save_or_locate(item_1)
+    buyitem_1 = BuyItem()
+    buyitem_1.details = itemdetails_1
+    buyitem_1 = importer.save_or_locate(buyitem_1)
 
-    item_2 = Item()
-    item_2.bar = bar_1
-    item_2.details = itemdetails_2
-    item_2.price = 2.5
-    item_2.buy_price = 2.0
-    item_2 = importer.save_or_locate(item_2)
+    buyitem_2 = BuyItem()
+    buyitem_2.details = itemdetails_2
+    buyitem_2 = importer.save_or_locate(buyitem_2)
+
+    # Processing model: StockItem
+
+    from bars_items.models.stockitem import StockItem
+
+    stockitem_1 = StockItem()
+    stockitem_1.bar = bar_1
+    stockitem_1.sellitem = sellitem_1
+    stockitem_1.details = itemdetails_1
+    stockitem_1.price = 1
+    stockitem_1 = importer.save_or_locate(stockitem_1)
+
+    stockitem_2 = StockItem()
+    stockitem_2.bar = bar_1
+    stockitem_2.sellitem = sellitem_2
+    stockitem_2.details = itemdetails_2
+    stockitem_2.price = 2
+    stockitem_2 = importer.save_or_locate(stockitem_2)
 
     # Processing model: News
 
@@ -290,5 +322,5 @@ def import_data():
         io = ItemOperation()
         io.transaction = t
         io.delta = -1.0
-        io.target = item_2
+        io.target = stockitem_1
         io = importer.save_or_locate(io)

@@ -1,12 +1,15 @@
 from django.db import models
-
-from bars_core.models.user import User
-from bars_django.utils import VirtualField
+from bars_django.utils import VirtualField, permission_logic
+from bars_core.perms import BarRolePermissionLogic
 from bars_core.models.bar import Bar
-from bars_base.models.item import Item
-from bars_base.models.account import Account
+from bars_core.models.user import User
+from bars_items.models.stockitem import StockItem
+from bars_core.models.account import Account
+from bars_transactions.perms import TransactionAuthorPermissionLogic
 
 
+@permission_logic(BarRolePermissionLogic())
+@permission_logic(TransactionAuthorPermissionLogic(field_name='author'))
 class Transaction(models.Model):
     class Meta:
         app_label = 'bars_transactions'
@@ -107,9 +110,10 @@ class BaseOperation(models.Model):
 class ItemOperation(BaseOperation):
     class Meta:
         app_label = 'bars_transactions'
-    target = models.ForeignKey(Item)
+    target = models.ForeignKey(StockItem)
+    fuzzy = models.BooleanField(default=False)
 
-    op_model = Item
+    op_model = StockItem
     op_model_field = 'qty'
 
 class AccountOperation(BaseOperation):
