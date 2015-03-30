@@ -69,7 +69,7 @@ class BarViewSet(viewsets.ModelViewSet):
 
 
 
-from bars_core.perms import BarRolePermissionLogic, PerBarPermissionsOrAuthedReadOnly
+from bars_core.perms import BarRolePermissionLogic, PerBarPermissionsOrAnonReadOnly
 
 @permission_logic(BarRolePermissionLogic())
 class BarSettings(models.Model):
@@ -102,4 +102,4 @@ class BarSettingsSerializer(serializers.ModelSerializer):
 class BarSettingsViewSet(viewsets.ModelViewSet):
     queryset = BarSettings.objects.all()
     serializer_class = BarSettingsSerializer
-    permission_classes = (PerBarPermissionsOrAuthedReadOnly,)
+    permission_classes = (PerBarPermissionsOrAnonReadOnly,)

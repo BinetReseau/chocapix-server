@@ -123,7 +123,7 @@ class BarSettingsTests(APITestCase):
     def test_get_not_authed(self):
         # Not authenticated
         response = self.client.get(self.barsettings_url)
-        self.assertEqual(response.status_code, 401)
+        self.assertEqual(response.status_code, 200)
 
     def test_get_authed(self):
         # Authenticated
