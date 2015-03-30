@@ -54,6 +54,26 @@ class SellItem(models.Model):
         return self.name
 
 
+    def create_operation(self, delta, **kwargs):
+        ops = []
+
+        total_qty = self.calc_qty()
+        stockitems = self.stockitems.all()
+        nstockitems = stockitems.count()
+
+        for si in stockitems.all():
+            if total_qty != 0:
+                d = (si.sell_qty * delta) / total_qty
+            else:
+                d = delta / nstockitems
+
+            [op] = si.create_operation(delta=d, fuzzy=True, **kwargs)
+            ops.append(op)
+
+        return ops
+
+
+
 class SellItemSerializer(serializers.ModelSerializer):
     class Meta:
         model = SellItem

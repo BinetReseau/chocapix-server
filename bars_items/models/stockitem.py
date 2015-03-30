@@ -30,15 +30,16 @@ class StockItem(models.Model):
         taxfactor = 1. + (self.sellitem.tax if tax else 0)
         return self.price * taxfactor / self.get_unit(unit)
 
-    def create_operation(self, unit='', **kwargs):
-        from bars_transactions.models import ItemOperation
+    def create_operation(self, unit='', transaction=None, **kwargs):
         if 'delta' in kwargs:
             kwargs['delta'] = kwargs['delta'] / self.get_unit(unit)
         if 'next_value' in kwargs:
             kwargs['next_value'] = kwargs['next_value'] / self.get_unit(unit)
-        io = ItemOperation(target=self, **kwargs)
-        io.save()
-        return io
+
+        io = transaction.itemoperation_set.create(
+            target=self,
+            **kwargs)
+        return [io]
 
 
     @property

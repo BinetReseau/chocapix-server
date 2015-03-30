@@ -30,8 +30,15 @@ class Account(models.Model):
     def save(self, *args, **kwargs):
         if not self.pk:
             Role.objects.create(name='customer', bar=self.bar, user=self.owner)
-
         super(Account, self).save(*args, **kwargs)
+
+
+    def create_operation(self, delta, transaction=None, **kwargs):
+        op = transaction.accountoperation_set.create(
+            target=self,
+            delta=delta,
+            **kwargs)
+        return [op]
 
 
 class AccountSerializer(serializers.ModelSerializer):
