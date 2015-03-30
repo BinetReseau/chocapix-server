@@ -582,7 +582,7 @@ class ApproTransactionSerializer(BaseTransactionSerializer):
         for iop in transaction.itemoperation_set.all():
             obj["items"].append({
                 'stockitem': iop.target.id,
-                'qty': iop.delta * iop.target.get_unit('sell')
+                'qty': iop.delta * iop.target.get_unit('buy')
             })
 
         aop = transaction.accountoperation_set.all()[0]
