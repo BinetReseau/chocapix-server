@@ -1,11 +1,12 @@
 from .common import *
 
-# TODO : temporary
-DEBUG = True
-TEMPLATE_DEBUG = True
-# REST_FRAMEWORK['DEFAULT_PERMISSION_CLASSES'] = [
-#     'rest_framework.permissions.AllowAny',
-# ]
+ALLOWED_HOSTS = [
+    "chocapix",
+    "chocapix.bin",
+    "chocapix.binets.fr",
+    "chocapix.eleves.polytechnique.fr",
+    "bars.nadrieril.fr"
+]
 
 DATABASES = {
     'default': {
