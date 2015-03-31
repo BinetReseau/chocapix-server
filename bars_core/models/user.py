@@ -89,17 +89,12 @@ class UserSerializer(serializers.ModelSerializer):
         return u
 
 
-from restfw_composed_permissions.generic.components import AllowOnlyAuthenticated
-from bars_core.perms import BaseComposedPermission, RootBarPermissionComponent, DjangoObjectPermissionComponent
-class UserPermissions(BaseComposedPermission):
-    permission_set = lambda self: \
-        AllowOnlyAuthenticated() & (RootBarPermissionComponent() | DjangoObjectPermissionComponent())
-
+from bars_core.perms import RootBarPermissionsOrObjectPermissions
 
 class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer
-    permission_classes = (UserPermissions,)
+    permission_classes = (RootBarPermissionsOrObjectPermissions,)
 
     @decorators.list_route()
     def me(self, request):

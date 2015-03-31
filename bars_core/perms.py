@@ -28,6 +28,10 @@ class DjangoObjectPermissionComponent(BasePermissionComponent, DjangoObjectPermi
 
 
 ## View-related permissions; forwards to bar- or object-related permissions
+class PerBarPermissions(BaseComposedPermission):
+    permission_set = lambda self: \
+        And(AllowOnlyAuthenticated, PerBarPermissionComponent)
+
 class PerBarPermissionsOrAnonReadOnly(BaseComposedPermission):
     permission_set = lambda self: \
         And(AllowOnlyAuthenticated, PerBarPermissionComponent) \
@@ -37,14 +41,14 @@ class PerBarPermissionsOrAuthedReadOnly(BaseComposedPermission):
     permission_set = lambda self: \
         And(AllowOnlyAuthenticated, Or(PerBarPermissionComponent, AllowOnlySafeHttpMethod))
 
-class PerBarPermissions(BaseComposedPermission):
+class PerBarPermissionsOrObjectPermissions(BaseComposedPermission):
     permission_set = lambda self: \
-        And(AllowOnlyAuthenticated, PerBarPermissionComponent)
+        And(AllowOnlyAuthenticated, Or(PerBarPermissionComponent, DjangoObjectPermissionComponent))
 
-class PerBarPermissionComponent(DjangoObjectPermissionComponent):
-    def has_permission(self, perm_obj, request, view):
-        bar = request.bar
-        return self.has_object_permission(perm_obj, request, view, bar)
+class PerBarPermissionsOrObjectPermissionsOrAnonReadOnly(BaseComposedPermission):
+    permission_set = lambda self: \
+        And(AllowOnlyAuthenticated, Or(PerBarPermissionComponent, DjangoObjectPermissionComponent)) \
+        | And(AllowOnlySafeHttpMethod, AllowAll)
 
 
 class RootBarPermissionsOrAnonReadOnly(BaseComposedPermission):
@@ -52,6 +56,15 @@ class RootBarPermissionsOrAnonReadOnly(BaseComposedPermission):
         And(AllowOnlyAuthenticated, RootBarPermissionComponent) \
         | And(AllowOnlySafeHttpMethod, AllowAll)
 
+class RootBarPermissionsOrObjectPermissions(BaseComposedPermission):
+    permission_set = lambda self: \
+        And(AllowOnlyAuthenticated, Or(RootBarPermissionComponent, DjangoObjectPermissionComponent))
+
+
+class PerBarPermissionComponent(DjangoObjectPermissionComponent):
+    def has_permission(self, perm_obj, request, view):
+        bar = request.bar
+        return self.has_object_permission(perm_obj, request, view, bar)
 
 class RootBarPermissionComponent(DjangoObjectPermissionComponent):
     def has_permission(self, perm_obj, request, view):
