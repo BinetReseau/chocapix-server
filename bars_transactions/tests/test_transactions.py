@@ -25,6 +25,8 @@ class TransactionTests(APITestCase):
         self.wrong_bar, _ = Bar.objects.get_or_create(id='barrouje')
 
         self.user, _ = User.objects.get_or_create(username='user')
+        self.user.role_set.all().delete()
+        self.user = reload(self.user)
         self.account, _ = Account.objects.get_or_create(bar=self.bar, owner=self.user)
         self.account.money = 100
         self.account.save()
@@ -50,6 +52,7 @@ class TransactionTests(APITestCase):
     def setUp(self):
         self.transaction.canceled = False
         self.transaction.save()
+        Role.objects.get_or_create(user=self.user, bar=self.bar, name='customer')
         self.user = reload(self.user)
         self.staff_user = reload(self.staff_user)
 

@@ -3,7 +3,7 @@ from django.db.models import Q, Prefetch
 from rest_framework import viewsets, decorators, exceptions, filters
 from rest_framework.response import Response
 
-from bars_core.perms import PerBarPermissionsOrAnonReadOnly
+from bars_core.perms import PerBarPermissionsOrObjectPermissionsOrAnonReadOnly
 from bars_core.models.bar import Bar
 from bars_core.models.user import User
 from bars_core.models.account import Account
@@ -53,7 +53,7 @@ class TransactionViewSet(viewsets.ModelViewSet):
         'itemoperation_set__target',
         'itemoperation_set__target__sellitem',
         'transactiondata_set')
-    permission_classes = (PerBarPermissionsOrAnonReadOnly,)
+    permission_classes = (PerBarPermissionsOrObjectPermissionsOrAnonReadOnly,)
     filter_backends = (TransactionFilterBackend,)
 
     def get_serializer_class(self):
