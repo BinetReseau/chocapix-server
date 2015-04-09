@@ -1,5 +1,9 @@
 from mock import Mock
+
+from django.conf import settings
+from django.test import override_settings
 from django.http import Http404
+
 from rest_framework import exceptions, serializers
 from rest_framework.test import APITestCase
 
@@ -98,7 +102,7 @@ class SerializerTests(APITestCase):
         self.context = {'request': Mock(user=self.user, bar=self.bar)}
 
 
-
+@override_settings(REDIS=settings.REDIS_TEST)
 class BuySerializerTests(SerializerTests):
     def setUp(self):
         self.stockitem = reload(self.stockitem)
@@ -302,6 +306,7 @@ class PunishSerializerTests(SerializerTests):
         self.assertFalse(s.is_valid())
 
 
+@override_settings(REDIS=settings.REDIS_TEST)
 class MealSerializerTests(SerializerTests):
     @classmethod
     def setUpClass(self):

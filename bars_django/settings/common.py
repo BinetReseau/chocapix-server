@@ -164,3 +164,9 @@ REDIS = {
         'port': 6379,
         'db': 1,
         }
+
+REDIS_TEST = {
+        'host': 'localhost',
+        'port': 6379,
+        'db': 2,
+        }
