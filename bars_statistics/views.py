@@ -3,7 +3,6 @@ from rest_framework import viewsets, decorators
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
 
-from bars_base.models.account import Account
 from bars_core.models.bar import Bar
 from bars_items.models.sellitem import SellItem
 
