@@ -152,28 +152,32 @@ def import_data():
     user_1 = User()
     user_1.username = u'nadri'
     user_1.set_password('nadri')
-    user_1.full_name = u'Nadrieril'
+    user_1.firstname = u'Guillaume'
+    user_1.lastname = u'Boisseau'
     user_1.pseudo = u'Nadri'
     user_1 = importer.save_or_locate(user_1)
 
     user_2 = User()
     user_2.username = u'ntag'
     user_2.set_password('ntag')
-    user_2.full_name = u'Basile Bruneau'
+    user_2.firstname = u'Basile'
+    user_2.lastname = u'Bruneau'
     user_2.pseudo = u'NTag'
     user_2 = importer.save_or_locate(user_2)
 
     user_3 = User()
     user_3.username = u'tizot'
     user_3.set_password('tizot')
-    user_3.full_name = u'Camille Masset'
+    user_3.firstname = u'Camille'
+    user_3.lastname = u'Masset'
     user_3.pseudo = u'Tizot'
     user_3 = importer.save_or_locate(user_3)
 
     user_4 = User()
     user_4.username = u'denis'
     user_4.set_password('denis')
-    user_4.full_name = u'Denis M\xe9rigoux'
+    user_4.firstname = u'Denis M'
+    user_4.lastname = u'M\xe9rigoux'
     user_4.pseudo = u''
     user_4 = importer.save_or_locate(user_4)
 

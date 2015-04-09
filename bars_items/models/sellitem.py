@@ -3,17 +3,20 @@ from django.db import models
 from rest_framework import viewsets, serializers, permissions, decorators, exceptions
 from rest_framework.response import Response
 
-from bars_django.utils import VirtualField, CurrentBarCreateOnlyDefault
+from bars_django.utils import VirtualField, permission_logic, CurrentBarCreateOnlyDefault
+from bars_core.perms import PerBarPermissionsOrAnonReadOnly, BarRolePermissionLogic
 from bars_core.models.bar import Bar
 from bars_items.models.stockitem import StockItem
 
 
+@permission_logic(BarRolePermissionLogic())
 class SellItem(models.Model):
     class Meta:
         app_label = 'bars_items'
     bar = models.ForeignKey(Bar)
     name = models.CharField(max_length=100)
     name_plural = models.CharField(max_length=100, blank=True)
+    keywords = models.CharField(max_length=200, blank=True)  # Todo: length
 
     unit_name = models.CharField(max_length=100, blank=True)
     unit_name_plural = models.CharField(max_length=100, blank=True)
@@ -42,9 +45,10 @@ class SellItem(models.Model):
 
     @unit_factor.setter
     def unit_factor(self, factor):
-        for stockitem in self.stockitems.all():
-            stockitem.unit_factor *= factor
-            stockitem.save()
+        if factor != 1:
+            for stockitem in self.stockitems.all():
+                stockitem.unit_factor *= factor
+                stockitem.save()
 
     def __unicode__(self):
         return self.name
@@ -53,33 +57,34 @@ class SellItem(models.Model):
 class SellItemSerializer(serializers.ModelSerializer):
     class Meta:
         model = SellItem
-        fields = ("id", "bar", "stockitems", "name", "name_plural", "unit_name", "unit_name_plural", "tax", "deleted", "fuzzy_qty", "fuzzy_price", "unit_factor", "_type")
         read_only_fields = ("id", "bar")
-        extra_kwargs = {'stockitems': {'required': False}}
+        extra_kwargs = {'stockitems': {'required': False},
+                        'unit_factor': {'required': False}}
 
     _type = VirtualField("SellItem")
     bar = serializers.PrimaryKeyRelatedField(read_only=True, default=CurrentBarCreateOnlyDefault())
+    stockitems = serializers.PrimaryKeyRelatedField(many=True, read_only=True)
     fuzzy_qty = serializers.FloatField(read_only=True, source='calc_qty')
     fuzzy_price = serializers.FloatField(read_only=True, source='calc_price')
-    unit_factor = serializers.FloatField(write_only=True)
+    unit_factor = serializers.FloatField(write_only=True, default=1)
 
 
 
-class MergeSellItemSerializer(serializers.BaseSerializer):
+class MergeSellItemSerializer(serializers.Serializer):
     sellitem = serializers.PrimaryKeyRelatedField(queryset=SellItem.objects.all())
-    unit_factor = serializers.FloatField()
+    unit_factor = serializers.FloatField(default=1)
 
-class AddStockItemSerializer(serializers.BaseSerializer):
+class AddStockItemSerializer(serializers.Serializer):
     stockitem = serializers.PrimaryKeyRelatedField(queryset=StockItem.objects.all())
-    unit_factor = serializers.FloatField()
+    unit_factor = serializers.FloatField(default=1)
 
-class RemoveStockItemSerializer(serializers.BaseSerializer):
+class RemoveStockItemSerializer(serializers.Serializer):
     stockitem = serializers.PrimaryKeyRelatedField(queryset=StockItem.objects.all())
 
 class SellItemViewSet(viewsets.ModelViewSet):
     queryset = SellItem.objects.all()
     serializer_class = SellItemSerializer
-    permission_classes = (permissions.AllowAny,)  # TODO: temporary
+    permission_classes = (PerBarPermissionsOrAnonReadOnly,)
     filter_fields = ['bar']
 
 
@@ -97,6 +102,9 @@ class SellItemViewSet(viewsets.ModelViewSet):
 
         if this.bar != request.bar or other.bar != this.bar or other.bar != request.bar:
             raise exceptions.PermissionDenied('Cannot operate across bars')
+
+        if this.pk == other.pk:
+            raise exceptions.PermissionDenied('Cannot merge a sellitem with itself')
 
         for stockitem in other.stockitems.all():
             stockitem.sellitem = this
@@ -156,6 +164,8 @@ class SellItemViewSet(viewsets.ModelViewSet):
         # Clone current sellitem
         new_sellitem = SellItem.objects.get(pk=sellitem.pk)
         new_sellitem.pk = None
+        new_sellitem.name = stockitem.details.name
+        new_sellitem.name_plural = stockitem.details.name_plural
         new_sellitem.save()
 
         stockitem.sellitem = new_sellitem

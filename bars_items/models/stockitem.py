@@ -1,18 +1,20 @@
 from django.db import models
 from rest_framework import viewsets, serializers, permissions
 
-from bars_django.utils import VirtualField, CurrentBarCreateOnlyDefault
+from bars_django.utils import VirtualField, permission_logic, CurrentBarCreateOnlyDefault
+from bars_core.perms import PerBarPermissionsOrAnonReadOnly, BarRolePermissionLogic
 from bars_core.models.bar import Bar
-from bars_items.models.itemdetails import ItemDetails
+# from bars_items.models.itemdetails import ItemDetails
 # from bars_items.models.sellitem import SellItem
 
 
+@permission_logic(BarRolePermissionLogic())
 class StockItem(models.Model):
     class Meta:
         unique_together = ("bar", "details")
         app_label = 'bars_items'
     bar = models.ForeignKey(Bar)
-    details = models.ForeignKey(ItemDetails)
+    details = models.ForeignKey("ItemDetails")
     sellitem = models.ForeignKey('SellItem', related_name="stockitems")
 
     qty = models.FloatField(default=0)
@@ -24,8 +26,9 @@ class StockItem(models.Model):
     def get_unit(self, unit=''):
         return {'':1., 'sell':self.unit_factor, 'buy':1.}[unit]
 
-    def get_price(self, unit=''):
-        return self.price * (1. + self.sellitem.tax) / self.get_unit(unit)
+    def get_price(self, unit='', tax=True):
+        taxfactor = 1. + (self.sellitem.tax if tax else 0)
+        return self.price * taxfactor / self.get_unit(unit)
 
     def create_operation(self, unit='', **kwargs):
         from bars_transactions.models import ItemOperation
@@ -48,17 +51,21 @@ class StockItem(models.Model):
 
 
     @property
-    def sell_price(self):
-        return self.get_price(unit='sell')
+    def display_price(self):
+        return self.get_price(unit='sell', tax=False)
 
-    @sell_price.setter
-    def sell_price(self, value):
-        self.price = value * self.get_unit('sell') / (1 + self.sellitem.tax)
+    @display_price.setter
+    def display_price(self, value):
+        self.price = value * self.get_unit('sell')
 
 
     @property
     def sell_qty(self):
         return self.qty * self.get_unit('sell')
+
+    @property
+    def sell_price(self):
+        return self.get_price(unit='sell')
 
     def __unicode__(self):
         return "%s (%s)" % (unicode(self.details), unicode(self.bar))
@@ -72,12 +79,12 @@ class StockItemSerializer(serializers.ModelSerializer):
     _type = VirtualField("StockItem")
     bar = serializers.PrimaryKeyRelatedField(read_only=True, default=CurrentBarCreateOnlyDefault())
     qty = serializers.FloatField(source='sell_qty', read_only=True)
-    price = serializers.FloatField(source='sell_price')
+    price = serializers.FloatField(source='display_price')
     sell_to_buy = serializers.FloatField()
 
 
 class StockItemViewSet(viewsets.ModelViewSet):
     queryset = StockItem.objects.all()
     serializer_class = StockItemSerializer
-    permission_classes = (permissions.AllowAny,)  # TODO: temporary
+    permission_classes = (PerBarPermissionsOrAnonReadOnly,)
     filter_fields = ['bar', 'details', 'sellitem']

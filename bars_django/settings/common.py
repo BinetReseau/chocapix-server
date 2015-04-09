@@ -13,7 +13,34 @@ import os
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = ')$w@s+3e_&cl19@c2-qbi^rr6fnzj4p*0%3u_xtltj0*-cc0&v'
+"""
+Two things are wrong with Django's default `SECRET_KEY` system:
+
+1. It is not random but pseudo-random
+2. It saves and displays the SECRET_KEY in `settings.py`
+
+This snippet
+1. uses `SystemRandom()` instead to generate a random key
+2. saves a local `secret.txt`
+
+The result is a random and safely hidden `SECRET_KEY`.
+"""
+try:
+    SECRET_KEY
+except NameError:
+    SECRET_FILE = os.path.join(PROJECT_ROOT, 'secret.key')
+    try:
+        SECRET_KEY = open(SECRET_FILE).read().strip()
+    except IOError:
+        try:
+            import random
+            symbols = 'abcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*(-_=+)'
+            SECRET_KEY = ''.join([random.SystemRandom().choice(symbols) for i in range(50)])
+            with open(SECRET_FILE, 'w') as f:
+                f.write(SECRET_KEY)
+        except IOError:
+            Exception('Please create a %s file with random characters \
+            to generate your secret key!' % SECRET_FILE)
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = False
@@ -41,6 +68,7 @@ INSTALLED_APPS = (
     'bars_items',
     'bars_transactions',
     'bars_news',
+    'bars_bugtracker',
 )
 
 
@@ -86,6 +114,7 @@ REST_FRAMEWORK = {
         'rest_framework.serializers.HyperlinkedModelSerializer',
 
     'DEFAULT_PERMISSION_CLASSES': [
+        # 'bars_core.perms.RootBarPermissionsOrAnonReadOnly',
         # 'rest_framework.permissions.AllowAny',
         # 'bars_core.perms.PerBarPermissionsOrAnonReadOnly',
         'rest_framework.permissions.DjangoObjectPermissions',
@@ -104,8 +133,7 @@ REST_FRAMEWORK = {
 
 AUTHENTICATION_BACKENDS = (
     'bars_core.auth.AuthenticationBackend',
-    'bars_core.perms.BarPermissionBackend',
-    'permission.backends.PermissionBackend',
+    'bars_core.perms.PermissionBackend',
 )
 
 import datetime

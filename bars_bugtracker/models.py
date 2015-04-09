@@ -2,44 +2,39 @@ from django.db import models
 from rest_framework import serializers, viewsets
 
 from bars_django.utils import VirtualField, permission_logic, CurrentBarCreateOnlyDefault, CurrentUserCreateOnlyDefault
+from bars_core.perms import PerBarPermissionsOrAnonReadOnly, BarRolePermissionLogic
 from bars_core.models.bar import Bar
 from bars_core.models.user import User
-from bars_core.perms import PerBarPermissionsOrAnonReadOnly, BarRolePermissionLogic
 
 
 @permission_logic(BarRolePermissionLogic())
-class News(models.Model):
-    class Meta:
-        app_label = 'bars_news'
+class BugReport(models.Model):
     bar = models.ForeignKey(Bar)
     author = models.ForeignKey(User)
-    name = models.CharField(max_length=100)
-    text = models.TextField()
-
+    message = models.CharField(max_length=1000)
+    data = models.TextField(blank=True)
     timestamp = models.DateTimeField(auto_now_add=True)
-    last_modified = models.DateTimeField(auto_now=True)
-
-    deleted = models.BooleanField(default=False)
+    fixed = models.BooleanField(default=False)
+    _type = VirtualField("BugReport")
 
     def __unicode__(self):
-        return self.name
+        return "#%d by %s at %s" % (self.id, unicode(self.author), unicode(self.timestamp))
 
 
-class NewsSerializer(serializers.ModelSerializer):
+class BugReportSerializer(serializers.ModelSerializer):
     class Meta:
-        model = News
+        model = BugReport
 
-    _type = VirtualField("News")
+    _type = VirtualField("BugReport")
     bar = serializers.PrimaryKeyRelatedField(read_only=True, default=CurrentBarCreateOnlyDefault())
     author = serializers.PrimaryKeyRelatedField(read_only=True, default=CurrentUserCreateOnlyDefault())
 
 
-class NewsViewSet(viewsets.ModelViewSet):
-    queryset = News.objects.all()
-    serializer_class = NewsSerializer
+class BugReportViewSet(viewsets.ModelViewSet):
+    queryset = BugReport.objects.all()
+    serializer_class = BugReportSerializer
     permission_classes = (PerBarPermissionsOrAnonReadOnly,)
     filter_fields = {
         'bar': ['exact'],
-        'timestamp': ['lte', 'gte'],
         'author': ['exact']}
-    search_fields = ('name', 'text')
+    search_fields = ('message', 'data')

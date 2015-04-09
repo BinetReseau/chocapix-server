@@ -3,6 +3,7 @@ from rest_framework import serializers
 from rest_framework.serializers import ValidationError
 from rest_framework import exceptions
 
+from bars_core.models.user import get_default_user
 from bars_core.models.account import Account, get_default_account
 from bars_items.models.buyitem import BuyItem, BuyItemPrice
 from bars_items.models.stockitem import StockItem
@@ -25,21 +26,27 @@ class BaseTransactionSerializer(serializers.ModelSerializer):
     def to_representation(self, transaction):
         if 'ignore_type' in self.context or transaction.type == "":
             obj = super(BaseTransactionSerializer, self).to_representation(transaction)
-            try:
-                author_account = Account.objects.get(owner=transaction.author, bar=transaction.bar)
-                obj["author_account"] = author_account.id
-            except:
-                pass
+
+            for a in transaction.author.account_set.all():
+                if a.bar_id == transaction.bar_id:
+                    obj["author_account"] = a.id
+
+            if self.context.get('request') is not None:
+                authed_user = self.context['request'].user
+                obj['can_cancel'] = authed_user.has_perm('bars_transactions.change_transaction', transaction)
+
             obj['_type'] = "Transaction"
 
             return obj
         else:
-            serializer = serializers_class_map[transaction.type](transaction)
-            # serializer.is_valid(raise_exception=True)
+            serializer = serializers_class_map[transaction.type](transaction, context=self.context)
             try:
                 return serializer.data
-            except:
-                return
+            except Exception as e:
+                obj = BaseTransactionSerializer(transaction, context={'ignore_type': True}).data
+                obj['type'] = 'error'
+                obj['error'] = str(e)
+                return obj
 
     def create(self, data):
         request = self.context['request']
@@ -51,7 +58,6 @@ class BaseTransactionSerializer(serializers.ModelSerializer):
             fields = Transaction._meta.get_all_field_names()
             attrs = {k: v for k, v in data.items() if k in fields}
             t = Transaction(**attrs)
-            # t.author = User.objects.all()[0]
             t.author = request.user
             t.bar = bar
             t.save()
@@ -142,7 +148,7 @@ class ItemQtySerializer(serializers.Serializer):
             else:
                 stockitems.append({'stockitem':stockitem.id, 'qty':delta})
 
-        return stockitems + sellitem_map.values()
+        return stockitems + list(sellitem_map.values())
 
 
 class BuyItemQtyPriceSerializer(serializers.Serializer):
@@ -151,7 +157,7 @@ class BuyItemQtyPriceSerializer(serializers.Serializer):
     price = serializers.FloatField(required=False)
 
     def validate_qty(self, value):
-        if value < 0:
+        if value <= 0:
             raise ValidationError("Quantity must be positive")
         return value
 
@@ -161,14 +167,19 @@ class BuyItemQtyPriceSerializer(serializers.Serializer):
         return value
 
 
-class AccountAmountSerializer(serializers.Serializer):
+class AccountSerializer(serializers.Serializer):
     account = serializers.PrimaryKeyRelatedField(queryset=Account.objects.all())
-    amount = serializers.FloatField()
 
     def validate_account(self, account):
         if account.deleted:
             raise ValidationError("Account is deleted")
+        if self.context['request'].bar.id != account.bar.id:
+            raise serializers.ValidationError("Cannot operate across bars")
         return account
+
+
+class AccountAmountSerializer(AccountSerializer):
+    amount = serializers.FloatField()
 
     def validate_amount(self, value):
         if value < 0:
@@ -176,14 +187,8 @@ class AccountAmountSerializer(serializers.Serializer):
         return value
 
 
-class AccountRatioSerializer(serializers.Serializer):
-    account = serializers.PrimaryKeyRelatedField(queryset=Account.objects.all())
-    ratio = serializers.FloatField()
-
-    def validate_account(self, account):
-        if account.deleted:
-            raise ValidationError("Account is deleted")
-        return account
+class AccountRatioSerializer(AccountSerializer):
+    ratio = serializers.FloatField(default=1)
 
     def validate_ratio(self, value):
         if value <= 0:
@@ -216,12 +221,12 @@ class BuyTransactionSerializer(BaseTransactionSerializer, ItemQtySerializer):
         return t
 
     def to_representation(self, transaction):
-        obj = BaseTransactionSerializer(transaction, context={'ignore_type': True}).data
+        obj = BaseTransactionSerializer(transaction, context={'request':self.context.get('request'), 'ignore_type': True}).data
         if transaction is None:
             return obj
 
         force_fuzzy = True
-        obj["items"] = ItemQtySerializer.serializeOperations(transaction.itemoperation_set.select_related(), force_fuzzy)
+        obj["items"] = ItemQtySerializer.serializeOperations(transaction.itemoperation_set.all(), force_fuzzy)
 
         aop = transaction.accountoperation_set.all()[0]
         obj["moneyflow"] = -aop.delta
@@ -259,7 +264,7 @@ class ThrowTransactionSerializer(BaseTransactionSerializer):
         return t
 
     def to_representation(self, transaction):
-        obj = BaseTransactionSerializer(transaction, context={'ignore_type': True}).data
+        obj = BaseTransactionSerializer(transaction, context={'request':self.context.get('request'), 'ignore_type': True}).data
         if transaction is None:
             return obj
 
@@ -271,6 +276,7 @@ class ThrowTransactionSerializer(BaseTransactionSerializer):
         obj["moneyflow"] = iop.delta * stockitem.get_price()
 
         return obj
+
 
 
 class DepositTransactionSerializer(BaseTransactionSerializer, AccountAmountSerializer):
@@ -287,15 +293,42 @@ class DepositTransactionSerializer(BaseTransactionSerializer, AccountAmountSeria
         return t
 
     def to_representation(self, transaction):
-        obj = BaseTransactionSerializer(transaction, context={'ignore_type': True}).data
+        obj = BaseTransactionSerializer(transaction, context={'request':self.context.get('request'), 'ignore_type': True}).data
         if transaction is None:
             return obj
 
-        aop = transaction.accountoperation_set.all()[0]
-        obj["account"] = aop.target.id
-        obj["amount"] = aop.delta
+        for aop in transaction.accountoperation_set.all():
+            if aop.target.owner != get_default_user():
+                obj["account"] = aop.target.id
+                obj["amount"] = aop.delta
+                obj["moneyflow"] = aop.delta
 
-        obj["moneyflow"] = aop.delta
+        return obj
+
+
+class WithdrawTransactionSerializer(BaseTransactionSerializer, AccountAmountSerializer):
+    def create(self, data):
+        t = super(WithdrawTransactionSerializer, self).create(data)
+
+        t.accountoperation_set.create(
+            target=data["account"],
+            delta=-data["amount"])
+        t.accountoperation_set.create(
+            target=get_default_account(t.bar),
+            delta=-data["amount"])
+
+        return t
+
+    def to_representation(self, transaction):
+        obj = BaseTransactionSerializer(transaction, context={'request':self.context.get('request'), 'ignore_type': True}).data
+        if transaction is None:
+            return obj
+
+        for aop in transaction.accountoperation_set.all():
+            if aop.target.owner != get_default_user():
+                obj["account"] = aop.target.id
+                obj["amount"] = -aop.delta
+                obj["moneyflow"] = -aop.delta
 
         return obj
 
@@ -306,9 +339,6 @@ class GiveTransactionSerializer(BaseTransactionSerializer, AccountAmountSerializ
 
         if self.context['request'].user == account.owner:
             raise serializers.ValidationError("Cannot give money to yourself")
-
-        if self.context['request'].bar.id != account.bar.id:
-            raise serializers.ValidationError("Cannot give across bars")
 
         return account
 
@@ -325,7 +355,7 @@ class GiveTransactionSerializer(BaseTransactionSerializer, AccountAmountSerializ
         return t
 
     def to_representation(self, transaction):
-        obj = BaseTransactionSerializer(transaction, context={'ignore_type': True}).data
+        obj = BaseTransactionSerializer(transaction, context={'request':self.context.get('request'), 'ignore_type': True}).data
         if transaction is None:
             return obj
 
@@ -337,6 +367,37 @@ class GiveTransactionSerializer(BaseTransactionSerializer, AccountAmountSerializ
         obj["amount"] = to_op.delta
 
         obj["moneyflow"] = to_op.delta
+
+        return obj
+
+
+class RefundTransactionSerializer(BaseTransactionSerializer, AccountAmountSerializer):
+    motive = serializers.CharField()
+
+    def create(self, data):
+        t = super(RefundTransactionSerializer, self).create(data)
+
+        t.accountoperation_set.create(
+            target=data["account"],
+            delta=data["amount"])
+        t.transactiondata_set.create(
+            label='motive',
+            data=data["motive"])
+
+        return t
+
+    def to_representation(self, transaction):
+        obj = BaseTransactionSerializer(transaction, context={'request':self.context.get('request'), 'ignore_type': True}).data
+        if transaction is None:
+            return obj
+
+        aop = transaction.accountoperation_set.all()[0]
+        obj["account"] = aop.target.id
+        obj["amount"] = aop.delta
+        obj["moneyflow"] = aop.delta
+
+        data = transaction.transactiondata_set.all()[0]
+        obj["motive"] = data.data
 
         return obj
 
@@ -357,7 +418,7 @@ class PunishTransactionSerializer(BaseTransactionSerializer, AccountAmountSerial
         return t
 
     def to_representation(self, transaction):
-        obj = BaseTransactionSerializer(transaction, context={'ignore_type': True}).data
+        obj = BaseTransactionSerializer(transaction, context={'request':self.context.get('request'), 'ignore_type': True}).data
         if transaction is None:
             return obj
 
@@ -371,6 +432,62 @@ class PunishTransactionSerializer(BaseTransactionSerializer, AccountAmountSerial
         obj["moneyflow"] = aop.delta
 
         return obj
+
+
+class AgiosTransactionSerializer(BaseTransactionSerializer, AccountAmountSerializer):
+    def create(self, data):
+        t = super(AgiosTransactionSerializer, self).create(data)
+
+        t.accountoperation_set.create(
+            target=data["account"],
+            delta=-data["amount"])
+
+        return t
+
+    def to_representation(self, transaction):
+        obj = BaseTransactionSerializer(transaction, context={'request':self.context.get('request'), 'ignore_type': True}).data
+        if transaction is None:
+            return obj
+
+        aop = transaction.accountoperation_set.all()[0]
+        obj["account"] = aop.target.id
+        obj["amount"] = -aop.delta
+
+        obj["moneyflow"] = aop.delta
+
+        return obj
+
+
+class BarInvestmentTransactionSerializer(BaseTransactionSerializer):
+    amount = serializers.FloatField()
+    motive = serializers.CharField(allow_blank=True)
+
+    def create(self, data):
+        t = super(BarInvestmentTransactionSerializer, self).create(data)
+
+        t.accountoperation_set.create(
+            target=get_default_account(t.bar),
+            delta=-data["amount"])
+        t.transactiondata_set.create(
+            label='motive',
+            data=data["motive"])
+
+        return t
+
+    def to_representation(self, transaction):
+        obj = BaseTransactionSerializer(transaction, context={'request':self.context.get('request'), 'ignore_type': True}).data
+        if transaction is None:
+            return obj
+
+        aop = transaction.accountoperation_set.all()[0]
+        obj["amount"] = -aop.delta
+        obj["moneyflow"] = -aop.delta
+
+        data = transaction.transactiondata_set.all()[0]
+        obj['motive'] = data.data
+
+        return obj
+
 
 
 
@@ -419,12 +536,12 @@ class MealTransactionSerializer(BaseTransactionSerializer):
         return t
 
     def to_representation(self, transaction):
-        obj = BaseTransactionSerializer(transaction, context={'ignore_type': True}).data
+        obj = BaseTransactionSerializer(transaction, context={'request':self.context.get('request'), 'ignore_type': True}).data
         if transaction is None:
             return obj
 
         force_fuzzy = True
-        obj["items"] = ItemQtySerializer.serializeOperations(transaction.itemoperation_set.select_related(), force_fuzzy)
+        obj["items"] = ItemQtySerializer.serializeOperations(transaction.itemoperation_set.all(), force_fuzzy)
 
         total_price = 0
         obj["accounts"] = []
@@ -465,10 +582,14 @@ class ApproTransactionSerializer(BaseTransactionSerializer):
             else:
                 total += priceobj.price * qty
 
-            stockitem = StockItem.objects.get(bar=t.bar, details=buyitem.details)
-            if stockitem.id not in stockitem_map:
-                stockitem_map[stockitem.id] = {'stockitem': stockitem, 'delta': 0}
-            stockitem_map[stockitem.id]['delta'] += qty * buyitem.itemqty
+            try:
+                stockitem = StockItem.objects.get(bar=t.bar, details=buyitem.details)
+                if stockitem.id not in stockitem_map:
+                    stockitem_map[stockitem.id] = {'stockitem': stockitem, 'delta': 0}
+                stockitem_map[stockitem.id]['delta'] += qty * buyitem.itemqty
+            except:
+                t.delete()
+                raise Http404("Stockitem does not exist")
 
         for x in stockitem_map.values():
             x['stockitem'].create_operation(delta=x['delta'], unit='buy', transaction=t)
@@ -480,7 +601,7 @@ class ApproTransactionSerializer(BaseTransactionSerializer):
         return t
 
     def to_representation(self, transaction):
-        obj = BaseTransactionSerializer(transaction, context={'ignore_type': True}).data
+        obj = BaseTransactionSerializer(transaction, context={'request':self.context.get('request'), 'ignore_type': True}).data
         if transaction is None:
             return obj
 
@@ -509,7 +630,7 @@ class InventoryTransactionSerializer(BaseTransactionSerializer):
         return t
 
     def to_representation(self, transaction):
-        obj = BaseTransactionSerializer(transaction, context={'ignore_type': True}).data
+        obj = BaseTransactionSerializer(transaction, context={'request':self.context.get('request'), 'ignore_type': True}).data
         if transaction is None:
             return obj
 
@@ -518,14 +639,60 @@ class InventoryTransactionSerializer(BaseTransactionSerializer):
         for iop in transaction.itemoperation_set.all():
             obj["items"].append({
                 'stockitem': iop.target.id,
-                'qty': iop.delta
+                'qty': iop.delta * iop.target.get_unit('sell')
             })
-            total_price += iop.delta * iop.target.sell_price
+            total_price += iop.delta * iop.target.get_price()
 
         obj["moneyflow"] = total_price
 
         return obj
 
+
+class CollectivePaymentTransactionSerializer(BaseTransactionSerializer):
+    accounts = AccountRatioSerializer(many=True)
+    amount = serializers.FloatField()
+    motive = serializers.CharField(allow_blank=True)
+
+    def create(self, data):
+        t = super(CollectivePaymentTransactionSerializer, self).create(data)
+
+        amount = data['amount']
+        total_ratio = 0
+        for a in data["accounts"]:
+            total_ratio += a["ratio"]
+        for a in data["accounts"]:
+            t.accountoperation_set.create(
+                target=a["account"],
+                delta=-amount * a["ratio"] / total_ratio)
+
+        t.transactiondata_set.create(
+            label='motive',
+            data=data["motive"])
+
+        return t
+
+    def to_representation(self, transaction):
+        obj = BaseTransactionSerializer(transaction, context={'request':self.context.get('request'), 'ignore_type': True}).data
+        if transaction is None:
+            return obj
+
+        total_price = 0
+        obj["accounts"] = []
+        aops = transaction.accountoperation_set.all()
+        for aop in aops:
+            total_price += abs(aop.delta)
+        for aop in aops:
+            obj["accounts"].append({
+                'account': aop.target.id,
+                'ratio': abs(aop.delta) / total_price
+            })
+
+        data = transaction.transactiondata_set.all()[0]
+        obj['motive'] = data.data
+
+        obj["moneyflow"] = total_price
+
+        return obj
 
 
 
@@ -534,8 +701,13 @@ serializers_class_map = {
     "buy": BuyTransactionSerializer,
     "throw": ThrowTransactionSerializer,
     "deposit": DepositTransactionSerializer,
+    "withdraw": WithdrawTransactionSerializer,
     "give": GiveTransactionSerializer,
+    "refund": RefundTransactionSerializer,
     "punish": PunishTransactionSerializer,
+    "agios": AgiosTransactionSerializer,
+    "barInvestment": BarInvestmentTransactionSerializer,
     "meal": MealTransactionSerializer,
     "appro": ApproTransactionSerializer,
-    "inventory": InventoryTransactionSerializer}
+    "inventory": InventoryTransactionSerializer,
+    "collectivePayment": CollectivePaymentTransactionSerializer}

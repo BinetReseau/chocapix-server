@@ -3,13 +3,14 @@ from rest_framework import viewsets
 from rest_framework import serializers, decorators
 from rest_framework.response import Response
 
-from bars_django.utils import VirtualField, CurrentBarCreateOnlyDefault
+from bars_django.utils import VirtualField, permission_logic, CurrentBarCreateOnlyDefault
 from bars_core.models.bar import Bar
 from bars_core.models.user import User, get_default_user
 from bars_core.models.role import Role
-from bars_core.perms import PerBarPermissionsOrAnonReadOnly
+from bars_core.perms import PerBarPermissionsOrAnonReadOnly, BarRolePermissionLogic
 
 
+@permission_logic(BarRolePermissionLogic())
 class Account(models.Model):
     class Meta:
         unique_together = ("bar", "owner")
@@ -19,6 +20,7 @@ class Account(models.Model):
     owner = models.ForeignKey(User)
     money = models.FloatField(default=0)
 
+    overdrawn_since = models.DateField(null=True)
     deleted = models.BooleanField(default=False)
     last_modified = models.DateTimeField(auto_now=True)
 
@@ -35,7 +37,7 @@ class Account(models.Model):
 class AccountSerializer(serializers.ModelSerializer):
     class Meta:
         model = Account
-        read_only_fields = ('bar', 'money', 'last_modified')
+        read_only_fields = ('bar', 'money', 'overdrawn_since', 'last_modified')
 
     _type = VirtualField("Account")
     bar = serializers.PrimaryKeyRelatedField(read_only=True, default=CurrentBarCreateOnlyDefault())
@@ -60,9 +62,11 @@ class AccountViewSet(viewsets.ModelViewSet):
         return Response(serializer.data)
 
 
+# default_account_map = {}
 def get_default_account(bar):
+    # global default_account_map
     user = get_default_user()
-    try:
-        return Account.objects.get(owner=user, bar=bar)
-    except Account.DoesNotExist:
-        return Account.objects.create(owner=user, bar=bar)
+    # if bar.id not in default_account_map:
+    #     default_account_map[bar.id], _ = Account.objects.get_or_create(owner=user, bar=bar)
+    x, _ = Account.objects.get_or_create(owner=user, bar=bar)
+    return x
