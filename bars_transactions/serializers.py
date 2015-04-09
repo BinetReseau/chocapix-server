@@ -368,6 +368,9 @@ class RefundTransactionSerializer(BaseTransactionSerializer, AccountAmountSerial
         t.accountoperation_set.create(
             target=data["account"],
             delta=data["amount"])
+        t.accountoperation_set.create(
+            target=get_default_account(t.bar),
+            delta=data["amount"])
         t.transactiondata_set.create(
             label='motive',
             data=data["motive"])
@@ -379,10 +382,11 @@ class RefundTransactionSerializer(BaseTransactionSerializer, AccountAmountSerial
         if transaction is None:
             return obj
 
-        aop = transaction.accountoperation_set.all()[0]
-        obj["account"] = aop.target.id
-        obj["amount"] = aop.delta
-        obj["moneyflow"] = aop.delta
+        for aop in transaction.accountoperation_set.all():
+            if aop.target.owner != get_default_user():
+                obj["account"] = aop.target.id
+                obj["amount"] = aop.delta
+                obj["moneyflow"] = aop.delta
 
         data = transaction.transactiondata_set.all()[0]
         obj["motive"] = data.data
