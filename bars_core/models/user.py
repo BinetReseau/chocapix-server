@@ -1,7 +1,13 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+import random
+import string
 from django.db import models
+from django.core.mail import send_mail
 from django.contrib.auth.models import BaseUserManager, AbstractBaseUser, _user_has_module_perms, _user_has_perm
-from rest_framework import viewsets, serializers, decorators, exceptions
+from rest_framework import viewsets, serializers, decorators, exceptions, permissions
 from rest_framework.response import Response
+from rest_framework.views import APIView
 
 from permission.logics import OneselfPermissionLogic
 from bars_django.utils import VirtualField, permission_logic
@@ -90,7 +96,6 @@ class UserSerializer(serializers.ModelSerializer):
 
 
 from bars_core.perms import RootBarPermissionsOrObjectPermissions
-
 class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer
@@ -113,15 +118,38 @@ class UserViewSet(viewsets.ModelViewSet):
         user.save()
         return Response('Password changed', 200)
 
-    @decorators.detail_route(methods=['put'])
-    def reset_password(self, request, pk=None):
-        user = User.objects.get(pk=pk)
-        # password = User.objects.make_random_password()
-        password = "0000"
+
+reset_mail = {
+    'from_email': 'babe@eleves.polytechnique.fr',
+    'subject': 'Mot de passe Chocapix',
+    'message': u"""
+Cher(e) {name},
+
+Ton mot de passe Chocapix a été réinitialisé.
+C'est maintenant "{password}"
+
+Cordialement,
+Les membres du BABE
+"""
+}
+class ResetPasswordView(APIView):
+    permission_classes = (permissions.AllowAny,)
+
+    def post(self, request, format=None):
+        email = request.data.get('email')
+        user = User.objects.get(email=email)
+
+        password = ''.join(random.choice(string.ascii_lowercase + string.digits) for _ in range(6))
+
+        mail = reset_mail.copy()
+        mail['recipient_list'] = [user.email]
+        mail['message'] = mail['message'].format(email=user.email, password=password, name=user.get_full_name())
+        send_mail(**mail)
 
         user.set_password(password)
         user.save()
-        return Response('Password changed', 200)
+
+        return Response('Password reset', 200)
 
 
 def get_default_user():

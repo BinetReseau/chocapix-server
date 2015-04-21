@@ -29,8 +29,7 @@ class Account(models.Model):
 
     def save(self, *args, **kwargs):
         if not self.pk:
-            Role.objects.create(name='customer', bar=self.bar, user=self.owner)
-
+            Role.objects.get_or_create(name='customer', bar=self.bar, user=self.owner)
         super(Account, self).save(*args, **kwargs)
 
 
