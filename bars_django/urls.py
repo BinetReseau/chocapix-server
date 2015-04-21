@@ -8,7 +8,7 @@ import permission
 permission.autodiscover()
 
 from bars_core.models.bar import BarViewSet, BarSettingsViewSet
-from bars_core.models.user import UserViewSet
+from bars_core.models.user import UserViewSet, ResetPasswordView
 from bars_core.models.role import RoleViewSet
 from bars_core.models.account import AccountViewSet
 from bars_core.models.loginattempt import LoginAttemptViewSet
@@ -52,5 +52,6 @@ urlpatterns = patterns(
     url(r'^api-auth/', include('rest_framework.urls', namespace='rest_framework')),
     # url(r'^api-token-auth/', 'rest_framework_jwt.views.obtain_jwt_token'),
     url(r'^api-token-auth/', 'bars_core.auth.obtain_jwt_token'),
+    url(r'^reset-password/$', ResetPasswordView.as_view()),
     url(r'^', include(router.urls)),
 )
