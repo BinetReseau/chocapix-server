@@ -123,7 +123,7 @@ reset_mail = {
     'from_email': 'babe@eleves.polytechnique.fr',
     'subject': 'Mot de passe Chocapix',
     'message': u"""
-Cher(e) {name},
+Salut,
 
 Ton mot de passe Chocapix a été réinitialisé.
 C'est maintenant "{password}"
