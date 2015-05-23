@@ -126,7 +126,8 @@ reset_mail = {
 Salut,
 
 Ton mot de passe Chocapix a été réinitialisé.
-C'est maintenant "{password}"
+C'est maintenant "{password}".
+Rappel: ton login est "{login}".
 
 Cordialement,
 Les membres du BABE
@@ -143,7 +144,7 @@ class ResetPasswordView(APIView):
 
         mail = reset_mail.copy()
         mail['recipient_list'] = [user.email]
-        mail['message'] = mail['message'].format(email=user.email, password=password, name=user.get_full_name())
+        mail['message'] = mail['message'].format(email=user.email, password=password, name=user.get_full_name(), login=user.username)
         send_mail(**mail)
 
         user.set_password(password)
