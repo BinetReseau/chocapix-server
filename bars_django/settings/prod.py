@@ -20,3 +20,5 @@ DATABASES = {
 
 EMAIL_HOST = "frankiz"
 EMAIL_PORT = 25
+
+ADMINS = (("Babe", "babe@eleves.polytechnique.fr"),)
