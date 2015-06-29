@@ -528,7 +528,7 @@ class MealTransactionSerializer(BaseTransactionSerializer):
         for aop in aops:
             obj["accounts"].append({
                 'account': aop.target.id,
-                'ratio': abs(aop.delta) / total_price
+                'ratio': abs(aop.delta) / total_price if total_price != 0 else 0
             })
 
         data = transaction.transactiondata_set.all()[0]
