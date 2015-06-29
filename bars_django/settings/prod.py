@@ -1,6 +1,7 @@
 from .common import *
 
 ALLOWED_HOSTS = [
+    "localhost",
     "chocapix",
     "chocapix.bin",
     "chocapix.binets.fr",
