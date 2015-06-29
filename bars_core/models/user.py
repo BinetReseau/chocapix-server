@@ -138,6 +138,8 @@ class ResetPasswordView(APIView):
 
     def post(self, request, format=None):
         email = request.data.get('email')
+        if email == '':
+            return Response("'email' field cannot be empty", 400)
         user = User.objects.get(email=email)
 
         password = ''.join(random.choice(string.ascii_lowercase + string.digits) for _ in range(6))
