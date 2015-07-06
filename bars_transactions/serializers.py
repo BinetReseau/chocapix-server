@@ -403,7 +403,7 @@ Salut,
 
 {name} a infligé une amende de {amount} € à ton compte dans le bar {bar}.
 La raison invoquée est la suivante :
-    «{cause}»
+    « {cause} »
 
 Ce mail a été envoyé automatiquement par Chocapix.
 """
