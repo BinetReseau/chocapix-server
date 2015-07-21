@@ -40,6 +40,9 @@ class Bar(models.Model):
 
         return 0
 
+    def count_accounts(self):
+        return self.account_set.count()
+
 
 def makeAgiosTransaction(bar, account, amount):
     from bars_transactions.serializers import AgiosTransactionSerializer
@@ -59,6 +62,7 @@ class BarSerializer(serializers.ModelSerializer):
         model = Bar
     _type = VirtualField("Bar")
     settings = serializers.PrimaryKeyRelatedField(read_only=True)
+    count_accounts = serializers.IntegerField()
 
 
 from bars_core.perms import RootBarPermissionsOrAnonReadOnly
