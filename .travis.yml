@@ -11,7 +11,7 @@ after_success: coveralls
 notifications:
   irc:
     channels:
-      - "irc.rezosup.org#bars"
+      - "irc.rezosup.org#chocapix"
     template:
       - "%{repository_name}/%{branch} %{commit} %{author}: %{message}"
     on_success: change
