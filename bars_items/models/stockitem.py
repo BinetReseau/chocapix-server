@@ -1,3 +1,4 @@
+from django.utils import timezone
 from django.db import models
 from rest_framework import viewsets, serializers, permissions
 
@@ -21,6 +22,7 @@ class StockItem(models.Model):
     unit_factor = models.FloatField(default=1)
     price = models.FloatField()
 
+    last_inventory = models.DateTimeField(default=timezone.now())
     deleted = models.BooleanField(default=False)
 
     def get_unit(self, unit=''):
@@ -81,6 +83,7 @@ class StockItemSerializer(serializers.ModelSerializer):
     qty = serializers.FloatField(source='sell_qty', read_only=True)
     price = serializers.FloatField(source='display_price')
     sell_to_buy = serializers.FloatField()
+    last_inventory = serializers.DateTimeField(read_only=True)
 
     def validate_sell_to_buy(self, value):
         if value <= 0:

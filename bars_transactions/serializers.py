@@ -1,5 +1,6 @@
 # encoding: utf8
 from django.core.mail import send_mail
+from django.utils import timezone
 
 from django.http import Http404
 from rest_framework import serializers
@@ -631,6 +632,8 @@ class InventoryTransactionSerializer(BaseTransactionSerializer):
         t = super(InventoryTransactionSerializer, self).create(data)
 
         for i in data["items"]:
+            i["stockitem"].last_inventory = timezone.now()
+            i["stockitem"].save()
             i["stockitem"].create_operation(next_value=i["qty"], unit='sell', transaction=t, fixed=True)
 
         return t
