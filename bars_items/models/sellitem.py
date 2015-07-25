@@ -53,6 +53,8 @@ class SellItem(models.Model):
     @property
     def calc_oldest_inventory(self):
         si = self.stockitems.all().order_by('last_inventory')
+        if not si:
+            return null
         return si[0].last_inventory
     
 
