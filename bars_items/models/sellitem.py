@@ -50,6 +50,12 @@ class SellItem(models.Model):
                 stockitem.unit_factor *= factor
                 stockitem.save()
 
+    @property
+    def calc_oldest_inventory(self):
+        si = self.stockitems.all().order_by('last_inventory')
+        return si[0].last_inventory
+    
+
     def __unicode__(self):
         return self.name
 
@@ -67,6 +73,7 @@ class SellItemSerializer(serializers.ModelSerializer):
     fuzzy_qty = serializers.FloatField(read_only=True, source='calc_qty')
     fuzzy_price = serializers.FloatField(read_only=True, source='calc_price')
     unit_factor = serializers.FloatField(write_only=True, default=1)
+    oldest_inventory = serializers.DateTimeField(read_only=True, source='calc_oldest_inventory')
 
 
 
