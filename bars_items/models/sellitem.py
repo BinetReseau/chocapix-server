@@ -1,5 +1,7 @@
 from django.http import Http404
 from django.db import models
+import datetime
+from django.utils.timezone import utc
 from rest_framework import viewsets, serializers, permissions, decorators, exceptions
 from rest_framework.response import Response
 
@@ -54,7 +56,7 @@ class SellItem(models.Model):
     def calc_oldest_inventory(self):
         si = self.stockitems.all().order_by('last_inventory')
         if not si:
-            return null
+            return datetime.datetime(2015, 2, 24, 21, 17, 0, 0, tzinfo=utc)
         return si[0].last_inventory
     
 
