@@ -1,5 +1,7 @@
 from django.http import Http404
 from django.db import models
+import datetime
+from django.utils.timezone import utc
 from rest_framework import viewsets, serializers, permissions, decorators, exceptions
 from rest_framework.response import Response
 
@@ -50,6 +52,14 @@ class SellItem(models.Model):
                 stockitem.unit_factor *= factor
                 stockitem.save()
 
+    @property
+    def calc_oldest_inventory(self):
+        si = self.stockitems.all().order_by('last_inventory')
+        if not si:
+            return datetime.datetime(2015, 2, 24, 21, 17, 0, 0, tzinfo=utc)
+        return si[0].last_inventory
+    
+
     def __unicode__(self):
         return self.name
 
@@ -67,6 +77,7 @@ class SellItemSerializer(serializers.ModelSerializer):
     fuzzy_qty = serializers.FloatField(read_only=True, source='calc_qty')
     fuzzy_price = serializers.FloatField(read_only=True, source='calc_price')
     unit_factor = serializers.FloatField(write_only=True, default=1)
+    oldest_inventory = serializers.DateTimeField(read_only=True, source='calc_oldest_inventory')
 
 
 

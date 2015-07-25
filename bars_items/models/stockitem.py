@@ -1,5 +1,6 @@
-from django.utils import timezone
+import datetime
 from django.db import models
+from django.utils.timezone import utc
 from rest_framework import viewsets, serializers, permissions
 
 from bars_django.utils import VirtualField, permission_logic, CurrentBarCreateOnlyDefault
@@ -22,7 +23,7 @@ class StockItem(models.Model):
     unit_factor = models.FloatField(default=1)
     price = models.FloatField()
 
-    last_inventory = models.DateTimeField(default=timezone.now())
+    last_inventory = models.DateTimeField(default=datetime.datetime(2015, 2, 24, 21, 17, 0, 0, tzinfo=utc))
     deleted = models.BooleanField(default=False)
 
     def get_unit(self, unit=''):
