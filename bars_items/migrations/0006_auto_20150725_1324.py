@@ -16,7 +16,7 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='stockitem',
             name='last_inventory',
-            field=models.DateTimeField(default=datetime.datetime(2015, 2, 24, 21, 17, 0, 0, tzinfo=utc)),
+            field=models.DateTimeField(default=datetime.datetime(2015, 7, 25, 13, 24, 45, 715360, tzinfo=utc)),
             preserve_default=True,
         ),
     ]
