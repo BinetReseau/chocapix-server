@@ -26,6 +26,7 @@ def reload(obj):
 class BaseSerializerTests(APITestCase):
     @classmethod
     def setUpClass(self):
+        super(BaseSerializerTests, self).setUpClass()
         self.bar, _ = Bar.objects.get_or_create(id='barjone')
         self.wrong_bar, _ = Bar.objects.get_or_create(id='barrouje')
 
@@ -63,6 +64,7 @@ class BaseSerializerTests(APITestCase):
 class SerializerTests(APITestCase):
     @classmethod
     def setUpClass(self):
+        super(SerializerTests, self).setUpClass()
         self.bar, _ = Bar.objects.get_or_create(id='barjone')
         self.wrong_bar, _ = Bar.objects.get_or_create(id='barrouje')
 

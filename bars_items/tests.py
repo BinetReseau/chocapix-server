@@ -121,6 +121,7 @@ class AutoTestMixin(AutoTestGetMixin, AutoTestCreateMixin, AutoTestChangeMixin):
 class ItemTests(APITestCase):
     @classmethod
     def setUpClass(self):
+        super(ItemTests, self).setUpClass()
         get_root_bar._cache = None  # Workaround
         self.bar, _ = Bar.objects.get_or_create(id='barjone')
         self.wrong_bar, _ = Bar.objects.get_or_create(id='barrouje')

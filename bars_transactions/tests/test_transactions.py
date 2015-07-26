@@ -21,6 +21,7 @@ def reload(obj):
 class TransactionTests(APITestCase):
     @classmethod
     def setUpClass(self):
+        super(TransactionTests, self).setUpClass()
         self.bar, _ = Bar.objects.get_or_create(id='barjone')
         self.wrong_bar, _ = Bar.objects.get_or_create(id='barrouje')
 
