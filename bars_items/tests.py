@@ -120,8 +120,8 @@ class AutoTestMixin(AutoTestGetMixin, AutoTestCreateMixin, AutoTestChangeMixin):
 
 class ItemTests(APITestCase):
     @classmethod
-    def setUpClass(self):
-        super(ItemTests, self).setUpClass()
+    def setUpTestData(self):
+        super(ItemTests, self).setUpTestData()
         get_root_bar._cache = None  # Workaround
         self.bar, _ = Bar.objects.get_or_create(id='barjone')
         self.wrong_bar, _ = Bar.objects.get_or_create(id='barrouje')
@@ -151,8 +151,8 @@ class ItemTests(APITestCase):
 
 class SellItemTests(ItemTests, AutoTestBarMixin):
     @classmethod
-    def setUpClass(self):
-        super(SellItemTests, self).setUpClass()
+    def setUpTestData(self):
+        super(SellItemTests, self).setUpTestData()
         self.model = SellItem
 
         self.get_url = '/sellitem/'
@@ -167,8 +167,8 @@ class SellItemTests(ItemTests, AutoTestBarMixin):
 
 class ItemDetailsTests(ItemTests, AutoTestMixin):
     @classmethod
-    def setUpClass(self):
-        super(ItemDetailsTests, self).setUpClass()
+    def setUpTestData(self):
+        super(ItemDetailsTests, self).setUpTestData()
         self.model = ItemDetails
 
         self.get_url = '/itemdetails/'
@@ -183,8 +183,8 @@ class ItemDetailsTests(ItemTests, AutoTestMixin):
 
 class BuyItemTests(ItemTests, AutoTestMixin):
     @classmethod
-    def setUpClass(self):
-        super(BuyItemTests, self).setUpClass()
+    def setUpTestData(self):
+        super(BuyItemTests, self).setUpTestData()
         self.model = BuyItem
 
         self.get_url = '/buyitem/'
@@ -199,8 +199,8 @@ class BuyItemTests(ItemTests, AutoTestMixin):
 
 class StockItemTests(ItemTests, AutoTestBarMixin):
     @classmethod
-    def setUpClass(self):
-        super(StockItemTests, self).setUpClass()
+    def setUpTestData(self):
+        super(StockItemTests, self).setUpTestData()
         self.model = StockItem
 
         self.get_url = '/stockitem/'
