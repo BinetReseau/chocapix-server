@@ -64,13 +64,14 @@ def time_series(qs, date_field, aggregate=None, interval='days', engine=None):
     engine = engine or _guess_engine(qs)
 
     interval_sql = _get_interval_sql(date_field, interval, engine)
-    aggregate_data = qs.extra(select = {'qss_date': interval_sql}).\
-                            order_by().values('qss_date').\
-                            annotate(qss_agg=aggregate)
+    aggregate_data = qs.extra(select = {'agg_date': interval_sql}).\
+                            order_by().values('agg_date').\
+                            annotate(agg=aggregate)
 
-    return [(x['qss_date'], x['qss_agg']) for x in aggregate_data]
+    return [(x['agg_date'], x['agg']) for x in aggregate_data]
 
 
+from datetime import datetime
 from bars_transactions.models import Transaction
 def compute_transaction_stats(request, filter=id, aggregate=None):
     qs = Transaction.objects.all()
@@ -78,6 +79,11 @@ def compute_transaction_stats(request, filter=id, aggregate=None):
 
     if request.bar:
         qs = qs.filter(bar=request.bar)
+
+    date_start = request.query_params.get('date_start')
+    date_end = request.query_params.get('date_end', datetime.now())
+    if date_start is not None:
+        qs = qs.filter(timestamp__range=(date_start, date_end))
 
     types = request.query_params.getlist("type")
     if len(types) != 0:
