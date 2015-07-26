@@ -62,7 +62,7 @@ INSTALLED_APPS = (
     'django_extensions',
     'rest_framework',
     'corsheaders',
-    'permission',
+    # 'permission',
 
     'bars_core',
     'bars_items',

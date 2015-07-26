@@ -25,7 +25,8 @@ def reload(obj):
 
 class BaseSerializerTests(APITestCase):
     @classmethod
-    def setUpClass(self):
+    def setUpTestData(self):
+        super(BaseSerializerTests, self).setUpTestData()
         self.bar, _ = Bar.objects.get_or_create(id='barjone')
         self.wrong_bar, _ = Bar.objects.get_or_create(id='barrouje')
 
@@ -62,7 +63,8 @@ class BaseSerializerTests(APITestCase):
 
 class SerializerTests(APITestCase):
     @classmethod
-    def setUpClass(self):
+    def setUpTestData(self):
+        super(SerializerTests, self).setUpTestData()
         self.bar, _ = Bar.objects.get_or_create(id='barjone')
         self.wrong_bar, _ = Bar.objects.get_or_create(id='barrouje')
 
@@ -156,8 +158,8 @@ class BuySerializerTests(SerializerTests):
 
 class GiveSerializerTests(SerializerTests):
     @classmethod
-    def setUpClass(self):
-        super(GiveSerializerTests, self).setUpClass()
+    def setUpTestData(self):
+        super(GiveSerializerTests, self).setUpTestData()
         self.user2, _ = User.objects.get_or_create(username='user2')
         self.account2, _ = Account.objects.get_or_create(bar=self.bar, owner=self.user2)
 
@@ -225,8 +227,8 @@ class ThrowSerializerTests(SerializerTests):
 
 class DepositSerializerTests(SerializerTests):
     @classmethod
-    def setUpClass(self):
-        super(DepositSerializerTests, self).setUpClass()
+    def setUpTestData(self):
+        super(DepositSerializerTests, self).setUpTestData()
 
         self.bar_account = get_default_account(self.bar)
         self.wrong_bar_account = get_default_account(self.wrong_bar)
@@ -304,8 +306,8 @@ class PunishSerializerTests(SerializerTests):
 
 class MealSerializerTests(SerializerTests):
     @classmethod
-    def setUpClass(self):
-        super(MealSerializerTests, self).setUpClass()
+    def setUpTestData(self):
+        super(MealSerializerTests, self).setUpTestData()
 
         self.user2, _ = User.objects.get_or_create(username='user2')
         self.account2, _ = Account.objects.get_or_create(bar=self.bar, owner=self.user2)
@@ -370,8 +372,8 @@ class MealSerializerTests(SerializerTests):
 
 class ApproSerializerTests(SerializerTests):
     @classmethod
-    def setUpClass(self):
-        super(ApproSerializerTests, self).setUpClass()
+    def setUpTestData(self):
+        super(ApproSerializerTests, self).setUpTestData()
 
         self.bar_account = get_default_account(self.bar)
 

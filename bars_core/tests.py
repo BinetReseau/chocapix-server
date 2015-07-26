@@ -12,7 +12,8 @@ def reload(obj):
 
 class BackendTests(APITestCase):
     @classmethod
-    def setUpClass(self):
+    def setUpTestData(self):
+        super(BackendTests, self).setUpTestData()
         User.objects.create_user("test", "test")
 
 
@@ -51,7 +52,8 @@ class BackendTests(APITestCase):
 
 class BarTests(APITestCase):
     @classmethod
-    def setUpClass(self):
+    def setUpTestData(self):
+        super(BarTests, self).setUpTestData()
         get_root_bar._cache = None  # Workaround
         root_bar = get_root_bar()
         self.manager, _ = User.objects.get_or_create(username="manager")
@@ -100,7 +102,8 @@ class BarTests(APITestCase):
 
 class BarSettingsTests(APITestCase):
     @classmethod
-    def setUpClass(self):
+    def setUpTestData(self):
+        super(BarSettingsTests, self).setUpTestData()
         self.bar, _ = Bar.objects.get_or_create(id="barjone")
         self.manager, _ = User.objects.get_or_create(username="manager")
         self.manager.role_set.all().delete()
@@ -150,7 +153,8 @@ class BarSettingsTests(APITestCase):
 
 class UserTests(APITestCase):
     @classmethod
-    def setUpClass(self):
+    def setUpTestData(self):
+        super(UserTests, self).setUpTestData()
         get_root_bar._cache = None  # Workaround
         root_bar = get_root_bar()
         self.manager, _ = User.objects.get_or_create(username="manager")
@@ -245,7 +249,8 @@ class UserTests(APITestCase):
 
 class AccountTests(APITestCase):
     @classmethod
-    def setUpClass(self):
+    def setUpTestData(self):
+        super(AccountTests, self).setUpTestData()
         self.bar, _ = Bar.objects.get_or_create(id='natationjone')
         Bar.objects.get_or_create(id='avironjone')
 
@@ -325,7 +330,10 @@ class AccountTests(APITestCase):
 
 class RoleTests(APITestCase):
     @classmethod
-    def setUpClass(self):
+    def setUpTestData(self):
+        super(RoleTests, self).setUpTestData()
+        get_root_bar._cache = None  # Workaround
+
         self.bar, _ = Bar.objects.get_or_create(id='natationjone')
         Bar.objects.get_or_create(id='avironjone')
 
