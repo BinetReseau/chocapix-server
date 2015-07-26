@@ -83,7 +83,7 @@ def time_series(qs, date_field, aggregate=None, interval='days', engine=None):
 from datetime import datetime
 from bars_transactions.models import Transaction
 def compute_transaction_stats(request, filter=id, aggregate=None):
-    qs = Transaction.objects.all()
+    qs = Transaction.objects.filter(canceled=False)
     qs = filter(qs)
 
     if request.bar:
