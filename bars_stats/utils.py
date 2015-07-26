@@ -26,6 +26,9 @@ def _get_interval_sql(date_field, interval, engine):
             'weeks': "DATE_FORMAT(DATE_SUB(`"+date_field+"`, INTERVAL(WEEKDAY(`"+date_field+"`)) DAY), '%%Y-%%m-%%d')",
             'months': "DATE_FORMAT(`" + date_field +"`, '%%Y-%%m-01')",
             'years': "DATE_FORMAT(`" + date_field +"`, '%%Y-01-01')",
+            'hours_of_day': "DATE_FORMAT(`" + date_field +"`, '%%H')",
+            'days_of_week': "WEEKDAY(`"+date_field+"`)",
+            'months_of_year': "DATE_FORMAT(`" + date_field +"`, '%%m')",
         },
         'postgresql': {
             'minutes': "date_trunc('minute', %s)" % date_field,
@@ -34,6 +37,9 @@ def _get_interval_sql(date_field, interval, engine):
             'weeks': "date_trunc('week', %s)" % date_field,
             'months': "date_trunc('month', %s)" % date_field,
             'years': "date_trunc('year', %s)" % date_field,
+            'hours_of_day': "extract(hour from %s)" % date_field,
+            'days_of_week': "extract(dow from %s)" % date_field,
+            'months_of_year': "extract(month from %s)" % date_field,
         },
         'sqlite': {
             'minutes': "strftime('%%Y-%%m-%%d %%H:%%M', `" + date_field + "`)",
@@ -42,6 +48,9 @@ def _get_interval_sql(date_field, interval, engine):
             'weeks':  "strftime('%%Y-%%m-%%d', julianday(`" + date_field + "`) - strftime('%%w', `" + date_field + "`) + 1)",
             'months': "strftime('%%Y-%%m-01', `" + date_field + "`)",
             'years': "strftime('%%Y-01-01', `" + date_field + "`)",
+            'hours_of_day': "strftime('%%H', `" + date_field + "`)",
+            'days_of_week': "strftime('%%w', `" + date_field + "`)",
+            'months_of_year': "strftime('%%m', `" + date_field + "`)",
         },
     }
 
