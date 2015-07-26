@@ -1,5 +1,6 @@
 from django.http import Http404
 from django.db import models
+from django.db.models import Sum, F
 import datetime
 from django.utils.timezone import utc
 from rest_framework import viewsets, serializers, permissions, decorators, exceptions
@@ -58,7 +59,7 @@ class SellItem(models.Model):
         if not si:
             return datetime.datetime(2015, 2, 24, 21, 17, 0, 0, tzinfo=utc)
         return si[0].last_inventory
-    
+
 
     def __unicode__(self):
         return self.name
@@ -184,3 +185,13 @@ class SellItemViewSet(viewsets.ModelViewSet):
 
         srz = SellItemSerializer(new_sellitem)
         return Response(srz.data, 200)
+
+
+    @decorators.detail_route()
+    def stats(self, request, pk):
+        from bars_stats.utils import compute_transaction_stats
+        f = lambda qs: qs.filter(itemoperation__target__sellitem=pk)
+        aggregate = Sum(F('itemoperation__delta') * F('itemoperation__target__unit_factor'))
+
+        stats = compute_transaction_stats(request, f, aggregate)
+        return Response(stats, 200)

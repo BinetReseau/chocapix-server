@@ -118,6 +118,15 @@ class UserViewSet(viewsets.ModelViewSet):
         user.save()
         return Response('Password changed', 200)
 
+    @decorators.detail_route()
+    def stats(self, request, pk):
+        from bars_stats.utils import compute_transaction_stats
+        f = lambda qs: qs.filter(accountoperation__target__owner=pk)
+        aggregate = models.Sum('accountoperation__delta')
+
+        stats = compute_transaction_stats(request, f, aggregate)
+        return Response(stats, 200)
+
 
 reset_mail = {
     'from_email': 'babe@eleves.polytechnique.fr',

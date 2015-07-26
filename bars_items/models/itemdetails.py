@@ -1,6 +1,9 @@
 from django.db import models
-from rest_framework import viewsets, serializers
+from django.db.models import Sum, F, Value as V
+from rest_framework import viewsets, serializers, decorators
 from bars_django.utils import VirtualField, permission_logic
+from rest_framework.response import Response
+
 from bars_core.perms import RootBarRolePermissionLogic, RootBarPermissionsOrAnonReadOnly
 from bars_items.models.stockitem import StockItem
 
@@ -47,3 +50,12 @@ class ItemDetailsViewSet(viewsets.ModelViewSet):
     serializer_class = ItemDetailsSerializer
     permission_classes = (RootBarPermissionsOrAnonReadOnly,)
     search_fields = ('name', 'keywords')
+
+    @decorators.detail_route()
+    def stats(self, request, pk):
+        from bars_stats.utils import compute_transaction_stats
+        f = lambda qs: qs.filter(itemoperation__target__sellitem=pk)
+        aggregate = Sum(F('itemoperation__delta') * V(1)) # TODO: change if buy_unit
+
+        stats = compute_transaction_stats(request, f, aggregate)
+        return Response(stats, 200)

@@ -45,7 +45,7 @@ class TransactionViewSet(viewsets.ModelViewSet):
     queryset = Transaction.objects.prefetch_related(
         Prefetch('bar', Bar.objects.only('id')),
         Prefetch('author', User.objects.only('id')),
-        Prefetch('author__account_set', queryset=Account.objects.only('id', 'bar_id', 'owner_id')),
+        Prefetch('author__account_set', Account.objects.only('id', 'bar_id', 'owner_id')),
         'accountoperation_set',
         'accountoperation_set__target',
         'accountoperation_set__target__owner',
