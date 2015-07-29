@@ -101,4 +101,5 @@ def compute_transaction_stats(request, filter=id, aggregate=None):
     qs = qs.order_by('-timestamp', '-id').distinct()
 
     interval = request.query_params.get('interval', 'days')
-    return time_series(qs, date_field='timestamp', interval=interval, aggregate=aggregate)
+    result = time_series(qs, date_field='timestamp', interval=interval, aggregate=aggregate)
+    return sorted(result)
