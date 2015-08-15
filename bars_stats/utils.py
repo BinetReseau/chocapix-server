@@ -67,7 +67,7 @@ def _get_interval_sql(date_field, interval, engine):
 
 
 # Inspired from https://github.com/kmike/django-qsstats-magic
-from django.db.models import Count
+from django.db.models import Count, Sum
 def time_series(qs, date_field, aggregate=None, interval='days', engine=None):
     aggregate = aggregate or Count('id')
     engine = engine or _guess_engine(qs)
@@ -103,3 +103,22 @@ def compute_transaction_stats(request, filter=id, aggregate=None):
     interval = request.query_params.get('interval', 'days')
     result = time_series(qs, date_field='timestamp', interval=interval, aggregate=aggregate)
     return sorted(result)
+
+def compute_total_spent(request, filter=id, aggregate=None):
+    qs = Transaction.objects.filter(canceled=False)
+    qs = filter(qs)
+
+    if request.bar:
+        qs = qs.filter(bar=request.bar)
+
+    date_start = request.query_params.get('date_start')
+    date_end = request.query_params.get('date_end', datetime.now())
+    if date_start is not None:
+        qs = qs.filter(timestamp__range=(date_start, date_end))
+
+    types = request.query_params.getlist("type")
+    if len(types) != 0:
+        qs = qs.filter(type__in=types)
+
+    result = qs.aggregate(total_spent = Sum('accountoperation__delta'))
+    return result

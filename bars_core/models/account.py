@@ -69,6 +69,14 @@ class AccountViewSet(viewsets.ModelViewSet):
         stats = compute_transaction_stats(request, f, aggregate)
         return Response(stats, 200)
 
+    @decorators.detail_route()
+    def total_spent(self, request, pk):
+        from bars_stats.utils import compute_total_spent
+        f = lambda qs: qs.filter(accountoperation__target=pk)
+
+        stats = compute_total_spent(request, f)
+        return Response(stats, 200)
+
 
 # default_account_map = {}
 def get_default_account(bar):
