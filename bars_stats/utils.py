@@ -129,7 +129,7 @@ def compute_account_ranking(request):
     if bar is None:
         return None
 
-    qs = Account.objects.filter(bar=bar).exclude(owner__username="bar")
+    qs = Account.objects.filter(bar=bar).exclude(owner__username="bar").filter(deleted=False)
     t_filter = {'accountoperation__transaction__canceled': False}
 
     date_start = request.query_params.get('date_start')
@@ -146,7 +146,25 @@ def compute_account_ranking(request):
     result = qs.values('id').annotate(total_spent=Sum('accountoperation__delta'))
     return result
 
-    
+from bars_items.models.sellitem import SellItem
+from django.db.models import F
+def compute_sellitem_ranking(request, pk=None):
+    qs = Account.objects.filter(bar=SellItem.objects.get(pk=pk).bar)
+    qs = qs.exclude(owner__username="bar").filter(deleted=False)
+
+    t_filter = {'accountoperation__transaction__canceled': False, 'accountoperation__transaction__itemoperation__target__sellitem': pk}
+
+    date_start = request.query_params.get('date_start')
+    date_end = request.query_params.get('date_end', datetime.now())
+    if date_start is not None:
+        t_filter['accountoperation__transaction__timestamp__range'] = (date_start, date_end)
+
+    t_filter['accountoperation__transaction__type__in'] = ("buy", "meal")
+
+    qs = qs.filter(**t_filter)
+
+    result = qs.values('id').annotate(total_spent=Sum(F('accountoperation__transaction__itemoperation__delta') * F('accountoperation__transaction__itemoperation__target__unit_factor')))
+    return result
 
     
 

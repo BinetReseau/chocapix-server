@@ -195,3 +195,9 @@ class SellItemViewSet(viewsets.ModelViewSet):
 
         stats = compute_transaction_stats(request, f, aggregate)
         return Response(stats, 200)
+
+    @decorators.detail_route()
+    def ranking(self, request, pk):
+        from bars_stats.utils import compute_sellitem_ranking
+        ranking = compute_sellitem_ranking(request, pk)
+        return Response(ranking, 200)
