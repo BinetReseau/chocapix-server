@@ -104,6 +104,7 @@ def compute_transaction_stats(request, filter=id, aggregate=None):
     result = time_series(qs, date_field='timestamp', interval=interval, aggregate=aggregate)
     return sorted(result)
 
+from bars_core.models.account import Account
 def compute_total_spent(request, filter=id, aggregate=None):
     qs = Transaction.objects.filter(canceled=False)
     qs = filter(qs)
@@ -122,3 +123,31 @@ def compute_total_spent(request, filter=id, aggregate=None):
 
     result = qs.aggregate(total_spent = Sum('accountoperation__delta'))
     return result
+
+def compute_account_ranking(request):
+    bar = request.query_params.get('bar')
+    if bar is None:
+        return None
+
+    qs = Account.objects.filter(bar=bar).exclude(owner__username="bar")
+    t_filter = {'accountoperation__transaction__canceled': False}
+
+    date_start = request.query_params.get('date_start')
+    date_end = request.query_params.get('date_end', datetime.now())
+    if date_start is not None:
+        t_filter['accountoperation__transaction__timestamp__range'] = (date_start, date_end)
+
+    types = request.query_params.getlist("type")
+    if len(types) != 0:
+        t_filter['accountoperation__transaction__type__in'] = types
+
+    qs = qs.filter(**t_filter)
+
+    result = qs.values('id').annotate(total_spent=Sum('accountoperation__delta'))
+    return result
+
+    
+
+    
+
+

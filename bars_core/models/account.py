@@ -1,4 +1,6 @@
 from django.db import models
+from django.http import HttpResponseBadRequest
+
 from rest_framework import viewsets
 from rest_framework import serializers, decorators
 from rest_framework.response import Response
@@ -76,6 +78,15 @@ class AccountViewSet(viewsets.ModelViewSet):
 
         stats = compute_total_spent(request, f)
         return Response(stats, 200)
+
+    @decorators.list_route(methods=['get'])
+    def ranking(self, request):
+        from bars_stats.utils import compute_account_ranking
+        ranking = compute_account_ranking(request)
+        if ranking is None:
+            return HttpResponseBadRequest("I can only give a ranking within a bar")
+        else:
+            return Response(ranking, 200)
 
 
 # default_account_map = {}
