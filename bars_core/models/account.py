@@ -88,6 +88,15 @@ class AccountViewSet(viewsets.ModelViewSet):
         else:
             return Response(ranking, 200)
 
+    @decorators.detail_route(methods=['get'])
+    def magicbar_ranking(self, request, pk):
+        from bars_stats.utils import compute_sellitem_by_account_ranking
+        ranking = compute_sellitem_by_account_ranking(request, pk)
+        if ranking is None:
+            return HttpResponseBadRequest("I can only give a ranking within a bar")
+        else:
+            return Response(ranking, 200)
+
 
 # default_account_map = {}
 def get_default_account(bar):

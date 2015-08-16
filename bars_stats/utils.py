@@ -149,7 +149,12 @@ def compute_account_ranking(request):
 from bars_items.models.sellitem import SellItem
 from django.db.models import F
 def compute_sellitem_ranking(request, pk=None):
-    qs = Account.objects.filter(bar=SellItem.objects.get(pk=pk).bar)
+    if request.bar is None:
+        return None
+    else:
+        bar = request.bar
+
+    qs = Account.objects.filter(bar=bar)
     qs = qs.exclude(owner__username="bar").filter(deleted=False)
 
     t_filter = {'accountoperation__transaction__canceled': False, 'accountoperation__transaction__itemoperation__target__sellitem': pk}
@@ -167,5 +172,24 @@ def compute_sellitem_ranking(request, pk=None):
     return result
 
     
+def compute_sellitem_by_account_ranking(request, pk=None):
+    if request.bar is None:
+        return None
+    else:
+        bar = request.bar
 
+    qs = SellItem.objects.filter(bar=bar, deleted=False)
 
+    t_filter = {'stockitems__itemoperation__transaction__canceled': False, 'stockitems__itemoperation__transaction__accountoperation__target': pk}
+
+    date_start = request.query_params.get('date_start')
+    date_end = request.query_params.get('date_end', datetime.now())
+    if date_start is not None:
+        t_filter['stockitems__itemoperation__transaction__timestamp__range'] = (date_start, date_end)
+
+    t_filter['stockitems__itemoperation__transaction__type__in'] = ("buy", "meal")
+
+    qs = qs.filter(**t_filter)
+
+    result = qs.values('id', 'name').annotate(nb_transactions=Count('stockitems__itemoperation__transaction'))
+    return result

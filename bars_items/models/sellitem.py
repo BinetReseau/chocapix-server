@@ -1,4 +1,4 @@
-from django.http import Http404
+from django.http import Http404, HttpResponseBadRequest
 from django.db import models
 from django.db.models import Sum, F
 import datetime
@@ -200,4 +200,7 @@ class SellItemViewSet(viewsets.ModelViewSet):
     def ranking(self, request, pk):
         from bars_stats.utils import compute_sellitem_ranking
         ranking = compute_sellitem_ranking(request, pk)
-        return Response(ranking, 200)
+        if ranking is None:
+            return HttpResponseBadRequest("I can only give a ranking within a bar")
+        else:
+            return Response(ranking, 200)
