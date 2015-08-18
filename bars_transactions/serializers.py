@@ -23,7 +23,7 @@ ERROR_MESSAGES = {
 class BaseTransactionSerializer(serializers.ModelSerializer):
     class Meta:
         model = Transaction
-        read_only_fields = ('bar', 'author', 'timestamp', 'last_modified')
+        read_only_fields = ('bar', 'author', 'timestamp', 'last_modified', 'moneyflow', )
 
     def to_representation(self, transaction):
         if 'ignore_type' in self.context or transaction.type == "":
@@ -210,6 +210,8 @@ class BuyTransactionSerializer(BaseTransactionSerializer, ItemQtySerializer):
             target=Account.objects.get(owner=t.author, bar=t.bar),
             delta=-money_delta)
 
+        t.moneyflow = money_delta
+
         return t
 
     def to_representation(self, transaction):
@@ -219,9 +221,6 @@ class BuyTransactionSerializer(BaseTransactionSerializer, ItemQtySerializer):
 
         force_fuzzy = True
         obj["items"] = ItemQtySerializer.serializeOperations(transaction.itemoperation_set.all(), force_fuzzy)
-
-        aop = transaction.accountoperation_set.all()[0]
-        obj["moneyflow"] = -aop.delta
 
         return obj
 
@@ -251,7 +250,9 @@ class ThrowTransactionSerializer(BaseTransactionSerializer):
         stockitem = data['stockitem']
         qty = data['qty']
 
-        stockitem.create_operation(delta=-qty, unit='sell', transaction=t)
+        iop = stockitem.create_operation(delta=-qty, unit='sell', transaction=t)
+
+        t.moneyflow = iop.delta * stockitem.get_price()
 
         return t
 
@@ -264,8 +265,6 @@ class ThrowTransactionSerializer(BaseTransactionSerializer):
         stockitem = iop.target
         obj["stockitem"] = stockitem.id
         obj["qty"] = -iop.delta * stockitem.get_unit('sell')
-
-        obj["moneyflow"] = iop.delta * stockitem.get_price()
 
         return obj
 
@@ -282,6 +281,8 @@ class DepositTransactionSerializer(BaseTransactionSerializer, AccountAmountSeria
             target=get_default_account(t.bar),
             delta=data["amount"])
 
+        t.moneyflow = data["amount"]
+
         return t
 
     def to_representation(self, transaction):
@@ -293,7 +294,6 @@ class DepositTransactionSerializer(BaseTransactionSerializer, AccountAmountSeria
             if aop.target.owner != get_default_user():
                 obj["account"] = aop.target.id
                 obj["amount"] = aop.delta
-                obj["moneyflow"] = aop.delta
 
         return obj
 
@@ -309,6 +309,8 @@ class WithdrawTransactionSerializer(BaseTransactionSerializer, AccountAmountSeri
             target=get_default_account(t.bar),
             delta=-data["amount"])
 
+        t.moneyflow = -data["amount"]
+
         return t
 
     def to_representation(self, transaction):
@@ -320,7 +322,6 @@ class WithdrawTransactionSerializer(BaseTransactionSerializer, AccountAmountSeri
             if aop.target.owner != get_default_user():
                 obj["account"] = aop.target.id
                 obj["amount"] = -aop.delta
-                obj["moneyflow"] = -aop.delta
 
         return obj
 
@@ -344,6 +345,8 @@ class GiveTransactionSerializer(BaseTransactionSerializer, AccountAmountSerializ
             target=data["account"],
             delta=data["amount"])
 
+        t.moneyflow = data["amount"]
+
         return t
 
     def to_representation(self, transaction):
@@ -357,8 +360,6 @@ class GiveTransactionSerializer(BaseTransactionSerializer, AccountAmountSerializ
             from_op, to_op = to_op, from_op
         obj["account"] = to_op.target.id
         obj["amount"] = to_op.delta
-
-        obj["moneyflow"] = to_op.delta
 
         return obj
 
@@ -379,6 +380,8 @@ class RefundTransactionSerializer(BaseTransactionSerializer, AccountAmountSerial
             label='motive',
             data=data["motive"])
 
+        t.moneyflow = data["amount"]
+
         return t
 
     def to_representation(self, transaction):
@@ -390,7 +393,6 @@ class RefundTransactionSerializer(BaseTransactionSerializer, AccountAmountSerial
             if aop.target.owner != get_default_user():
                 obj["account"] = aop.target.id
                 obj["amount"] = aop.delta
-                obj["moneyflow"] = aop.delta
 
         data = transaction.transactiondata_set.all()[0]
         obj["motive"] = data.data
@@ -424,6 +426,8 @@ class PunishTransactionSerializer(BaseTransactionSerializer, AccountAmountSerial
             label='motive',
             data=data["motive"])
 
+        t.moneyflow = -data["amount"]
+
         ## notify the account owner
         message = punishement_notification_mail.copy()
         message["from_email"] = t.author.email
@@ -451,8 +455,6 @@ class PunishTransactionSerializer(BaseTransactionSerializer, AccountAmountSerial
         data = transaction.transactiondata_set.all()[0]
         obj["motive"] = data.data
 
-        obj["moneyflow"] = aop.delta
-
         return obj
 
 
@@ -464,6 +466,8 @@ class AgiosTransactionSerializer(BaseTransactionSerializer, AccountAmountSeriali
             target=data["account"],
             delta=-data["amount"])
 
+        t.moneyflow = -data["amount"]
+
         return t
 
     def to_representation(self, transaction):
@@ -474,8 +478,6 @@ class AgiosTransactionSerializer(BaseTransactionSerializer, AccountAmountSeriali
         aop = transaction.accountoperation_set.all()[0]
         obj["account"] = aop.target.id
         obj["amount"] = -aop.delta
-
-        obj["moneyflow"] = aop.delta
 
         return obj
 
@@ -494,6 +496,8 @@ class BarInvestmentTransactionSerializer(BaseTransactionSerializer):
             label='motive',
             data=data["motive"])
 
+        t.moneyflow = data["amount"]
+
         return t
 
     def to_representation(self, transaction):
@@ -503,7 +507,6 @@ class BarInvestmentTransactionSerializer(BaseTransactionSerializer):
 
         aop = transaction.accountoperation_set.all()[0]
         obj["amount"] = -aop.delta
-        obj["moneyflow"] = -aop.delta
 
         data = transaction.transactiondata_set.all()[0]
         obj['motive'] = data.data
@@ -540,6 +543,8 @@ class MealTransactionSerializer(BaseTransactionSerializer):
             label='name',
             data=data["name"])
 
+        t.moneyflow = total_price
+
         return t
 
     def to_representation(self, transaction):
@@ -563,8 +568,6 @@ class MealTransactionSerializer(BaseTransactionSerializer):
 
         data = transaction.transactiondata_set.all()[0]
         obj[data.label] = data.data
-
-        obj["moneyflow"] = total_price
 
         return obj
 
@@ -605,6 +608,8 @@ class ApproTransactionSerializer(BaseTransactionSerializer):
             target=get_default_account(t.bar),
             delta=-total)
 
+        t.moneyflow = total
+
         return t
 
     def to_representation(self, transaction):
@@ -620,7 +625,6 @@ class ApproTransactionSerializer(BaseTransactionSerializer):
             })
 
         aop = transaction.accountoperation_set.all()[0]
-        obj["moneyflow"] = -aop.delta
 
         return obj
 
@@ -631,10 +635,15 @@ class InventoryTransactionSerializer(BaseTransactionSerializer):
     def create(self, data):
         t = super(InventoryTransactionSerializer, self).create(data)
 
+        total_price = 0
+
         for i in data["items"]:
             i["stockitem"].last_inventory = timezone.now()
             i["stockitem"].save()
-            i["stockitem"].create_operation(next_value=i["qty"], unit='sell', transaction=t, fixed=True)
+            iop = i["stockitem"].create_operation(next_value=i["qty"], unit='sell', transaction=t, fixed=True)
+            total_price += iop.delta
+
+        t.moneyflow = total_price
 
         return t
 
@@ -643,16 +652,12 @@ class InventoryTransactionSerializer(BaseTransactionSerializer):
         if transaction is None:
             return obj
 
-        total_price = 0
         obj["items"] = []
         for iop in transaction.itemoperation_set.all():
             obj["items"].append({
                 'stockitem': iop.target.id,
                 'qty': iop.delta * iop.target.get_unit('sell')
             })
-            total_price += iop.delta * iop.target.get_price()
-
-        obj["moneyflow"] = total_price
 
         return obj
 
@@ -678,6 +683,8 @@ class CollectivePaymentTransactionSerializer(BaseTransactionSerializer):
             label='motive',
             data=data["motive"])
 
+        t.moneyflow = amount
+
         return t
 
     def to_representation(self, transaction):
@@ -698,8 +705,6 @@ class CollectivePaymentTransactionSerializer(BaseTransactionSerializer):
 
         data = transaction.transactiondata_set.all()[0]
         obj['motive'] = data.data
-
-        obj["moneyflow"] = total_price
 
         return obj
 

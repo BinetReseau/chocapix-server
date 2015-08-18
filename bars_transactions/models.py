@@ -20,6 +20,7 @@ class Transaction(models.Model):
     canceled = models.BooleanField(default=False)
     last_modified = models.DateTimeField(auto_now=True)
     _type = VirtualField("Transaction")
+    moneyflow = models.FloatField(default=0)
 
     def __unicode__(self):
         return self.type + ": " \
@@ -48,6 +49,45 @@ class Transaction(models.Model):
 
         # TODO: Check money flow, owners, signs, labels, ...
         return True
+
+    def compute_moneyflow(self):
+        t = self.type
+        iops = self.itemoperation_set.all()
+        aops = self.accountoperation_set.all()
+        data = self.transactiondata_set.all()
+
+        if t in ["buy", "withdraw", "agios", "barInvestment", "appro"]:
+            return -aops[0].delta
+
+        if t == "throw":
+            return iops[0].delta * iops[0].target.get_price()
+
+        if t in ["deposit", "punish"]:
+            return aops[0].delta
+
+        if t == "give":
+            from_op = transaction.aops[0]
+            to_op = transaction.aops[1]
+            if to_op.target.owner == self.author:
+                from_op, to_op = to_op, from_op
+            return to_op.delta
+
+        if t == "refund":
+            for aop in aops:
+                if aop.target.owner != get_default_user():
+                    return aop.delta
+
+        if t in ["meal", "collectivePayment"]:
+            m = 0
+            for aop in aops:
+                m += abs(aop.delta)
+            return m
+
+        if t == "inventory":
+            m = 0
+            for iop in iops:
+                m += iop.delta * iop.target.get_price()
+            return m
 
 
 
