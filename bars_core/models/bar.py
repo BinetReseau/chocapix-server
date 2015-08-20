@@ -1,7 +1,8 @@
 from datetime import date, timedelta
 from mock import Mock
 from django.db import models
-from rest_framework import viewsets, serializers
+from rest_framework import viewsets, serializers, decorators
+from rest_framework.response import Response
 
 from bars_django.utils import VirtualField, permission_logic
 from bars_core.perms import RootBarRolePermissionLogic
@@ -71,6 +72,21 @@ class BarViewSet(viewsets.ModelViewSet):
     serializer_class = BarSerializer
     permission_classes = (RootBarPermissionsOrAnonReadOnly,)
 
+    @decorators.list_route(methods=['get'])
+    def sellitem_ranking(self, request):
+        from bars_items.models.sellitem import SellItem
+        from bars_stats.utils import compute_ranking
+        f = {
+            'stockitems__itemoperation__transaction__type__in': ("buy", "meal"), 
+            'stockitems__deleted': False
+        }
+        ann = models.Count('stockitems__itemoperation__transaction')/models.Count('stockitems', distinct=True)
+        ranking = compute_ranking(request, model=SellItem, t_path='stockitems__itemoperation__transaction__', filter=f, annotate=ann)
+        if ranking is None:
+            return HttpResponseBadRequest("I can only give a ranking within a bar")
+        else:
+            return Response(ranking, 200)
+
 
 
 from bars_core.perms import BarRolePermissionLogic, PerBarPermissionsOrAnonReadOnly
@@ -107,3 +123,4 @@ class BarSettingsViewSet(viewsets.ModelViewSet):
     queryset = BarSettings.objects.all()
     serializer_class = BarSettingsSerializer
     permission_classes = (PerBarPermissionsOrAnonReadOnly,)
+
