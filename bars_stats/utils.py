@@ -126,8 +126,8 @@ def compute_total_spent(request, filter=id, aggregate=None):
     result = qs.aggregate(total_spent = Sum('accountoperation__delta'))
     return result
 
-def compute_ranking(request, model=Account, t_path='accountoperation__transaction__', filter={}, annotate=None):
-    if model is not Bar:
+def compute_ranking(request, model=Account, t_path='accountoperation__transaction__', filter={}, annotate=None, all_bars=False):
+    if not all_bars:
         bar = request.query_params.get('bar')
         if bar is None:
             return None

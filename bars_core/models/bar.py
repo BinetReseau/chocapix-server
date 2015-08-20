@@ -72,11 +72,12 @@ class BarViewSet(viewsets.ModelViewSet):
     serializer_class = BarSerializer
     permission_classes = (RootBarPermissionsOrAnonReadOnly,)
 
-    @decorators.list_route(methods=['get'])
-    def sellitem_ranking(self, request):
+    @decorators.detail_route(methods=['get'])
+    def sellitem_ranking(self, request, pk):
         from bars_items.models.sellitem import SellItem
         from bars_stats.utils import compute_ranking
         f = {
+            'stockitems__itemoperation__transaction__bar': pk,
             'stockitems__itemoperation__transaction__type__in': ("buy", "meal"), 
             'stockitems__deleted': False
         }
@@ -86,6 +87,32 @@ class BarViewSet(viewsets.ModelViewSet):
             return HttpResponseBadRequest("I can only give a ranking within a bar")
         else:
             return Response(ranking, 200)
+
+    @decorators.list_route(methods=['get'])
+    def nazi_ranking(self, request):
+        from bars_stats.utils import compute_ranking
+        f = {
+            'transaction__type': "punish"
+        }
+        ann = models.Sum('transaction__moneyflow')
+        ranking = compute_ranking(request, model=Bar, t_path='transaction__', filter=f, annotate=ann, all_bars=True)
+        return Response(ranking, 200)
+
+    # @decorators.list_route(methods=['get'])
+    # def items_ranking(self, request):
+    #     from bars_stats.utils import compute_ranking
+
+    #     items = request.query_params.getlist("item")
+    #     if len(items) == 0:
+    #         return HttpResponseBadRequest("Give me some items to compare bars with")
+
+    #     f = {
+    #         'transaction__type__in': ("buy", "meal"),
+    #         'transaction__itemoperation__target__details__in': items
+    #     }
+    #     ann = models.Count('transaction')
+    #     ranking = compute_ranking(request, model=Bar, t_path='transaction__', filter=f, annotate=ann, all_bars=True)
+    #     return Response(ranking, 200)
 
 
 
