@@ -211,6 +211,7 @@ class BuyTransactionSerializer(BaseTransactionSerializer, ItemQtySerializer):
             delta=-money_delta)
 
         t.moneyflow = money_delta
+        t.save()
 
         return t
 
@@ -253,6 +254,7 @@ class ThrowTransactionSerializer(BaseTransactionSerializer):
         iop = stockitem.create_operation(delta=-qty, unit='sell', transaction=t)
 
         t.moneyflow = iop.delta * stockitem.get_price()
+        t.save()
 
         return t
 
@@ -282,6 +284,7 @@ class DepositTransactionSerializer(BaseTransactionSerializer, AccountAmountSeria
             delta=data["amount"])
 
         t.moneyflow = data["amount"]
+        t.save()
 
         return t
 
@@ -310,6 +313,7 @@ class WithdrawTransactionSerializer(BaseTransactionSerializer, AccountAmountSeri
             delta=-data["amount"])
 
         t.moneyflow = -data["amount"]
+        t.save()
 
         return t
 
@@ -346,6 +350,7 @@ class GiveTransactionSerializer(BaseTransactionSerializer, AccountAmountSerializ
             delta=data["amount"])
 
         t.moneyflow = data["amount"]
+        t.save()
 
         return t
 
@@ -381,6 +386,7 @@ class RefundTransactionSerializer(BaseTransactionSerializer, AccountAmountSerial
             data=data["motive"])
 
         t.moneyflow = data["amount"]
+        t.save()
 
         return t
 
@@ -427,6 +433,7 @@ class PunishTransactionSerializer(BaseTransactionSerializer, AccountAmountSerial
             data=data["motive"])
 
         t.moneyflow = -data["amount"]
+        t.save()
 
         ## notify the account owner
         message = punishement_notification_mail.copy()
@@ -467,6 +474,7 @@ class AgiosTransactionSerializer(BaseTransactionSerializer, AccountAmountSeriali
             delta=-data["amount"])
 
         t.moneyflow = -data["amount"]
+        t.save()
 
         return t
 
@@ -497,6 +505,7 @@ class BarInvestmentTransactionSerializer(BaseTransactionSerializer):
             data=data["motive"])
 
         t.moneyflow = data["amount"]
+        t.save()
 
         return t
 
@@ -544,6 +553,7 @@ class MealTransactionSerializer(BaseTransactionSerializer):
             data=data["name"])
 
         t.moneyflow = total_price
+        t.save()
 
         return t
 
@@ -609,6 +619,7 @@ class ApproTransactionSerializer(BaseTransactionSerializer):
             delta=-total)
 
         t.moneyflow = total
+        t.save()
 
         return t
 
@@ -644,6 +655,7 @@ class InventoryTransactionSerializer(BaseTransactionSerializer):
             total_price += iop.delta * iop.target.get_price()
 
         t.moneyflow = total_price
+        t.save()
 
         return t
 
@@ -684,6 +696,7 @@ class CollectivePaymentTransactionSerializer(BaseTransactionSerializer):
             data=data["motive"])
 
         t.moneyflow = amount
+        t.save()
 
         return t
 
