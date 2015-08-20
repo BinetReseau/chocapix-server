@@ -81,8 +81,8 @@ class AccountViewSet(viewsets.ModelViewSet):
 
     @decorators.list_route(methods=['get'])
     def ranking(self, request):
-        from bars_stats.utils import compute_account_ranking
-        ranking = compute_account_ranking(request)
+        from bars_stats.utils import compute_ranking
+        ranking = compute_ranking(request, annotate=models.Sum('accountoperation__delta'))
         if ranking is None:
             return HttpResponseBadRequest("I can only give a ranking within a bar")
         else:
@@ -90,8 +90,15 @@ class AccountViewSet(viewsets.ModelViewSet):
 
     @decorators.detail_route(methods=['get'])
     def magicbar_ranking(self, request, pk):
-        from bars_stats.utils import compute_sellitem_by_account_ranking
-        ranking = compute_sellitem_by_account_ranking(request, pk)
+        from bars_items.models.sellitem import SellItem
+        from bars_stats.utils import compute_ranking
+        f = {
+            'stockitems__itemoperation__transaction__accountoperation__target': pk, 
+            'stockitems__itemoperation__transaction__type__in': ("buy", "meal"), 
+            'stockitems__deleted': False
+        }
+        ann = models.Count('stockitems__itemoperation__transaction')/models.Count('stockitems', distinct=True)
+        ranking = compute_ranking(request, model=SellItem, t_path='stockitems__itemoperation__transaction__', filter=f, annotate=ann)
         if ranking is None:
             return HttpResponseBadRequest("I can only give a ranking within a bar")
         else:

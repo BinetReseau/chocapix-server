@@ -67,7 +67,12 @@ def _get_interval_sql(date_field, interval, engine):
 
 
 # Inspired from https://github.com/kmike/django-qsstats-magic
-from django.db.models import Count, Sum
+from datetime import datetime
+from django.db.models import Count, Sum, F
+from bars_transactions.models import Transaction
+from bars_core.models.bar import Bar
+from bars_core.models.account import Account
+from bars_items.models.sellitem import SellItem
 def time_series(qs, date_field, aggregate=None, interval='days', engine=None):
     aggregate = aggregate or Count('id')
     engine = engine or _guess_engine(qs)
@@ -80,8 +85,6 @@ def time_series(qs, date_field, aggregate=None, interval='days', engine=None):
     return [(x['agg_date'], x['agg']) for x in aggregate_data]
 
 
-from datetime import datetime
-from bars_transactions.models import Transaction
 def compute_transaction_stats(request, filter=id, aggregate=None):
     qs = Transaction.objects.filter(canceled=False)
     qs = filter(qs)
@@ -104,7 +107,6 @@ def compute_transaction_stats(request, filter=id, aggregate=None):
     result = time_series(qs, date_field='timestamp', interval=interval, aggregate=aggregate)
     return sorted(result)
 
-from bars_core.models.account import Account
 def compute_total_spent(request, filter=id, aggregate=None):
     qs = Transaction.objects.filter(canceled=False)
     qs = filter(qs)
@@ -124,72 +126,25 @@ def compute_total_spent(request, filter=id, aggregate=None):
     result = qs.aggregate(total_spent = Sum('accountoperation__delta'))
     return result
 
-def compute_account_ranking(request):
-    bar = request.query_params.get('bar')
-    if bar is None:
-        return None
-
-    qs = Account.objects.filter(bar=bar).exclude(owner__username="bar").filter(deleted=False)
-    t_filter = {'accountoperation__transaction__canceled': False}
-
+def compute_ranking(request, model=Account, t_path='accountoperation__transaction__', filter={}, annotate=None):
+    if model is not Bar:
+        bar = request.query_params.get('bar')
+        if bar is None:
+            return None
+    
+    t_filter = {t_path + 'canceled': False}
+    
     date_start = request.query_params.get('date_start')
     date_end = request.query_params.get('date_end', datetime.now())
     if date_start is not None:
-        t_filter['accountoperation__transaction__timestamp__range'] = (date_start, date_end)
-
+        t_filter[t_path + 'timestamp__range'] = (date_start, date_end)
+    
     types = request.query_params.getlist("type")
     if len(types) != 0:
-        t_filter['accountoperation__transaction__type__in'] = types
+        t_filter[t_path + 'type__in'] = types
 
-    qs = qs.filter(**t_filter)
+    t_filter.update(filter)
 
-    result = qs.values('id').annotate(total_spent=Sum('accountoperation__delta'))
-    return result
+    qs = model.objects.filter(**t_filter)
 
-from bars_items.models.sellitem import SellItem
-from django.db.models import F
-def compute_sellitem_ranking(request, pk=None):
-    if request.bar is None:
-        return None
-    else:
-        bar = request.bar
-
-    qs = Account.objects.filter(bar=bar)
-    qs = qs.exclude(owner__username="bar").filter(deleted=False)
-
-    t_filter = {'accountoperation__transaction__canceled': False, 'accountoperation__transaction__itemoperation__target__sellitem': pk}
-
-    date_start = request.query_params.get('date_start')
-    date_end = request.query_params.get('date_end', datetime.now())
-    if date_start is not None:
-        t_filter['accountoperation__transaction__timestamp__range'] = (date_start, date_end)
-
-    t_filter['accountoperation__transaction__type__in'] = ("buy", "meal")
-
-    qs = qs.filter(**t_filter)
-
-    result = qs.values('id').annotate(total_spent=Sum(F('accountoperation__transaction__itemoperation__delta') * F('accountoperation__transaction__itemoperation__target__unit_factor')))
-    return result
-
-    
-def compute_sellitem_by_account_ranking(request, pk=None):
-    if request.bar is None:
-        return None
-    else:
-        bar = request.bar
-
-    qs = SellItem.objects.filter(bar=bar, deleted=False)
-
-    t_filter = {'stockitems__itemoperation__transaction__canceled': False, 'stockitems__itemoperation__transaction__accountoperation__target': pk}
-
-    date_start = request.query_params.get('date_start')
-    date_end = request.query_params.get('date_end', datetime.now())
-    if date_start is not None:
-        t_filter['stockitems__itemoperation__transaction__timestamp__range'] = (date_start, date_end)
-
-    t_filter['stockitems__itemoperation__transaction__type__in'] = ("buy", "meal")
-
-    qs = qs.filter(**t_filter)
-
-    result = qs.values('id', 'name').annotate(nb_transactions=Count('stockitems__itemoperation__transaction'))
-    return result
+    return qs.values('id').annotate(val=annotate)
