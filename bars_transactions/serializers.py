@@ -641,7 +641,7 @@ class InventoryTransactionSerializer(BaseTransactionSerializer):
             i["stockitem"].last_inventory = timezone.now()
             i["stockitem"].save()
             iop = i["stockitem"].create_operation(next_value=i["qty"], unit='sell', transaction=t, fixed=True)
-            total_price += iop.delta
+            total_price += iop.delta * iop.target.get_price()
 
         t.moneyflow = total_price
 

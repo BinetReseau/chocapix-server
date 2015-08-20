@@ -113,7 +113,8 @@ class BuySerializerTests(SerializerTests):
         data = {'type':'buy', 'stockitem':self.stockitem.id, 'qty':3}
         s = BuyTransactionSerializer(data=data, context=self.context)
         self.assertTrue(s.is_valid())
-        s.save()
+        tct = s.save()
+        self.assertAlmostEqual(tct.moneyflow, self.stockitem.sell_price * data['qty'])
 
         self.assertAlmostEqual(reload(self.stockitem).sell_qty, self.stockitem.sell_qty - data['qty'])
         self.assertAlmostEqual(reload(self.account).money, self.account.money - data['qty'] * self.stockitem.sell_price)
@@ -127,7 +128,8 @@ class BuySerializerTests(SerializerTests):
 
         s = BuyTransactionSerializer(data=data, context=self.context)
         self.assertTrue(s.is_valid())
-        s.save()
+        tct = s.save()
+        self.assertAlmostEqual(tct.moneyflow, self.sellitem.calc_price() * data['qty'])
 
         total_qty = self.stockitem.sell_qty + stockitem3.sell_qty
         self.assertAlmostEqual(reload(self.stockitem).sell_qty, self.stockitem.sell_qty * (1 - data['qty'] / total_qty))
@@ -174,7 +176,8 @@ class GiveSerializerTests(SerializerTests):
         data = {'type':'give', 'account':self.account2.id, 'amount':10}
         s = GiveTransactionSerializer(data=data, context=self.context)
         self.assertTrue(s.is_valid())
-        s.save()
+        tct = s.save()
+        self.assertAlmostEqual(tct.moneyflow, data['amount'])
 
         self.assertAlmostEqual(reload(self.account).money, self.account.money - data['amount'])
         self.assertAlmostEqual(reload(self.account2).money, self.account2.money + data['amount'])
@@ -203,7 +206,8 @@ class ThrowSerializerTests(SerializerTests):
 
         s = ThrowTransactionSerializer(data=data, context=self.context)
         self.assertTrue(s.is_valid())
-        s.save()
+        tct = s.save()
+        self.assertAlmostEqual(tct.moneyflow, - self.stockitem.sell_price * data['qty'])
 
         self.assertAlmostEqual(reload(self.stockitem).sell_qty, self.stockitem.sell_qty - data['qty'])
 
@@ -240,7 +244,8 @@ class DepositSerializerTests(SerializerTests):
 
         s = DepositTransactionSerializer(data=data, context=self.context)
         self.assertTrue(s.is_valid())
-        s.save()
+        tct = s.save()
+        self.assertAlmostEqual(tct.moneyflow, data['amount'])
 
         self.assertAlmostEqual(reload(self.account).money, self.account.money + data['amount'])
         self.assertAlmostEqual(reload(self.bar_account).money, self.bar_account.money + data['amount'])
@@ -283,7 +288,8 @@ class PunishSerializerTests(SerializerTests):
 
         s = PunishTransactionSerializer(data=data, context=self.context)
         self.assertTrue(s.is_valid())
-        s.save()
+        tct = s.save()
+        self.assertAlmostEqual(tct.moneyflow, -data['amount'])
 
         self.assertAlmostEqual(reload(self.account).money, self.account.money - data['amount'])
 
@@ -333,7 +339,8 @@ class MealSerializerTests(SerializerTests):
 
         s = MealTransactionSerializer(data=data, context=self.context)
         self.assertTrue(s.is_valid())
-        s.save()
+        tct = s.save()
+        self.assertAlmostEqual(tct.moneyflow, self.stockitem.sell_price * data['items'][0]['qty'])
 
         self.assertAlmostEqual(reload(self.stockitem).sell_qty, self.stockitem.sell_qty - data['items'][0]['qty'])
         end_money = self.account.money - data['items'][0]['qty'] * self.stockitem.sell_price
@@ -353,7 +360,7 @@ class MealSerializerTests(SerializerTests):
 
         s = MealTransactionSerializer(data=data, context=self.context)
         self.assertTrue(s.is_valid())
-        s.save()
+        tct = s.save()
 
         self.assertAlmostEqual(reload(self.stockitem).sell_qty, self.stockitem.sell_qty - data['items'][0]['qty'])
         self.assertAlmostEqual(reload(self.stockitem2).sell_qty, self.stockitem2.sell_qty - data['items'][1]['qty'])
@@ -368,6 +375,7 @@ class MealSerializerTests(SerializerTests):
 
         self.assertAlmostEqual(reload(self.account).money, end_money)
         self.assertAlmostEqual(reload(self.account2).money, end_money2)
+        self.assertAlmostEqual(tct.moneyflow, total_money)
 
 
 class ApproSerializerTests(SerializerTests):
@@ -389,7 +397,8 @@ class ApproSerializerTests(SerializerTests):
 
         s = ApproTransactionSerializer(data=data, context=self.context)
         self.assertTrue(s.is_valid())
-        s.save()
+        tct = s.save()
+        self.assertAlmostEqual(tct.moneyflow, data['items'][0]['price'] + self.buyitemprice2.price * data['items'][1]['qty'])
 
         self.assertAlmostEqual(reload(self.stockitem).sell_qty, self.stockitem.sell_qty + data['items'][0]['qty'] * self.buyitem.itemqty / self.stockitem.sell_to_buy)
         self.assertAlmostEqual(reload(self.stockitem2).sell_qty, self.stockitem2.sell_qty + data['items'][1]['qty'] * self.buyitem2.itemqty / self.stockitem2.sell_to_buy)
@@ -411,7 +420,7 @@ class ApproSerializerTests(SerializerTests):
         self.assertTrue(s.is_valid())
 
         with self.assertRaises(exceptions.PermissionDenied):
-            s.save()
+            tct = s.save()
 
         self.assertAlmostEqual(reload(self.stockitem).qty, self.stockitem.qty)
         self.assertAlmostEqual(reload(self.bar_account).money, self.bar_account.money)
@@ -422,14 +431,20 @@ class InventorySerializerTests(SerializerTests):
         self.context = {'request': Mock(user=self.staff_user, bar=self.bar)}
         data = {'type':'inventory',
                 'items': [
-                    {'stockitem':self.stockitem.id, 'qty':3},
+                    {'stockitem':self.stockitem.id, 'qty': 3},
                     {'stockitem':self.stockitem2.id, 'qty': 5}
                 ]
                 }
 
+        s1_sell_qty = self.stockitem.sell_qty
+        s2_sell_qty = self.stockitem2.sell_qty
+
         s = InventoryTransactionSerializer(data=data, context=self.context)
         self.assertTrue(s.is_valid())
-        s.save()
+        tct = s.save()
+        moneyflow = self.stockitem.get_price('sell') * (data['items'][0]['qty'] - s1_sell_qty)
+        moneyflow += self.stockitem2.get_price('sell') * (data['items'][1]['qty'] - s2_sell_qty)
+        self.assertAlmostEqual(tct.moneyflow, moneyflow)
 
         self.assertAlmostEqual(reload(self.stockitem).sell_qty, data['items'][0]['qty'])
         self.assertAlmostEqual(reload(self.stockitem2).sell_qty, data['items'][1]['qty'])
