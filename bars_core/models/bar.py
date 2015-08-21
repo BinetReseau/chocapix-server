@@ -76,16 +76,18 @@ class BarViewSet(viewsets.ModelViewSet):
     def sellitem_ranking(self, request, pk):
         from bars_items.models.sellitem import SellItem
         from bars_stats.utils import compute_ranking
+        from django.db.models import Count, Sum, F
         f = {
             'stockitems__itemoperation__transaction__bar': pk,
             'stockitems__itemoperation__transaction__type__in': ("buy", "meal"), 
             'stockitems__deleted': False
         }
-        ann = models.Count('stockitems__itemoperation__transaction')/models.Count('stockitems', distinct=True)
+        ann = Count('stockitems__itemoperation__transaction')/Count('stockitems', distinct=True)
         ranking = compute_ranking(request, model=SellItem, t_path='stockitems__itemoperation__transaction__', filter=f, annotate=ann)
         if ranking is None:
             return HttpResponseBadRequest("I can only give a ranking within a bar")
         else:
+            ranking = ranking.annotate(total=Sum(F('stockitems__itemoperation__delta') * F('stockitems__itemoperation__target__unit_factor')))
             return Response(ranking, 200)
 
     @decorators.list_route(methods=['get'])
