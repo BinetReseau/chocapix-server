@@ -38,7 +38,7 @@ class Migration(migrations.Migration):
                 default_user = User.objects.get_or_create(username="bar", firstname="Bar", is_active=False)
                 for aop in aops:
                     if aop.target.owner != default_user:
-                        return aop.delta
+                        m += aop.delta
 
             if t in ["meal", "collectivePayment"]:
                 for aop in aops:
