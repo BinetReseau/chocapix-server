@@ -1,6 +1,7 @@
 from datetime import date, timedelta
 from mock import Mock
 from django.db import models
+from django.db.models import Count, F, Sum
 from rest_framework import viewsets, serializers, decorators
 from rest_framework.response import Response
 
@@ -76,7 +77,6 @@ class BarViewSet(viewsets.ModelViewSet):
     def sellitem_ranking(self, request, pk):
         from bars_items.models.sellitem import SellItem
         from bars_stats.utils import compute_ranking
-        from django.db.models import Count, Sum, F
         f = {
             'stockitems__itemoperation__transaction__bar': pk,
             'stockitems__itemoperation__transaction__type__in': ("buy", "meal"), 
@@ -96,25 +96,25 @@ class BarViewSet(viewsets.ModelViewSet):
         f = {
             'transaction__type': "punish"
         }
-        ann = models.Sum('transaction__moneyflow')
+        ann = Sum('transaction__moneyflow')
         ranking = compute_ranking(request, model=Bar, t_path='transaction__', filter=f, annotate=ann, all_bars=True)
         return Response(ranking, 200)
 
-    # @decorators.list_route(methods=['get'])
-    # def items_ranking(self, request):
-    #     from bars_stats.utils import compute_ranking
+    @decorators.list_route(methods=['get'])
+    def items_ranking(self, request):
+        from bars_stats.utils import compute_ranking
 
-    #     items = request.query_params.getlist("item")
-    #     if len(items) == 0:
-    #         return HttpResponseBadRequest("Give me some items to compare bars with")
+        items = request.query_params.getlist("item")
+        if len(items) == 0:
+            return HttpResponseBadRequest("Give me some items to compare bars with")
 
-    #     f = {
-    #         'transaction__type__in': ("buy", "meal"),
-    #         'transaction__itemoperation__target__details__in': items
-    #     }
-    #     ann = models.Count('transaction')
-    #     ranking = compute_ranking(request, model=Bar, t_path='transaction__', filter=f, annotate=ann, all_bars=True)
-    #     return Response(ranking, 200)
+        f = {
+            'transaction__type__in': ("buy", "meal"),
+            'transaction__itemoperation__target__details__in': items
+        }
+        ann = Sum(F('transaction__itemoperation__delta') * F('transaction__itemoperation__target__unit_factor'))
+        ranking = compute_ranking(request, model=Bar, t_path='transaction__', filter=f, annotate=ann, all_bars=True)
+        return Response(ranking, 200)
 
 
 

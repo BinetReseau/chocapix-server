@@ -20,6 +20,8 @@ class ItemDetails(models.Model):
     unit = models.CharField(max_length=100, blank=True)
     unit_plural = models.CharField(max_length=100, blank=True)
     container_qty = models.FloatField(default=1)
+    ranking_unit = models.CharField(max_length=100, blank=True)
+    ranking_unit_factor = models.FloatField(default=1)
 
     keywords = models.CharField(max_length=200, blank=True)  # Todo: length
 
