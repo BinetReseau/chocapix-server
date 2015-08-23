@@ -16,39 +16,44 @@ class Migration(migrations.Migration):
             data = tsc.transactiondata_set.all()
             m = 0
 
-            if t in ["buy", "withdraw", "agios", "barInvestment", "appro"]:
-                m = -aops[0].delta
+            try:
+                if t in ["buy", "withdraw", "agios", "barInvestment", "appro"]:
+                    m = -aops[0].delta
 
-            if t == "throw":
-                si = iops[0].target
-                si_price = si.price * (1. + si.sellitem.tax)
-                m = iops[0].delta * si_price
-
-            if t in ["deposit", "punish"]:
-                m = aops[0].delta
-
-            if t == "give":
-                from_op = aops[0]
-                to_op = aops[1]
-                if to_op.target.owner == transaction.author:
-                    from_op, to_op = to_op, from_op
-                m = to_op.delta
-
-            if t == "refund":
-                default_user = User.objects.get_or_create(username="bar", firstname="Bar", is_active=False)
-                for aop in aops:
-                    if aop.target.owner != default_user:
-                        m += aop.delta
-
-            if t in ["meal", "collectivePayment"]:
-                for aop in aops:
-                    m += abs(aop.delta)
-
-            if t == "inventory":
-                for iop in iops:
-                    si = iop.target
+                if t == "throw":
+                    si = iops[0].target
                     si_price = si.price * (1. + si.sellitem.tax)
-                    m += iop.delta * si_price
+                    m = iops[0].delta * si_price
+
+                if t in ["deposit", "punish"]:
+                    m = aops[0].delta
+
+                if t == "give":
+                    from_op = aops[0]
+                    to_op = aops[1]
+                    if to_op.target.owner == tsc.author:
+                        from_op, to_op = to_op, from_op
+                    m = to_op.delta
+
+                if t == "refund":
+                    default_user = User.objects.get_or_create(username="bar", firstname="Bar", is_active=False)
+                    for aop in aops:
+                        if aop.target.owner != default_user:
+                            m += aop.delta
+
+                if t in ["meal", "collectivePayment"]:
+                    for aop in aops:
+                        m += abs(aop.delta)
+
+                if t == "inventory":
+                    for iop in iops:
+                        si = iop.target
+                        si_price = si.price * (1. + si.sellitem.tax)
+                        m += iop.delta * si_price
+            except Exception as inst:
+                print type(inst)
+                print inst.args
+                print inst 
 
             tsc.moneyflow = m
             tsc.save()
