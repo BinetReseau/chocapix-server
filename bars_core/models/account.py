@@ -104,7 +104,7 @@ class AccountViewSet(viewsets.ModelViewSet):
         if ranking is None:
             return HttpResponseBadRequest("I can only give a ranking within a bar")
         else:
-            ranking = ranking.annotate(total=models.Sum(models.F('stockitems__itemoperation__delta') * models.F('stockitems__itemoperation__target__unit_factor') * models.F('stockitems__itemoperation__transaction__') * models.F('stockitems__itemoperation__transaction__accountoperation__delta') / models.F('stockitems__itemoperation__transaction__moneyflow')))
+            ranking = ranking.annotate(total=models.Sum(models.F('stockitems__itemoperation__delta') * models.F('stockitems__itemoperation__target__unit_factor') * models.F('stockitems__itemoperation__transaction__accountoperation__delta') * models.F('stockitems__itemoperation__transaction__accountoperation__delta') / models.F('stockitems__itemoperation__transaction__moneyflow')))
             return Response(ranking, 200)
 
     @decorators.detail_route(methods=['get'])

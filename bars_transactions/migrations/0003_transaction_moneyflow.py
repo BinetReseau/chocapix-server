@@ -8,6 +8,7 @@ class Migration(migrations.Migration):
 
     def migrate_moneyflow(apps, schema_editor):
         Transaction = apps.get_model("bars_transactions", "Transaction")
+        User = apps.get_model("bars_core", "User")
         for tsc in Transaction.objects.all():
             t = tsc.type
             iops = tsc.itemoperation_set.all()
@@ -34,8 +35,9 @@ class Migration(migrations.Migration):
                 m = to_op.delta
 
             if t == "refund":
+                default_user = User.objects.get_or_create(username="bar", firstname="Bar", is_active=False)
                 for aop in aops:
-                    if aop.target.owner != get_default_user():
+                    if aop.target.owner != default_user:
                         return aop.delta
 
             if t in ["meal", "collectivePayment"]:
@@ -59,6 +61,7 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ('bars_transactions', '0002_manual'),
+        ('bars_core', '0017_auto_20150726_1506')
     ]
 
     operations = [
