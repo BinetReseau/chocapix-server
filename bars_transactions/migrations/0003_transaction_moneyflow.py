@@ -51,9 +51,9 @@ class Migration(migrations.Migration):
                         si_price = si.price * (1. + si.sellitem.tax)
                         m += iop.delta * si_price
             except Exception as inst:
-                print type(inst)
-                print inst.args
-                print inst 
+                print(type(inst))
+                print(inst.args)
+                print(inst)
 
             tsc.moneyflow = m
             tsc.save()
