@@ -148,7 +148,8 @@ def compute_ranking(request, model=Account, t_path='accountoperation__transactio
 
     t_filter.update(filter)
 
+    t_excude = {t_path + 'accountoperation__target__username': "bar"}
 
-    qs = model.objects.exclude(t_path + 'accountoperation__target__username'="bar").filter(**t_filter)
+    qs = model.objects.exclude(**t_excude).filter(**t_filter)
 
     return qs.values('id').annotate(val=annotate)
