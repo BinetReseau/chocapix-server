@@ -127,12 +127,15 @@ def compute_total_spent(request, filter=id, aggregate=None):
     return result
 
 def compute_ranking(request, model=Account, t_path='accountoperation__transaction__', filter={}, annotate=None, all_bars=False):
+    t_filter: {}
     if not all_bars:
         bar = request.query_params.get('bar')
         if bar is None:
             return None
+        else:
+            t_filter[t_path + 'bar'] = bar
     
-    t_filter = {t_path + 'canceled': False}
+    t_filter[t_path + 'canceled'] = False
     
     date_start = request.query_params.get('date_start')
     date_end = request.query_params.get('date_end', datetime.now())
