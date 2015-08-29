@@ -82,9 +82,8 @@ class BarViewSet(viewsets.ModelViewSet):
             'stockitems__itemoperation__transaction__type__in': ("buy", "meal"), 
             'stockitems__deleted': False
         }
-        e = {'stockitems__itemoperation__transaction__accountoperation__target__owner__username': "bar"}
         ann = Count('stockitems__itemoperation__transaction')/Count('stockitems', distinct=True)
-        ranking = compute_ranking(request, model=SellItem, t_path='stockitems__itemoperation__transaction__', filter=f, exclude=e, annotate=ann)
+        ranking = compute_ranking(request, model=SellItem, t_path='stockitems__itemoperation__transaction__', filter=f, annotate=ann)
         if ranking is None:
             return HttpResponseBadRequest("I can only give a ranking within a bar")
         else:
@@ -113,9 +112,8 @@ class BarViewSet(viewsets.ModelViewSet):
             'transaction__type__in': ("buy", "meal"),
             'transaction__itemoperation__target__details__in': items
         }
-        e = {'transaction__accountoperation__target__owner__username': "bar"}
         ann = Sum(F('transaction__itemoperation__delta') * F('transaction__itemoperation__target__unit_factor'))
-        ranking = compute_ranking(request, model=Bar, t_path='transaction__', filter=f, exclude=e, annotate=ann, all_bars=True)
+        ranking = compute_ranking(request, model=Bar, t_path='transaction__', filter=f, annotate=ann, all_bars=True)
         return Response(ranking, 200)
 
 

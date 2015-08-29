@@ -84,7 +84,7 @@ class AccountViewSet(viewsets.ModelViewSet):
     @decorators.list_route(methods=['get'])
     def ranking(self, request):
         from bars_stats.utils import compute_ranking
-        ranking = compute_ranking(request, exclude={'owner__username': "bar"}, annotate=models.Sum('accountoperation__delta'))
+        ranking = compute_ranking(request, annotate=models.Sum('accountoperation__delta'))
         if ranking is None:
             return HttpResponseBadRequest("I can only give a ranking within a bar")
         else:
@@ -113,6 +113,7 @@ class AccountViewSet(viewsets.ModelViewSet):
         from bars_stats.utils import compute_ranking
         f = {
             'stockitems__itemoperation__transaction__accountoperation__target': pk, 
+            #'stockitems__itemoperation__transaction__type__in': ("buy", "meal"), 
             'stockitems__deleted': False
         }
         ann = models.Count('stockitems__itemoperation__transaction')/models.Count('stockitems', distinct=True)

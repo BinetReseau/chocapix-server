@@ -200,8 +200,7 @@ class SellItemViewSet(viewsets.ModelViewSet):
     def ranking(self, request, pk):
         from bars_stats.utils import compute_ranking
         f = {'accountoperation__transaction__itemoperation__target__sellitem': pk}
-        e = {'owner__username': "bar"}
-        ranking = compute_ranking(request, filter=f, exclude=e, annotate=Sum(F('accountoperation__transaction__itemoperation__delta') * F('accountoperation__transaction__itemoperation__target__unit_factor') * F('accountoperation__delta') / F('accountoperation__transaction__moneyflow')))
+        ranking = compute_ranking(request, filter=f, annotate=Sum(F('accountoperation__transaction__itemoperation__delta') * F('accountoperation__transaction__itemoperation__target__unit_factor') * F('accountoperation__delta') / F('accountoperation__transaction__moneyflow')))
         if ranking is None:
             return HttpResponseBadRequest("I can only give a ranking within a bar")
         else:
