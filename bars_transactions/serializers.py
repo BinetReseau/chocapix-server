@@ -465,16 +465,41 @@ class PunishTransactionSerializer(BaseTransactionSerializer, AccountAmountSerial
         return obj
 
 
+agios_notification_mail = {
+    'subject': "[Chocapix] Notification d'agios",
+    'message': u"""
+Salut,
+
+Tu viens de payer {amount} € d'agios dans le bar {bar}.
+Ton nouveau solde est {solde} €.
+Pense à donner rapidement un chèque à un respo bar.
+
+Ce mail a été envoyé automatiquement par Chocapix.
+"""
+}
+
 class AgiosTransactionSerializer(BaseTransactionSerializer, AccountAmountSerializer):
     def create(self, data):
         t = super(AgiosTransactionSerializer, self).create(data)
 
-        t.accountoperation_set.create(
+        operation = t.accountoperation_set.create(
             target=data["account"],
             delta=-data["amount"])
 
         t.moneyflow = -data["amount"]
         t.save()
+
+        ## notify the account owner
+        message = agios_notification_mail.copy()
+        message["from_email"] = "babe@eleves.polytechnique.fr"
+        account = operation.target
+        message["recipient_list"] = [account.owner.email]
+        message["message"] = message["message"].format(
+            amount=data["amount"],
+            solde=account.money,
+            bar=account.bar.name
+        )
+        send_mail(**message)
 
         return t
 
