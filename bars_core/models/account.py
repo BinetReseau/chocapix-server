@@ -147,6 +147,7 @@ class AccountViewSet(viewsets.ModelViewSet):
     @decorators.list_route(methods=['get'])
     def items_ranking(self, request):
         from bars_stats.utils import compute_ranking
+        from django.db.models import Sum, F
 
         items = request.query_params.getlist("item")
         if len(items) == 0:
