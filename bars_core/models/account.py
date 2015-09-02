@@ -144,6 +144,22 @@ class AccountViewSet(viewsets.ModelViewSet):
         
         return Response(ranking, 200)
 
+    @decorators.list_route(methods=['get'])
+    def items_ranking(self, request):
+        from bars_stats.utils import compute_ranking
+
+        items = request.query_params.getlist("item")
+        if len(items) == 0:
+            return HttpResponseBadRequest("Give me some items to compare accounts with")
+
+        f = {
+            'accountoperation__transaction__type__in': ("buy", "meal"),
+            'accountoperation__transaction__itemoperation__target__details__in': items
+        }
+        ann = Sum(F('accountoperation__transaction__itemoperation__delta') * F('accountoperation__transaction__itemoperation__target__unit_factor'))
+        ranking = compute_ranking(request, model=Account, t_path='accountoperation__transaction__', filter=f, annotate=ann)
+        return Response(ranking, 200)
+
 
 # default_account_map = {}
 def get_default_account(bar):

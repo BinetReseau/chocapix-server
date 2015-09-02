@@ -117,7 +117,6 @@ class BarViewSet(viewsets.ModelViewSet):
         return Response(ranking, 200)
 
 
-
 from bars_core.perms import BarRolePermissionLogic, PerBarPermissionsOrAnonReadOnly
 
 @permission_logic(BarRolePermissionLogic())
