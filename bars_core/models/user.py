@@ -126,6 +126,9 @@ class UserViewSet(viewsets.ModelViewSet):
         if not user.check_password(data['old_password']):
             raise exceptions.PermissionDenied()
 
+        if data['password'] == "":
+            return Response("'password' field cannot be empty", 400)
+
         user.set_password(data['password'])
         user.save()
         return Response('Password changed', 200)
