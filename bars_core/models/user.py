@@ -78,15 +78,27 @@ class User(AbstractBaseUser):
     def get_full_name(self):
         return "%s %s" % (self.firstname, self.lastname)
 
+    def get_previous_login(self):
+        from bars_core.models.loginattempt import LoginAttempt
+        qs = LoginAttempt.objects.filter(user=self, success=True).order_by('-timestamp')[1:2]
+        try:
+            pl = qs.get().timestamp
+        except LoginAttempt.DoesNotExist:
+            pl = None
+
+        return pl
+
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         read_only_fields = ('is_active', 'last_login', 'last_modified')
         write_only_fields = ('password',)
-        exclude = ('is_staff', 'is_superuser')
+        exclude = ('is_staff', 'is_superuser', )
         extra_kwargs = {'password':{'required':False}}
     _type = VirtualField("User")
+
+    previous_login = serializers.DateTimeField(read_only=True, source='get_previous_login')
 
     def create(self, data):
         u = super(UserSerializer, self).create(data)
