@@ -494,13 +494,14 @@ class AgiosTransactionSerializer(BaseTransactionSerializer, AccountAmountSeriali
         message = agios_notification_mail.copy()
         message["from_email"] = "babe@eleves.polytechnique.fr"
         account = operation.target
-        message["recipient_list"] = [account.owner.email]
-        message["message"] = message["message"].format(
-            amount=data["amount"],
-            solde=account.money,
-            bar=account.bar.name
-        )
-        send_mail(**message)
+        if account.owner.email:
+            message["recipient_list"] = [account.owner.email]
+            message["message"] = message["message"].format(
+                amount=data["amount"],
+                solde=account.money,
+                bar=account.bar.name
+            )
+            send_mail(**message)
 
         return t
 
