@@ -439,14 +439,15 @@ class PunishTransactionSerializer(BaseTransactionSerializer, AccountAmountSerial
         message = punishement_notification_mail.copy()
         message["from_email"] = t.author.email
         account = operation.target
-        message["recipient_list"] = [account.owner.email]
-        message["message"] = message["message"].format(
-            name=t.author.get_full_name(),
-            amount=data["amount"],
-            cause=data["motive"],
-            bar=account.bar.name
-        )
-        send_mail(**message)
+        if account.owner.email:
+            message["recipient_list"] = [account.owner.email]
+            message["message"] = message["message"].format(
+                name=t.author.get_full_name(),
+                amount=data["amount"],
+                cause=data["motive"],
+                bar=account.bar.name
+            )
+            send_mail(**message)
 
         return t
 
