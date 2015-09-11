@@ -100,12 +100,13 @@ class UserSerializer(serializers.ModelSerializer):
 
     previous_login = serializers.DateTimeField(read_only=True, source='get_previous_login')
 
-    def validate_email(self, value):
-        from django.core.validators import validate_email
+    def validate(self, data):
         """Check valid email"""
-        if not validate_email(value):
-            raise serializers.ValidationError("Email is not valid")
-        return value
+        from django.core.validators import validate_email
+        if 'email' not in data:
+            raise serializers.ValidationError("Please give us your email")
+        validate_email(data['email'])
+        return data
 
     def create(self, data):
         u = super(UserSerializer, self).create(data)

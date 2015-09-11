@@ -163,6 +163,7 @@ class UserTests(APITestCase):
 
         self.user, _ = User.objects.get_or_create(username="bob")
         self.user.set_password("password")
+        self.user.email = "bob@chocapix.org"
         self.user.save()
 
         serializer = UserSerializer(self.user)
@@ -171,6 +172,7 @@ class UserTests(APITestCase):
 
     def setUp(self):
         self.data['username'] = "bob"
+        self.data['email'] = "bob@chocapix.org"
         self.user.username = "bob"
         self.user.save()
 
@@ -197,7 +199,7 @@ class UserTests(APITestCase):
 
     def test_create_user_admin(self):
         # Authenticated as admin
-        data = {'username': "charles2"}
+        data = {'username': "charles2", 'email': "blabla@m4x.org"}
         self.client.force_authenticate(user=self.manager)
         response = self.client.post('/user/', data)
         self.assertEqual(response.status_code, 201)
