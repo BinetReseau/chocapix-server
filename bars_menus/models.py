@@ -4,9 +4,11 @@ from django.http import Http404
 from rest_framework import serializers, viewsets
 from rest_framework.response import Response
 
-from bars_core.perms import PerBarPermissionsOrAnonReadOnly
+from bars_django.utils import VirtualField, permission_logic
+from bars_core.perms import BarRolePermissionLogic, PerBarPermissionsOrAnonReadOnly
 from bars_core.models.account import Account
 from bars_items.models.sellitem import SellItem
+from bars_menus.perms import MenuOwnerPermissionLogic
 
 
 ERROR_MESSAGES = {
@@ -16,9 +18,12 @@ ERROR_MESSAGES = {
 }
 
 
+@permission_logic(BarRolePermissionLogic())
+@permission_logic(MenuOwnerPermissionLogic(field_name='account__owner'))
 class Menu(models.Model):
     name = models.CharField(max_length=100)
     account = models.ForeignKey(Account)
+    _type = VirtualField("Menu")
 
     def __unicode__(self):
         user = self.account.owner.pseudo or (self.account.owner.firstname + " " + self.account.owner.lastname)
