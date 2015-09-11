@@ -63,14 +63,25 @@ class MenuSerializer(serializers.ModelSerializer):
         fields = ('id', 'name', 'account', 'items', )
 
     def create(self, data):
-        menu = Menu.objects.create(name=data['name'], account=data['account'])
-        for si_data in data['items']:
+        items = data.pop('items')
+        menu = super(MenuSerializer, self).create(data)
+
+        for si_data in items:
             MenuSellItem.objects.create(menu=menu, **si_data)
+
         return menu
+
+    def update(self, instance, data):
+        items = data.pop('items')
+        MenuSellItem.objects.filter(menu=instance).delete()
+        for si_data in items:
+            MenuSellItem.objects.create(menu=instance, **si_data)
+        
+        return super(MenuSerializer, self).update(instance, data)
 
 
 class MenuViewSet(viewsets.ModelViewSet):
-    queryset = Menu.objects.prefetch_related('items').all()
+    queryset = Menu.objects.all()
     serializer_class = MenuSerializer
     permission_classes = (PerBarPermissionsOrAnonReadOnly,)
 
