@@ -69,6 +69,7 @@ INSTALLED_APPS = (
     'bars_transactions',
     'bars_news',
     'bars_bugtracker',
+    'bars_menus',
 )
 
 
