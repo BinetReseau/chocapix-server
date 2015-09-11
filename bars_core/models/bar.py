@@ -128,6 +128,7 @@ class BarSettings(models.Model):
     next_scheduled_appro = models.DateTimeField(null=True)
     money_warning_threshold = models.FloatField(default=15)
     transaction_cancel_threshold = models.FloatField(default=48)  # In hours
+    default_tax = models.FloatField(default=0.2)
 
     agios_enabled = models.BooleanField(default=True)
     agios_threshold = models.FloatField(default=2)  # In days
