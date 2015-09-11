@@ -36,6 +36,7 @@ roles_map['treasurer'] = \
         'bars_transactions.add_refundtransaction',
         'bars_transactions.add_barInvestmenttransaction',
         'bars_transactions.add_collectivePaymenttransaction',
+        'bars_core.change_barsettings', # to let the treasurer adjust agios parameters
 ]
 
 # Items
