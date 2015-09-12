@@ -21,6 +21,8 @@ ERROR_MESSAGES = {
 @permission_logic(BarRolePermissionLogic())
 @permission_logic(MenuOwnerPermissionLogic(field_name='account__owner'))
 class Menu(models.Model):
+    class Meta:
+        unique_together = ('account', 'name', )
     name = models.CharField(max_length=100)
     account = models.ForeignKey(Account)
     _type = VirtualField("Menu")
@@ -89,5 +91,8 @@ class MenuViewSet(viewsets.ModelViewSet):
     queryset = Menu.objects.all()
     serializer_class = MenuSerializer
     permission_classes = (PerBarPermissionsOrAnonReadOnly,)
+    filter_fields = {
+        'account': ['exact']
+    }
 
 
