@@ -25,7 +25,6 @@ class Menu(models.Model):
         unique_together = ('account', 'name', )
     name = models.CharField(max_length=100)
     account = models.ForeignKey(Account)
-    _type = VirtualField("Menu")
 
     def __unicode__(self):
         user = self.account.owner.pseudo or (self.account.owner.firstname + " " + self.account.owner.lastname)
@@ -63,11 +62,12 @@ class MenuSellItemSerializer(serializers.ModelSerializer):
 
 
 class MenuSerializer(serializers.ModelSerializer):
+    _type = VirtualField("Menu")
     items = MenuSellItemSerializer(many=True)
 
     class Meta:
         model = Menu
-        fields = ('id', 'name', 'account', 'items', )
+        # fields = ('id', 'name', 'account', 'items', '_type', )
 
     def create(self, data):
         items = data.pop('items')
