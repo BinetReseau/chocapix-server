@@ -4,9 +4,10 @@ from django.http import Http404
 from rest_framework import serializers, viewsets
 from rest_framework.response import Response
 
-from bars_django.utils import VirtualField, permission_logic
-from bars_core.perms import BarRolePermissionLogic, PerBarPermissionsOrAnonReadOnly
-from bars_core.models.account import Account
+from bars_django.utils import VirtualField, permission_logic, CurrentBarCreateOnlyDefault, CurrentUserCreateOnlyDefault
+from bars_core.perms import BarRolePermissionLogic, PerBarPermissionsOrObjectPermissionsOrAnonReadOnly
+from bars_core.models.bar import Bar
+from bars_core.models.user import User
 from bars_items.models.sellitem import SellItem
 from bars_menus.perms import MenuOwnerPermissionLogic
 
@@ -19,15 +20,16 @@ ERROR_MESSAGES = {
 
 
 @permission_logic(BarRolePermissionLogic())
-@permission_logic(MenuOwnerPermissionLogic(field_name='account__owner'))
+@permission_logic(MenuOwnerPermissionLogic(field_name='user', delete_permission=True))
 class Menu(models.Model):
     class Meta:
-        unique_together = ('account', 'name', )
+        unique_together = ('bar', 'user', 'name', )
     name = models.CharField(max_length=100)
-    account = models.ForeignKey(Account)
+    bar = models.ForeignKey(Bar)
+    user = models.ForeignKey(User)
 
     def __unicode__(self):
-        user = self.account.owner.pseudo or (self.account.owner.firstname + " " + self.account.owner.lastname)
+        user = self.user.pseudo or (self.user.firstname + " " + self.user.lastname)
         return "%s (%s)" % (self.name, user)
 
 
@@ -64,10 +66,12 @@ class MenuSellItemSerializer(serializers.ModelSerializer):
 class MenuSerializer(serializers.ModelSerializer):
     _type = VirtualField("Menu")
     items = MenuSellItemSerializer(many=True)
+    bar = serializers.PrimaryKeyRelatedField(read_only=True, default=CurrentBarCreateOnlyDefault())
+    user = serializers.PrimaryKeyRelatedField(read_only=True, default=CurrentUserCreateOnlyDefault())
 
     class Meta:
         model = Menu
-        # fields = ('id', 'name', 'account', 'items', '_type', )
+        read_only_fields = ('bar', 'user', )
 
     def create(self, data):
         items = data.pop('items')
@@ -90,9 +94,10 @@ class MenuSerializer(serializers.ModelSerializer):
 class MenuViewSet(viewsets.ModelViewSet):
     queryset = Menu.objects.all()
     serializer_class = MenuSerializer
-    permission_classes = (PerBarPermissionsOrAnonReadOnly,)
+    permission_classes = (PerBarPermissionsOrObjectPermissionsOrAnonReadOnly,)
     filter_fields = {
-        'account': ['exact']
+        'bar': ['exact'],
+        'user': ['exact']
     }
 
 
