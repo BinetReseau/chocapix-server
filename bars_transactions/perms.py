@@ -1,8 +1,10 @@
 from datetime import timedelta
 from django.utils import timezone
 from permission.logics import AuthorPermissionLogic
+from bars_core.perms import debug_perm
 
 class TransactionAuthorPermissionLogic(AuthorPermissionLogic):
+    @debug_perm("Logic (transaction)")
     def has_perm(self, user, perm, obj=None):
         if not user.is_authenticated() or not user.is_active:
             return False
