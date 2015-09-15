@@ -25,7 +25,7 @@ class StockItem(models.Model):
     unit_factor = models.FloatField(default=1)
     price = models.FloatField()
 
-    last_inventory = models.DateTimeField(default=datetime.datetime(2015, 2, 24, 21, 17, 0, 0, tzinfo=utc))
+    last_inventory = models.DateTimeField(auto_now_add=True)
     deleted = models.BooleanField(default=False)
 
     def get_unit(self, unit=''):

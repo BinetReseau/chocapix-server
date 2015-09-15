@@ -24,6 +24,8 @@ from bars_news.models import NewsViewSet
 
 from bars_bugtracker.models import BugReportViewSet
 
+from bars_menus.models import MenuViewSet
+
 router = routers.DefaultRouter()
 
 router.register('bar', BarViewSet)
@@ -44,6 +46,8 @@ router.register('transaction', TransactionViewSet)
 router.register('news', NewsViewSet)
 
 router.register('bugreport', BugReportViewSet)
+
+router.register('menu', MenuViewSet)
 
 
 urlpatterns = patterns(
