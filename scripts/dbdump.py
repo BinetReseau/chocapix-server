@@ -129,58 +129,31 @@ def import_data():
     from bars_core.models.bar import Bar
 
     bar_1 = Bar()
-    bar_1.id = u'avironjone'
-    bar_1.name = u'Aviron J\xf4ne'
+    bar_1.id = u'faerix'
+    bar_1.name = u'Faërix'
     bar_1 = importer.save_or_locate(bar_1)
-
-    bar_2 = Bar()
-    bar_2.id = u'escrimejone'
-    bar_2.name = u'Escrime J\xf4ne'
-    bar_2 = importer.save_or_locate(bar_2)
-
-    bar_3 = Bar()
-    bar_3.id = u'natationjone'
-    bar_3.name = u'Natation J\xf4ne'
-    bar_3 = importer.save_or_locate(bar_3)
 
     # Processing model: User
 
     from bars_core.models.user import User
 
-    User.objects.create_superuser('admin', 'admin')
+    User.objects.create_superuser('admin', 'xwpts')
 
     user_1 = User()
-    user_1.username = u'nadri'
-    user_1.set_password('nadri')
-    user_1.firstname = u'Guillaume'
-    user_1.lastname = u'Boisseau'
-    user_1.pseudo = u'Nadri'
+    user_1.username = u'faerix'
+    user_1.set_password('faerix')
+    user_1.firstname = u'Respo'
+    user_1.lastname = u'Bar'
+    user_1.pseudo = u'Faërix'
     user_1 = importer.save_or_locate(user_1)
 
     user_2 = User()
-    user_2.username = u'ntag'
-    user_2.set_password('ntag')
-    user_2.firstname = u'Basile'
-    user_2.lastname = u'Bruneau'
-    user_2.pseudo = u'NTag'
+    user_2.username = u'ryzum'
+    user_2.set_password('ryzum')
+    user_2.firstname = u'Nicolas'
+    user_2.lastname = u'Ding'
+    user_2.pseudo = u'RyZum'
     user_2 = importer.save_or_locate(user_2)
-
-    user_3 = User()
-    user_3.username = u'tizot'
-    user_3.set_password('tizot')
-    user_3.firstname = u'Camille'
-    user_3.lastname = u'Masset'
-    user_3.pseudo = u'Tizot'
-    user_3 = importer.save_or_locate(user_3)
-
-    user_4 = User()
-    user_4.username = u'denis'
-    user_4.set_password('denis')
-    user_4.firstname = u'Denis M'
-    user_4.lastname = u'M\xe9rigoux'
-    user_4.pseudo = u''
-    user_4 = importer.save_or_locate(user_4)
-
 
     # Processing model: Account
 
@@ -196,25 +169,16 @@ def import_data():
     account_2.owner = user_2
     account_2 = importer.save_or_locate(account_2)
 
-    account_3 = Account()
-    account_3.bar = bar_1
-    account_3.owner = user_3
-    account_3 = importer.save_or_locate(account_3)
+    # Processing Model: Role
 
-    account_4 = Account()
-    account_4.bar = bar_1
-    account_4.owner = user_4
-    account_4 = importer.save_or_locate(account_4)
+    from bars_core.models.role import Role
+    from bars_django.utils import get_root_bar
 
-    account_5 = Account()
-    account_5.bar = bar_3
-    account_5.owner = user_2
-    account_5 = importer.save_or_locate(account_5)
-
-    account_6 = Account()
-    account_6.bar = bar_2
-    account_6.owner = user_4
-    account_6 = importer.save_or_locate(account_6)
+    role_1 = Role(name="admin", user=user_1, bar=bar_1)
+    role_1 = importer.save_or_locate(role_1)
+    
+    role_2 = Role(name="staff", user=user_1, bar=get_root_bar())
+    role_2 = importer.save_or_locate(role_2)
 
     # Processing model: SellItem
 
@@ -222,33 +186,21 @@ def import_data():
 
     sellitem_1 = SellItem()
     sellitem_1.bar = bar_1
-    sellitem_1.name = "Chocolat"
-    sellitem_1.unit_name = u'carre'
-    sellitem_1.unit_name_plural = u'carres'
+    sellitem_1.name = "Mr Freeze"
+    sellitem_1.unit_name = u''
+    sellitem_1.unit_name_plural = u''
     sellitem_1.tax = 0.2
     sellitem_1 = importer.save_or_locate(sellitem_1)
-
-    sellitem_2 = SellItem()
-    sellitem_2.bar = bar_1
-    sellitem_2.name = "Pizza"
-    sellitem_2 = importer.save_or_locate(sellitem_2)
 
     # Processing model: ItemDetails
 
     from bars_items.models.itemdetails import ItemDetails
 
     itemdetails_1 = ItemDetails()
-    itemdetails_1.name = u'Chocolat'
-    itemdetails_1.unit_name = u'tablette'
-    itemdetails_1.unit_name_plural = u'tablettes'
+    itemdetails_1.name = u'Mr Freeze'
+    itemdetails_1.unit_name = u''
+    itemdetails_1.unit_name_plural = u''
     itemdetails_1 = importer.save_or_locate(itemdetails_1)
-
-    itemdetails_2 = ItemDetails()
-    itemdetails_2.name = u'Pizza'
-    itemdetails_2.unit_name = u''
-    itemdetails_2.unit_name_plural = u''
-    itemdetails_2 = importer.save_or_locate(itemdetails_2)
-
     # Processing model: BuyItem
 
     from bars_items.models.buyitem import BuyItem
@@ -256,10 +208,6 @@ def import_data():
     buyitem_1 = BuyItem()
     buyitem_1.details = itemdetails_1
     buyitem_1 = importer.save_or_locate(buyitem_1)
-
-    buyitem_2 = BuyItem()
-    buyitem_2.details = itemdetails_2
-    buyitem_2 = importer.save_or_locate(buyitem_2)
 
     # Processing model: StockItem
 
@@ -271,33 +219,6 @@ def import_data():
     stockitem_1.details = itemdetails_1
     stockitem_1.price = 1
     stockitem_1 = importer.save_or_locate(stockitem_1)
-
-    stockitem_2 = StockItem()
-    stockitem_2.bar = bar_1
-    stockitem_2.sellitem = sellitem_2
-    stockitem_2.details = itemdetails_2
-    stockitem_2.price = 2
-    stockitem_2 = importer.save_or_locate(stockitem_2)
-
-    # Processing model: News
-
-    from bars_news.models import News
-
-    news_1 = News()
-    news_1.bar = bar_1
-    news_1.author = user_3
-    news_1.name = u"C'est du propre !"
-    news_1.text = u"Bar d'\xe9tage d\xe9guelasse !! Faites votre vaisselle bande de p**** !"
-    news_1.timestamp = dateutil.parser.parse("2015-01-30T02:37:14+00:00")
-    news_1 = importer.save_or_locate(news_1)
-
-    news_2 = News()
-    news_2.bar = bar_1
-    news_2.author = user_3
-    news_2.name = u'Merci pour les photos'
-    news_2.text = u"Bravo \xe0 Yoann qui a pris le temps de mettre toutes les photos sur les murs du bar d'\xe9tage !"
-    news_2.timestamp = dateutil.parser.parse("2015-01-30T02:37:14+00:00")
-    news_2 = importer.save_or_locate(news_2)
 
     # Processing model: Transaction
 
