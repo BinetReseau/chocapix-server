@@ -50,6 +50,11 @@ class BaseTransactionSerializer(serializers.ModelSerializer):
                 obj['error'] = str(e)
                 return obj
 
+    def to_internal_value(self, data):
+        if not "author" in data:
+            data["author"] = self.context['request'].user.id
+        return super(BaseTransactionSerializer, self).to_internal_value(data)
+
     def create(self, data):
         request = self.context['request']
         bar = request.bar
@@ -59,8 +64,6 @@ class BaseTransactionSerializer(serializers.ModelSerializer):
         if request.user.has_perm('bars_transactions.add_' + data["type"] + 'transaction', bar):
             fields = Transaction._meta.get_all_field_names()
             attrs = {k: v for k, v in data.items() if k in fields}
-            if "author" not in attrs:
-                attrs["author"] = request.user
             t = Transaction(**attrs)
             t.bar = bar
             t.save()
