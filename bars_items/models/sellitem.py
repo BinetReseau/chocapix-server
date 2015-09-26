@@ -186,6 +186,20 @@ class SellItemViewSet(viewsets.ModelViewSet):
         srz = SellItemSerializer(new_sellitem)
         return Response(srz.data, 200)
 
+    @decorators.list_route()
+    def set_global_tax(self, request):
+        bar = request.query_bar.get('bar', None)
+        tax = request.data.get('tax', None)
+
+        if bar is None:
+            raise Response('Please give me a bar', 400)
+        if tax is None:
+            raise Response('Please give me a new tax', 400)
+        if tax < 0 or tax > 1:
+            raise Response('Tax must be between 0 and 1', 400)
+
+        SellItem.objects.filter(bar=bar).update(tax=tax)
+        return Response(status=204)
 
     @decorators.detail_route()
     def stats(self, request, pk):
