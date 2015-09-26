@@ -23,7 +23,7 @@ ERROR_MESSAGES = {
 class BaseTransactionSerializer(serializers.ModelSerializer):
     class Meta:
         model = Transaction
-        read_only_fields = ('bar', 'author', 'timestamp', 'last_modified', 'moneyflow', )
+        read_only_fields = ('bar', 'timestamp', 'last_modified', 'moneyflow', )
 
     def to_representation(self, transaction):
         if 'ignore_type' in self.context or transaction.type == "":
@@ -59,8 +59,9 @@ class BaseTransactionSerializer(serializers.ModelSerializer):
         if request.user.has_perm('bars_transactions.add_' + data["type"] + 'transaction', bar):
             fields = Transaction._meta.get_all_field_names()
             attrs = {k: v for k, v in data.items() if k in fields}
+            if "author" not in attrs:
+                attrs["author"] = request.user
             t = Transaction(**attrs)
-            t.author = request.user
             t.bar = bar
             t.save()
             return t
