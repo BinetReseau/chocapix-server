@@ -93,6 +93,9 @@ class AddStockItemSerializer(serializers.Serializer):
 class RemoveStockItemSerializer(serializers.Serializer):
     stockitem = serializers.PrimaryKeyRelatedField(queryset=StockItem.objects.all())
 
+class ChangeTaxSerializer(serializers.Serializer):
+    tax = serializers.FloatField(default=None)
+
 class SellItemViewSet(viewsets.ModelViewSet):
     queryset = SellItem.objects.all()
     serializer_class = SellItemSerializer
@@ -186,6 +189,22 @@ class SellItemViewSet(viewsets.ModelViewSet):
         srz = SellItemSerializer(new_sellitem)
         return Response(srz.data, 200)
 
+    @decorators.list_route(methods=['put'])
+    def set_global_tax(self, request):
+        bar = request.query_params.get('bar', None)
+        unsrz = ChangeTaxSerializer(data=request.data)
+        unsrz.is_valid(raise_exception=True)
+        tax = unsrz.validated_data['tax']
+
+        if bar is None:
+            return Response('Please give me a bar', 400)
+        if tax is None:
+            return Response('Please give me a new tax', 400)
+        if tax < 0 or tax > 1:
+            return Response('Tax must be between 0 and 1', 400)
+
+        SellItem.objects.filter(bar=bar).update(tax=tax)
+        return Response(status=204)
 
     @decorators.detail_route()
     def stats(self, request, pk):

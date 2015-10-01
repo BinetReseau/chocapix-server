@@ -148,6 +148,8 @@ class ItemTests(APITestCase):
         self.buyitemprice2, _ = BuyItemPrice.objects.get_or_create(buyitem=self.buyitem2, bar=self.bar, price=2)
         # self.stockitem2, _ = StockItem.objects.get_or_create(bar=self.bar, sellitem=self.sellitem2, details=self.itemdetails2, price=7)
 
+        self.sellitem3, _ = SellItem.objects.get_or_create(bar=self.wrong_bar, tax=0.1)
+
 
 class SellItemTests(ItemTests, AutoTestBarMixin):
     @classmethod
@@ -163,6 +165,33 @@ class SellItemTests(ItemTests, AutoTestBarMixin):
         self.change_url = ('/sellitem/%d/' % self.sellitem.id) + '?bar=%s'
         self.update_data = SellItemSerializer(self.sellitem).data
         self.update_data['tax'] = 0.1
+
+    def test_global_tax_1(self):
+        # No bar
+        self.client.force_authenticate(user=self.staff_user)
+        response = self.client.put('/sellitem/set_global_tax/', {'tax': 0.15});
+        self.assertEqual(response.status_code, 400)
+
+    def test_global_tax_2(self):
+        # Wrong bar
+        self.client.force_authenticate(user=self.staff_user)
+        response = self.client.put('/sellitem/set_global_tax/?bar=barrouje', {'tax': 0.15});
+        self.assertEqual(response.status_code, 403)
+
+    def test_global_tax_3(self):
+        # Wrong permission
+        self.client.force_authenticate(user=self.user)
+        response = self.client.put('/sellitem/set_global_tax/?bar=barjone', {'tax': 0.15});
+        self.assertEqual(response.status_code, 403)
+
+    def test_global_tax_4(self):
+        # OK : test sellitems in other bars
+        self.client.force_authenticate(user=self.staff_user)
+        response = self.client.put('/sellitem/set_global_tax/?bar=barjone', {'tax': 0.15});
+        self.assertEqual(response.status_code, 204)
+        self.assertEqual(reload(self.sellitem).tax, 0.15)
+        self.assertEqual(reload(self.sellitem2).tax, 0.15)
+        self.assertEqual(reload(self.sellitem3).tax, 0.1)
 
 
 class ItemDetailsTests(ItemTests, AutoTestMixin):
