@@ -410,7 +410,7 @@ punishement_notification_mail = {
     'message': u"""
 Salut,
 
-{name} a infligé une amende de {amount} € à ton compte dans le bar {bar}.
+{name} a infligé une amende de {amount:.2f} € à ton compte dans le bar {bar}.
 La raison invoquée est la suivante :
     « {cause} »
 
@@ -471,8 +471,8 @@ agios_notification_mail = {
     'message': u"""
 Salut,
 
-Tu viens de payer {amount} € d'agios dans le bar {bar}.
-Ton nouveau solde est {solde} €.
+Tu viens de payer {amount:.2f} € d'agios dans le bar {bar}.
+Ton nouveau solde est {solde:.2f} €.
 Pense à donner rapidement un chèque à un respo bar.
 
 Ce mail a été envoyé automatiquement par Chocapix.
