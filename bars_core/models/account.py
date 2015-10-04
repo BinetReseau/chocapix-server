@@ -97,7 +97,6 @@ class AccountViewSet(viewsets.ModelViewSet):
         
         bar = request.query_params.get('bar', None)
         t_filter = {}
-        t_path = 'accountoperation__transaction__'
         if bar is None:
             return HttpResponseBadRequest("I can only give a ranking within a bar")
         else:
