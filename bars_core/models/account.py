@@ -90,6 +90,34 @@ class AccountViewSet(viewsets.ModelViewSet):
         else:
             return Response(ranking, 200)
 
+    @decorators.list_route(methods=['get'])
+    def coheze_ranking(self, request):
+        from django.db.models import Sum, Count, Prefetch
+        from bars_transactions.models import Transaction
+        
+        bar = request.query_params.get('bar', None)
+        t_filter = {}
+        t_path = 'accountoperation__transaction__'
+        if bar is None:
+            return HttpResponseBadRequest("I can only give a ranking within a bar")
+        else:
+            t_filter['bar'] = bar
+        
+        t_filter['canceled'] = False
+        
+        date_start = request.query_params.get('date_start')
+        date_end = request.query_params.get('date_end', datetime.now())
+        if date_start is not None:
+            t_filter['timestamp__range'] = (date_start, date_end)
+        
+        t_filter['type'] = "meal"
+
+        admissible_transactions = list(Transaction.objects.filter(**t_filter).annotate(nb_accounts=Count('accountoperation__target')).filter(nb_accounts__gte=2).values('id'))
+        admissible_transactions = [t['id'] for t in admissible_transactions]
+        
+        ranking = Account.objects.filter(bar=bar, accountoperation__transaction__id__in=admissible_transactions).values('id').annotate(val=Sum('accountoperation__delta'))
+        return Response(ranking, 200)
+
     @decorators.detail_route(methods=['get'])
     def sellitem_ranking(self, request, pk):
         from bars_items.models.sellitem import SellItem
