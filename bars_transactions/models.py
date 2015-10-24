@@ -190,7 +190,7 @@ class AccountOperation(BaseOperation):
                     bar=target.bar.name
                 )
                 send_mail(**message)
-        super.save(AccountOperation, self).save()
+        super(AccountOperation, self).save()
 
     op_model = Account
     op_model_field = 'money'
