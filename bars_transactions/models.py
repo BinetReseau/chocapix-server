@@ -177,20 +177,20 @@ class AccountOperation(BaseOperation):
         app_label = 'bars_transactions'
     target = models.ForeignKey(Account)
 
-    def save(self):
-        if ((target.money <= -delta) and (target.owner != transaction.author) and (not self.pk)):
+    def save(self, *args, **kwargs):
+        if ((self.target.money <= -self.delta) and (self.target.owner != self.transaction.author) and (not self.pk)):
             ## if the transaction empties the account of the user, notify the account owner
             message = switching_to_negative_notification_mail.copy()
             message["from_email"] = "babe@eleves.polytechnique.fr"
-            if target.owner.email:
-                message["recipient_list"] = [target.owner.email]
+            if self.target.owner.email:
+                message["recipient_list"] = [self.target.owner.email]
                 message["message"] = message["message"].format(
-                    amount=-delta,
-                    solde=target.money + delta,
-                    bar=target.bar.name
+                    amount = -self.delta,
+                    solde = self.target.money + self.delta,
+                    bar = selftarget.bar.name
                 )
                 send_mail(**message)
-        super(AccountOperation, self).save()
+        super(AccountOperation, self).save(*args, **kwargs)
 
     op_model = Account
     op_model_field = 'money'
