@@ -557,6 +557,12 @@ class MealTransactionSerializer(BaseTransactionSerializer):
     accounts = AccountRatioSerializer(many=True)
     name = serializers.CharField(allow_blank=True)
 
+    def validate(self, data):
+        if "accounts" not in data or len(data["accounts"]) < 1:
+            raise ValidationError("There is no account in this meal")
+
+        return data
+
     def create(self, data):
         t = super(MealTransactionSerializer, self).create(data)
 
