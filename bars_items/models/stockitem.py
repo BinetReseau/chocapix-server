@@ -1,6 +1,7 @@
 import datetime
 from django.db import models
 from django.db.models import Sum, F
+from django.core.exceptions import ValidationError
 from django.utils.timezone import utc
 from rest_framework import viewsets, serializers, permissions, decorators
 from rest_framework.response import Response
@@ -90,7 +91,7 @@ class StockItemSerializer(serializers.ModelSerializer):
 
     def validate_sell_to_buy(self, value):
         if value <= 0:
-            raise ValidationError("'sell_to_buy' field has to be nonnegative")
+            raise ValidationError(_("'sell_to_buy' field has to be nonnegative"))
         return value
 
 
