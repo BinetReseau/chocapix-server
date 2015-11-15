@@ -3,6 +3,7 @@
 import random
 import string
 from django.db import models
+from django.db.models import Prefetch
 from django.core.mail import send_mail
 from django.contrib.auth.models import BaseUserManager, AbstractBaseUser, _user_has_module_perms, _user_has_perm
 from rest_framework import viewsets, serializers, decorators, exceptions, permissions
@@ -12,11 +13,15 @@ from rest_framework.views import APIView
 from permission.logics import OneselfPermissionLogic
 from bars_django.utils import VirtualField, permission_logic
 from bars_core.perms import RootBarRolePermissionLogic
+from bars_core.models.loginattempt import LoginAttempt
 
 
 class UserManager(BaseUserManager):
     def get_queryset(self):
-        return super(UserManager, self).get_queryset().prefetch_related('role_set')
+        return super(UserManager, self).get_queryset().prefetch_related(
+            'role_set',
+            Prefetch('loginattempt_set', queryset=LoginAttempt.objects.order_by('-timestamp'))
+        )
 
     def create_user(self, username, password):
         user = self.model(username=username)
@@ -80,10 +85,12 @@ class User(AbstractBaseUser):
 
     def get_previous_login(self):
         from bars_core.models.loginattempt import LoginAttempt
-        qs = LoginAttempt.objects.filter(user=self, success=True).order_by('-timestamp')[1:2]
         try:
-            pl = qs.get().timestamp
+            login_attempt = self.loginattempt_set.all()[1:2]
+            pl = login_attempt[0].timestamp
         except LoginAttempt.DoesNotExist:
+            pl = None
+        except IndexError:
             pl = None
 
         return pl
