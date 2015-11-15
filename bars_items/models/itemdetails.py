@@ -11,7 +11,7 @@ from bars_items.models.stockitem import StockItem
 
 class ItemDetailsManager(models.Manager):
     def get_queryset(self):
-        return super(ItemDetailsManager, self).get_queryset().prefetch_related('stockitem_set')
+        return super(ItemDetailsManager, self).get_queryset().prefetch_related(Prefetch('stockitem_set', queryset=StockItem.objects.select_related('bar')))
 
 
 @permission_logic(RootBarRolePermissionLogic())
@@ -44,15 +44,15 @@ class ItemDetailsSerializer(serializers.ModelSerializer):
 
     def to_representation(self, itemdetails):
         obj = super(ItemDetailsSerializer, self).to_representation(itemdetails)
-        
+
         if 'request' in self.context.keys():
             bar = self.context['request'].query_params.get('bar', None)
             if bar is not None:
-                stockitems = self.context['stockitems']
+                stockitems = itemdetails.stockitem_set.all()
                 # we find the correct StockItem id from the stockitems list passed through context
-                stockitem = next((item for item in stockitems if item["details"] == obj["id"]), None)
+                stockitem = next((item for item in stockitems if item.bar == bar), None)
                 if stockitem is not None:
-                    obj["stockitem"] = stockitem["id"]
+                    obj["stockitem"] = stockitem.id
                 else:
                     obj["stockitem"] = None
 
@@ -66,31 +66,12 @@ class ItemDetailsViewSet(viewsets.ModelViewSet):
     search_fields = ('name', 'keywords')
 
     def list(self, request):
-        bar = request.query_params.get("bar", None)
-        if bar is not None:
-            # if a bar is given in GET params, we fetch all its StockItems and pass them in context to the serializer
-            stockitems = list(StockItem.objects.filter(bar=bar).values('id', 'details'))
-        else:
-            stockitems = None
-
-        serializer = ItemDetailsSerializer(self.get_queryset(), many=True, context={'request': request, 'stockitems': stockitems})
+        serializer = ItemDetailsSerializer(self.get_queryset(), many=True, context={'request': request})
         return Response(serializer.data)
 
     def retrieve(self, request, pk=None):
-        try:
-            instance = ItemDetails.objects.get(pk=pk)
-        except ItemDetails.DoesNotExist:
-            raise Http404()
-
-        bar = request.query_params.get("bar", None)
-        if bar is not None:
-            stockitems = list(StockItem.objects.filter(bar=bar, details=instance).values('id', 'details'))
-        else:
-            stockitems = None
-
-        serializer = ItemDetailsSerializer(instance, context={'request': request, 'stockitems': stockitems})
+        serializer = ItemDetailsSerializer(instance, context={'request': request})
         return Response(serializer.data)
-
 
     @decorators.detail_route()
     def stats(self, request, pk):
