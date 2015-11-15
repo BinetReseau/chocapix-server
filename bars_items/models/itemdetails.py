@@ -49,8 +49,7 @@ class ItemDetailsSerializer(serializers.ModelSerializer):
             bar = self.context['request'].query_params.get('bar', None)
             if bar is not None:
                 stockitems = itemdetails.stockitem_set.all()
-                # we find the correct StockItem id from the stockitems list passed through context
-                stockitem = next((item for item in stockitems if item.bar == bar), None)
+                stockitem = next((item for item in stockitems if item.bar.id == bar), None)
                 if stockitem is not None:
                     obj["stockitem"] = stockitem.id
                 else:
@@ -70,6 +69,11 @@ class ItemDetailsViewSet(viewsets.ModelViewSet):
         return Response(serializer.data)
 
     def retrieve(self, request, pk=None):
+        try:
+            instance = ItemDetails.objects.get(pk=pk)
+        except ItemDetails.DoesNotExist:
+            return Http404()
+
         serializer = ItemDetailsSerializer(instance, context={'request': request})
         return Response(serializer.data)
 
