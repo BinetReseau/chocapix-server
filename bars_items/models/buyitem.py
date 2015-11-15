@@ -1,5 +1,6 @@
 from django.http import Http404
 from django.db import models
+from django.db.models import Prefetch
 from rest_framework import viewsets, serializers, permissions
 from rest_framework.response import Response
 from rest_framework.serializers import ValidationError
@@ -11,6 +12,26 @@ from bars_core.models.bar import Bar
 from bars_items.models.itemdetails import ItemDetails
 
 
+@permission_logic(BarRolePermissionLogic())
+class BuyItemPrice(models.Model):
+    class Meta:
+        unique_together = ("bar", "buyitem")
+        app_label = 'bars_items'
+    bar = models.ForeignKey(Bar)
+    buyitem = models.ForeignKey('BuyItem')
+    price = models.FloatField(default=0)
+
+    def __unicode__(self):
+        return "%s (%s)" % (unicode(self.buyitem), unicode(self.bar))
+
+
+class BuyItemManager(models.Manager):
+    def get_queryset(self):
+        return super(BuyItemManager, self).get_queryset().select_related('details').prefetch_related(
+            Prefetch('buyitemprice_set', queryset=BuyItemPrice.objects.select_related('bar'))
+        )
+
+
 @permission_logic(RootBarRolePermissionLogic())
 class BuyItem(models.Model):
     class Meta:
@@ -18,6 +39,8 @@ class BuyItem(models.Model):
     barcode = models.CharField(max_length=25, blank=True)
     details = models.ForeignKey(ItemDetails)
     itemqty = models.FloatField(default=1)
+
+    objects = BuyItemManager()
 
     def __unicode__(self):
         return "%s * %f" % (unicode(self.details), self.itemqty)
@@ -31,12 +54,15 @@ class BuyItemSerializer(serializers.ModelSerializer):
     def to_representation(self, buyitem):
         obj = super(BuyItemSerializer, self).to_representation(buyitem)
 
-        try:
-            bar = self.context['request'].bar
-            buyitemprice = BuyItemPrice.objects.get(bar=bar, buyitem=buyitem)
-            obj["buyitemprice"] = buyitemprice.id
-        except (KeyError, BuyItemPrice.DoesNotExist):
-            pass
+        if 'request' in self.context.keys():
+            bar = self.context['request'].query_params.get('bar', None)
+            if bar is not None:
+                buyitemprices = buyitem.buyitemprice_set.all()
+                buyitemprice = next((item for item in buyitemprices if item.bar.id == bar), None)
+                if buyitemprice is not None:
+                    obj["buyitemprice"] = buyitemprice.id
+                else:
+                    obj["buyitemprice"] = None
 
         return obj
 
@@ -47,19 +73,18 @@ class BuyItemViewSet(viewsets.ModelViewSet):
     permission_classes = (RootBarPermissionsOrAnonReadOnly,)
     filter_fields = ['barcode', 'details']
 
+    def list(self, request):
+        serializer = BuyItemSerializer(self.get_queryset(), many=True, context={'request': request})
+        return Response(serializer.data)
 
+    def retrieve(self, request, pk=None):
+        try:
+            instance = BuyItem.objects.get(pk=pk)
+        except BuyItem.DoesNotExist:
+            return Http404()
 
-@permission_logic(BarRolePermissionLogic())
-class BuyItemPrice(models.Model):
-    class Meta:
-        unique_together = ("bar", "buyitem")
-        app_label = 'bars_items'
-    bar = models.ForeignKey(Bar)
-    buyitem = models.ForeignKey(BuyItem)
-    price = models.FloatField(default=0)
-
-    def __unicode__(self):
-        return "%s (%s)" % (unicode(self.buyitem), unicode(self.bar))
+        serializer = BuyItemSerializer(instance, context={'request': request})
+        return Response(serializer.data)
 
 
 class BuyItemPriceSerializer(serializers.ModelSerializer):
