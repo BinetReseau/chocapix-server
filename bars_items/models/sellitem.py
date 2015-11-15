@@ -1,6 +1,6 @@
 from django.http import Http404, HttpResponseBadRequest
 from django.db import models
-from django.db.models import Sum, F
+from django.db.models import Sum, F, Prefetch
 import datetime
 from django.utils.timezone import utc
 from rest_framework import viewsets, serializers, permissions, decorators, exceptions
@@ -10,6 +10,10 @@ from bars_django.utils import VirtualField, permission_logic, CurrentBarCreateOn
 from bars_core.perms import PerBarPermissionsOrAnonReadOnly, BarRolePermissionLogic
 from bars_core.models.bar import Bar
 from bars_items.models.stockitem import StockItem
+
+class SellItemManager(models.Manager):
+    def get_queryset(self):
+        return super(SellItemManager, self).get_queryset().prefetch_related(Prefetch('stockitems', queryset=StockItem.objects.order_by('last_inventory')))
 
 
 @permission_logic(BarRolePermissionLogic())
@@ -27,6 +31,8 @@ class SellItem(models.Model):
     tax = models.FloatField(default=0)
 
     deleted = models.BooleanField(default=False)
+
+    objects = SellItemManager()
 
     def calc_qty(self):
         if not hasattr(self, '_qty'):
@@ -55,11 +61,10 @@ class SellItem(models.Model):
 
     @property
     def calc_oldest_inventory(self):
-        si = self.stockitems.all().order_by('last_inventory')
+        si = self.stockitems.all()
         if not si:
             return datetime.datetime(2015, 2, 24, 21, 17, 0, 0, tzinfo=utc)
         return si[0].last_inventory
-
 
     def __unicode__(self):
         return self.name
@@ -81,7 +86,6 @@ class SellItemSerializer(serializers.ModelSerializer):
     oldest_inventory = serializers.DateTimeField(read_only=True, source='calc_oldest_inventory')
 
 
-
 class MergeSellItemSerializer(serializers.Serializer):
     sellitem = serializers.PrimaryKeyRelatedField(queryset=SellItem.objects.all())
     unit_factor = serializers.FloatField(default=1)
@@ -101,7 +105,6 @@ class SellItemViewSet(viewsets.ModelViewSet):
     serializer_class = SellItemSerializer
     permission_classes = (PerBarPermissionsOrAnonReadOnly,)
     filter_fields = ['bar']
-
 
     @decorators.detail_route(methods=['put'])
     def merge(self, request, pk=None):
