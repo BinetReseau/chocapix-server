@@ -9,11 +9,6 @@ from bars_core.perms import RootBarRolePermissionLogic, RootBarPermissionsOrAnon
 from bars_items.models.stockitem import StockItem
 
 
-class ItemDetailsManager(models.Manager):
-    def get_queryset(self):
-        return super(ItemDetailsManager, self).get_queryset().prefetch_related(Prefetch('stockitem_set', queryset=StockItem.objects.select_related('bar')))
-
-
 @permission_logic(RootBarRolePermissionLogic())
 class ItemDetails(models.Model):
     class Meta:
@@ -31,8 +26,6 @@ class ItemDetails(models.Model):
 
     keywords = models.CharField(max_length=200, blank=True)  # Todo: length
 
-    objects = ItemDetailsManager()
-
     def __unicode__(self):
         return self.name
 
@@ -48,11 +41,9 @@ class ItemDetailsSerializer(serializers.ModelSerializer):
         if 'request' in self.context.keys():
             bar = self.context['request'].query_params.get('bar', None)
             if bar is not None:
-                stockitems = itemdetails.stockitem_set.all()
-                stockitem = next((item for item in stockitems if item.bar.id == bar), None)
-                if stockitem is not None:
-                    obj["stockitem"] = stockitem.id
-                else:
+                try:
+                    obj["stockitem"] = itemdetails.stockitem[0].id
+                except IndexError:
                     obj["stockitem"] = None
 
         return obj
@@ -65,12 +56,22 @@ class ItemDetailsViewSet(viewsets.ModelViewSet):
     search_fields = ('name', 'keywords')
 
     def list(self, request):
-        serializer = ItemDetailsSerializer(self.get_queryset(), many=True, context={'request': request})
+        bar = request.query_params.get('bar', None)
+        if bar is None:
+            serializer = ItemDetailsSerializer(self.get_queryset(), many=True)
+        else:
+            serializer = ItemDetailsSerializer(self.get_queryset().prefetch_related(Prefetch('stockitem_set', queryset=StockItem.objects.filter(bar__id=bar), to_attr='stockitem')), many=True, context={'request': request})
         return Response(serializer.data)
 
     def retrieve(self, request, pk=None):
+        bar = request.query_params.get('bar', None)
+        if bar is None:
+            qs = self.get_queryset()
+        else:
+            qs = self.get_queryset().prefetch_related(Prefetch('stockitem_set', queryset=StockItem.objects.filter(bar__id=bar), to_attr='stockitem'))
+
         try:
-            instance = ItemDetails.objects.get(pk=pk)
+            instance = qs.get(pk=pk)
         except ItemDetails.DoesNotExist:
             return Http404()
 

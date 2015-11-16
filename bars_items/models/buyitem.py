@@ -25,13 +25,6 @@ class BuyItemPrice(models.Model):
         return "%s (%s)" % (unicode(self.buyitem), unicode(self.bar))
 
 
-class BuyItemManager(models.Manager):
-    def get_queryset(self):
-        return super(BuyItemManager, self).get_queryset().select_related('details').prefetch_related(
-            Prefetch('buyitemprice_set', queryset=BuyItemPrice.objects.select_related('bar'))
-        )
-
-
 @permission_logic(RootBarRolePermissionLogic())
 class BuyItem(models.Model):
     class Meta:
@@ -39,8 +32,6 @@ class BuyItem(models.Model):
     barcode = models.CharField(max_length=25, blank=True)
     details = models.ForeignKey(ItemDetails)
     itemqty = models.FloatField(default=1)
-
-    objects = BuyItemManager()
 
     def __unicode__(self):
         return "%s * %f" % (unicode(self.details), self.itemqty)
@@ -57,11 +48,9 @@ class BuyItemSerializer(serializers.ModelSerializer):
         if 'request' in self.context.keys():
             bar = self.context['request'].query_params.get('bar', None)
             if bar is not None:
-                buyitemprices = buyitem.buyitemprice_set.all()
-                buyitemprice = next((item for item in buyitemprices if item.bar.id == bar), None)
-                if buyitemprice is not None:
-                    obj["buyitemprice"] = buyitemprice.id
-                else:
+                try:
+                    obj["buyitemprice"] = buyitem.buyitemprice[0].id
+                except IndexError:
                     obj["buyitemprice"] = None
 
         return obj
@@ -74,12 +63,22 @@ class BuyItemViewSet(viewsets.ModelViewSet):
     filter_fields = ['barcode', 'details']
 
     def list(self, request):
-        serializer = BuyItemSerializer(self.get_queryset(), many=True, context={'request': request})
+        bar = request.query_params.get('bar', None)
+        if bar is None:
+            serializer = BuyItemSerializer(self.get_queryset(), many=True)
+        else:
+            serializer = BuyItemSerializer(self.get_queryset().prefetch_related(Prefetch('buyitemprice_set', queryset=BuyItemPrice.objects.filter(bar__id=bar), to_attr='buyitemprice')), many=True, context={'request': request})
         return Response(serializer.data)
 
     def retrieve(self, request, pk=None):
+        bar = request.query_params.get('bar', None)
+        if bar is None:
+            qs = self.get_queryset()
+        else:
+            qs = self.get_queryset().prefetch_related(Prefetch('buyitemprice_set', queryset=BuyItemPrice.objects.filter(bar__id=bar), to_attr='buyitemprice'))
+
         try:
-            instance = BuyItem.objects.get(pk=pk)
+            instance = qs.get(pk=pk)
         except BuyItem.DoesNotExist:
             return Http404()
 
