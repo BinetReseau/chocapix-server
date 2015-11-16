@@ -1,4 +1,4 @@
-from datetime import datetime
+from django.utils import timezone
 
 from bars_core.models.user import User
 
@@ -26,15 +26,15 @@ class ObtainJSONWebTokenWrapper(ObtainJSONWebToken):
 
         ip = get_client_ip(request)
         success = response.status_code != 400
-        sent_username=request.data.get('username')
+        sent_username = request.data.get('username')
         try:
             user = User.objects.get(username=sent_username)
+            user.previous_login = user.current_login
+            user.current_login = timezone.now()
+            user.save()
         except User.DoesNotExist:
             user = None
         LoginAttempt.objects.create(user=user, success=success, ip=ip, sent_username=sent_username)
-        user.previous_login = user.current_login
-        user.current_login = datetime.now()
-        user.save()
 
         return response
 

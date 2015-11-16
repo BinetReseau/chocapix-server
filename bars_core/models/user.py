@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 import random
 import string
+from datetime import datetime, timezone
 from django.db import models
 from django.db.models import Prefetch
 from django.core.mail import send_mail
@@ -53,8 +54,8 @@ class User(AbstractBaseUser):
     is_superuser = models.BooleanField(default=False)
     is_staff = models.BooleanField(default=False)
 
-    previous_login = models.DateTimeField(blank=True)
-    current_login = models.DateTimeField(blank=True)
+    previous_login = models.DateTimeField(blank=True, auto_now_add=True)
+    current_login = models.DateTimeField(blank=True, auto_now_add=True)
 
     objects = UserManager()
 
@@ -84,18 +85,6 @@ class User(AbstractBaseUser):
 
     def get_full_name(self):
         return "%s %s" % (self.firstname, self.lastname)
-
-    # def get_previous_login(self):
-    #     from bars_core.models.loginattempt import LoginAttempt
-    #     try:
-    #         login_attempt = self.loginattempt_set[1]
-    #         pl = login_attempt['timestamp']
-    #     except LoginAttempt.DoesNotExist:
-    #         pl = None
-    #     except IndexError:
-    #         pl = None
-    #
-    #     return pl
 
 
 class UserSerializer(serializers.ModelSerializer):
