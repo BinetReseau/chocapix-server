@@ -10,6 +10,10 @@ from bars_core.perms import PerBarPermissionsOrAnonReadOnly, BarRolePermissionLo
 
 from bars_core.roles import roles_map, root_roles_map, roles_list
 
+class RoleManager(models.Manager):
+    def get_queryset(self):
+        return super(RoleManager, self).get_queryset().select_related('bar', 'user')
+
 
 @permission_logic(BarRolePermissionLogic())
 class Role(models.Model):
@@ -19,6 +23,8 @@ class Role(models.Model):
     bar = models.ForeignKey(Bar)
     user = models.ForeignKey(User)
     last_modified = models.DateTimeField(auto_now=True)
+
+    objects = RoleManager()
 
     def get_permissions(self):
         if self.bar == get_root_bar():
