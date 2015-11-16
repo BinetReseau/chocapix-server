@@ -20,7 +20,6 @@ class UserManager(BaseUserManager):
     def get_queryset(self):
         return super(UserManager, self).get_queryset().prefetch_related(
             'role_set',
-            Prefetch('loginattempt_set', queryset=LoginAttempt.objects.order_by('-timestamp'))
         )
 
     def create_user(self, username, password):
