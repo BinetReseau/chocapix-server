@@ -18,3 +18,4 @@ notifications:
     on_failure: always
     use_notice: true
     skip_join: true
+  slack: chocapix:KsJ6bP6EWXpLQGh1RrkgquXO
