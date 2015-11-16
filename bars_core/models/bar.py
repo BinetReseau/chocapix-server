@@ -1,7 +1,7 @@
 from datetime import date, timedelta
 from mock import Mock
 from django.db import models
-from django.db.models import Count, F, Sum
+from django.db.models import Count, F, Sum, Prefetch
 from rest_framework import viewsets, serializers, decorators
 from rest_framework.response import Response
 
@@ -69,7 +69,7 @@ class BarSerializer(serializers.ModelSerializer):
 
 from bars_core.perms import RootBarPermissionsOrAnonReadOnly
 class BarViewSet(viewsets.ModelViewSet):
-    queryset = Bar.objects.all()
+    queryset = Bar.objects.prefetch_related('settings')
     serializer_class = BarSerializer
     permission_classes = (RootBarPermissionsOrAnonReadOnly,)
 
@@ -79,7 +79,7 @@ class BarViewSet(viewsets.ModelViewSet):
         from bars_stats.utils import compute_ranking
         f = {
             'stockitems__itemoperation__transaction__bar': pk,
-            'stockitems__itemoperation__transaction__type__in': ("buy", "meal"), 
+            'stockitems__itemoperation__transaction__type__in': ("buy", "meal"),
             'stockitems__deleted': False
         }
         ann = Count('stockitems__itemoperation__transaction')/Count('stockitems', distinct=True)
@@ -152,4 +152,3 @@ class BarSettingsViewSet(viewsets.ModelViewSet):
     queryset = BarSettings.objects.all()
     serializer_class = BarSettingsSerializer
     permission_classes = (PerBarPermissionsOrAnonReadOnly,)
-
