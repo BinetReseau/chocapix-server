@@ -54,6 +54,9 @@ class User(AbstractBaseUser):
     is_superuser = models.BooleanField(default=False)
     is_staff = models.BooleanField(default=False)
 
+    previous_login = models.DateTimeField(blank=True)
+    current_login = models.DateTimeField(blank=True)
+
     objects = UserManager()
 
     USERNAME_FIELD = 'username'
@@ -83,29 +86,27 @@ class User(AbstractBaseUser):
     def get_full_name(self):
         return "%s %s" % (self.firstname, self.lastname)
 
-    def get_previous_login(self):
-        from bars_core.models.loginattempt import LoginAttempt
-        try:
-            login_attempt = self.loginattempt_set.all()[1:2]
-            pl = login_attempt[0].timestamp
-        except LoginAttempt.DoesNotExist:
-            pl = None
-        except IndexError:
-            pl = None
-
-        return pl
+    # def get_previous_login(self):
+    #     from bars_core.models.loginattempt import LoginAttempt
+    #     try:
+    #         login_attempt = self.loginattempt_set[1]
+    #         pl = login_attempt['timestamp']
+    #     except LoginAttempt.DoesNotExist:
+    #         pl = None
+    #     except IndexError:
+    #         pl = None
+    #
+    #     return pl
 
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        read_only_fields = ('is_active', 'last_login', 'last_modified')
-        write_only_fields = ('password',)
-        exclude = ('is_staff', 'is_superuser', )
+        read_only_fields = ('is_active', 'last_login', 'last_modified', 'previous_login', )
+        write_only_fields = ('password', )
+        exclude = ('is_staff', 'is_superuser', 'current_login', )
         extra_kwargs = {'password':{'required':False}}
     _type = VirtualField("User")
-
-    previous_login = serializers.DateTimeField(read_only=True, source='get_previous_login')
 
     def validate(self, data):
         """Check valid email"""

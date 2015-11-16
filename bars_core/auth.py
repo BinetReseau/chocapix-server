@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from bars_core.models.user import User
 
 class AuthenticationBackend(object):
@@ -30,6 +32,9 @@ class ObtainJSONWebTokenWrapper(ObtainJSONWebToken):
         except User.DoesNotExist:
             user = None
         LoginAttempt.objects.create(user=user, success=success, ip=ip, sent_username=sent_username)
+        user.previous_login = user.current_login
+        user.current_login = datetime.now()
+        user.save()
 
         return response
 
