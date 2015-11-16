@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 import random
 import string
-from datetime import datetime, timezone
 from django.db import models
 from django.db.models import Prefetch
 from django.core.mail import send_mail
