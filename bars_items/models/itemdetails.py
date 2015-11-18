@@ -45,6 +45,13 @@ class ItemDetailsSerializer(serializers.ModelSerializer):
                     obj["stockitem"] = itemdetails.stockitem[0].id
                 except IndexError:
                     obj["stockitem"] = None
+        else:
+            try:
+                bar = self.context['request'].bar
+                stockitem = StockItem.objects.get(bar=bar, details=itemdetails)
+                obj["stockitem"] = stockitem.id
+            except (KeyError, StockItem.DoesNotExist):
+                pass
 
         return obj
 

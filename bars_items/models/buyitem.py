@@ -52,6 +52,13 @@ class BuyItemSerializer(serializers.ModelSerializer):
                     obj["buyitemprice"] = buyitem.buyitemprice[0].id
                 except IndexError:
                     obj["buyitemprice"] = None
+        else:
+            try:
+                bar = self.context['request'].bar
+                buyitemprice = BuyItemPrice.objects.get(bar=bar, buyitem=buyitem)
+                obj["buyitemprice"] = buyitemprice.id
+            except (KeyError, BuyItemPrice.DoesNotExist):
+                pass
 
         return obj
 
