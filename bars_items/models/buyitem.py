@@ -45,7 +45,7 @@ class BuyItemSerializer(serializers.ModelSerializer):
     def to_representation(self, buyitem):
         obj = super(BuyItemSerializer, self).to_representation(buyitem)
 
-        if 'request' in self.context.keys():
+        if 'request' in self.context.keys() and self.context.get('request').method == 'GET':
             bar = self.context['request'].query_params.get('bar', None)
             if bar is not None:
                 try:

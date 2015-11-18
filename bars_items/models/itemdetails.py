@@ -38,7 +38,7 @@ class ItemDetailsSerializer(serializers.ModelSerializer):
     def to_representation(self, itemdetails):
         obj = super(ItemDetailsSerializer, self).to_representation(itemdetails)
 
-        if 'request' in self.context.keys():
+        if 'request' in self.context.keys() and self.context.get('request').method == 'GET':
             bar = self.context['request'].query_params.get('bar', None)
             if bar is not None:
                 try:
