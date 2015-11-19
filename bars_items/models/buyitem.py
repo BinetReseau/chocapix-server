@@ -71,14 +71,18 @@ class BuyItemViewSet(viewsets.ModelViewSet):
 
     def list(self, request):
         bar = request.query_params.get('bar', None)
+        qs = self.filter_queryset(self.get_queryset())
+
         if bar is None:
-            serializer = BuyItemSerializer(self.get_queryset(), many=True)
+            serializer = BuyItemSerializer(qs, many=True)
         else:
-            serializer = BuyItemSerializer(self.get_queryset().prefetch_related(Prefetch('buyitemprice_set', queryset=BuyItemPrice.objects.filter(bar__id=bar), to_attr='buyitemprice')), many=True, context={'request': request})
+            serializer = BuyItemSerializer(qs.prefetch_related(Prefetch('buyitemprice_set', queryset=BuyItemPrice.objects.filter(bar__id=bar), to_attr='buyitemprice')), many=True, context={'request': request})
+
         return Response(serializer.data)
 
     def retrieve(self, request, pk=None):
         bar = request.query_params.get('bar', None)
+
         if bar is None:
             qs = self.get_queryset()
         else:

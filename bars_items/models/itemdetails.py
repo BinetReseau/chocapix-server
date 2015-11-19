@@ -65,17 +65,17 @@ class ItemDetailsViewSet(viewsets.ModelViewSet):
     def list(self, request):
         bar = request.query_params.get('bar', None)
         if bar is None:
-            serializer = ItemDetailsSerializer(self.get_queryset(), many=True)
+            serializer = ItemDetailsSerializer(self.filter_queryset(self.get_queryset()), many=True)
         else:
-            serializer = ItemDetailsSerializer(self.get_queryset().prefetch_related(Prefetch('stockitem_set', queryset=StockItem.objects.filter(bar__id=bar), to_attr='stockitem')), many=True, context={'request': request})
+            serializer = ItemDetailsSerializer(self.filter_queryset(self.get_queryset()).prefetch_related(Prefetch('stockitem_set', queryset=StockItem.objects.filter(bar__id=bar), to_attr='stockitem')), many=True, context={'request': request})
         return Response(serializer.data)
 
     def retrieve(self, request, pk=None):
         bar = request.query_params.get('bar', None)
         if bar is None:
-            qs = self.get_queryset()
+            qs = self.filter_queryset(self.get_queryset())
         else:
-            qs = self.get_queryset().prefetch_related(Prefetch('stockitem_set', queryset=StockItem.objects.filter(bar__id=bar), to_attr='stockitem'))
+            qs = self.filter_queryset(self.get_queryset()).prefetch_related(Prefetch('stockitem_set', queryset=StockItem.objects.filter(bar__id=bar), to_attr='stockitem'))
 
         try:
             instance = qs.get(pk=pk)
