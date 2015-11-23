@@ -551,6 +551,7 @@ class BarInvestmentTransactionSerializer(BaseTransactionSerializer):
 
 
 
+
 class MealTransactionSerializer(BaseTransactionSerializer):
     items = ItemQtySerializer(many=True)
     accounts = AccountRatioSerializer(many=True)
