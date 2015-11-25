@@ -1,5 +1,5 @@
-[![Build Status](https://travis-ci.org/Nadrieril/bars-django.svg?branch=master)](https://travis-ci.org/Nadrieril/bars-django)
-[![Coverage Status](https://coveralls.io/repos/Nadrieril/bars-django/badge.svg)](https://coveralls.io/r/Nadrieril/bars-django)
+[![Build Status](https://travis-ci.org/BinetReseau/chocapix-server.svg?branch=develop)](https://travis-ci.org/BinetReseau/chocapix-server)
+[![Coverage Status](https://coveralls.io/repos/BinetReseau/chocapix-server/badge.svg?branch=develop&service=github)](https://coveralls.io/github/BinetReseau/chocapix-server?branch=develop)
 chocapix-server
 ===========
 
