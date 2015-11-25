@@ -405,7 +405,8 @@ class RefundTransactionSerializer(BaseTransactionSerializer, AccountAmountSerial
 
         return obj
 
-punishement_notification_mail = {
+punishment_notification_mail = {
+    'from_email': "babe@eleves.polytechnique.fr",
     'subject': "[Chocapix] Notification d'amende",
     'message': u"""
 Salut,
@@ -436,8 +437,9 @@ class PunishTransactionSerializer(BaseTransactionSerializer, AccountAmountSerial
         t.save()
 
         ## notify the account owner
-        message = punishement_notification_mail.copy()
-        message["from_email"] = t.author.email
+        message = punishment_notification_mail.copy()
+        if t.author.email:
+            message["from_email"] = t.author.email
         account = operation.target
         if account.owner.email:
             message["recipient_list"] = [account.owner.email]
