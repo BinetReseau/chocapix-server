@@ -13,6 +13,11 @@ from bars_core.models.bar import Bar
 # from bars_items.models.sellitem import SellItem
 
 
+class StockItemManager(models.Manager):
+    def get_queryset(self):
+        return super(StockItemManager, self).get_queryset().select_related('bar', 'sellitem', 'details')
+
+
 @permission_logic(BarRolePermissionLogic())
 class StockItem(models.Model):
     class Meta:
@@ -28,6 +33,8 @@ class StockItem(models.Model):
 
     last_inventory = models.DateTimeField(auto_now_add=True)
     deleted = models.BooleanField(default=False)
+
+    objects = StockItemManager()
 
     def get_unit(self, unit=''):
         return {'':1., 'sell':self.unit_factor, 'buy':1.}[unit]

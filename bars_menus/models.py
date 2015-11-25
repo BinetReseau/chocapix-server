@@ -18,6 +18,10 @@ ERROR_MESSAGES = {
     'deleted': "%(model)s (id=%(id)d) is deleted"
 }
 
+class MenuManager(models.Manager):
+    def get_queryset(self):
+        return super(MenuManager, self).get_queryset().prefetch_related('items')
+
 
 @permission_logic(BarRolePermissionLogic())
 @permission_logic(MenuOwnerPermissionLogic(field_name='user', delete_permission=True))
@@ -27,6 +31,8 @@ class Menu(models.Model):
     name = models.CharField(max_length=100)
     bar = models.ForeignKey(Bar)
     user = models.ForeignKey(User)
+
+    objects = MenuManager()
 
     def __unicode__(self):
         user = self.user.pseudo or (self.user.firstname + " " + self.user.lastname)
@@ -86,9 +92,10 @@ class MenuSerializer(serializers.ModelSerializer):
         items = data.pop('items')
         MenuSellItem.objects.filter(menu=instance).delete()
         for si_data in items:
-            MenuSellItem.objects.create(menu=instance, **si_data)
-        
-        return super(MenuSerializer, self).update(instance, data)
+            msi = MenuSellItem.objects.create(menu=instance, **si_data)
+
+        Menu.objects.filter(pk=instance.id).update(**data)
+        return Menu.objects.prefetch_related('items').get(pk=instance.id)
 
 
 class MenuViewSet(viewsets.ModelViewSet):
@@ -99,5 +106,3 @@ class MenuViewSet(viewsets.ModelViewSet):
         'bar': ['exact'],
         'user': ['exact']
     }
-
-

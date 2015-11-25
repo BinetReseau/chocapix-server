@@ -2,13 +2,13 @@ from django.db import models
 from rest_framework import serializers, viewsets, permissions
 
 from bars_django.utils import VirtualField
-from bars_core.models.user import User
+# from bars_core.models.user import User
 
 
 class LoginAttempt(models.Model):
     class Meta:
         app_label = 'bars_core'
-    user = models.ForeignKey(User, null=True)
+    user = models.ForeignKey('User', null=True)
     success = models.BooleanField(default=False)
     sent_username = models.CharField(max_length=512)
     timestamp = models.DateTimeField(auto_now_add=True)

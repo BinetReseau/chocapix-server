@@ -3,6 +3,7 @@
 import random
 import string
 from django.db import models
+from django.db.models import Prefetch
 from django.core.mail import send_mail
 from django.contrib.auth.models import BaseUserManager, AbstractBaseUser, _user_has_module_perms, _user_has_perm
 from rest_framework import viewsets, serializers, decorators, exceptions, permissions
@@ -12,11 +13,14 @@ from rest_framework.views import APIView
 from permission.logics import OneselfPermissionLogic
 from bars_django.utils import VirtualField, permission_logic
 from bars_core.perms import RootBarRolePermissionLogic
+from bars_core.models.loginattempt import LoginAttempt
 
 
 class UserManager(BaseUserManager):
     def get_queryset(self):
-        return super(UserManager, self).get_queryset().prefetch_related('role_set')
+        return super(UserManager, self).get_queryset().prefetch_related(
+            'role_set',
+        )
 
     def create_user(self, username, password):
         user = self.model(username=username)
@@ -49,6 +53,9 @@ class User(AbstractBaseUser):
     is_superuser = models.BooleanField(default=False)
     is_staff = models.BooleanField(default=False)
 
+    previous_login = models.DateTimeField(blank=True, auto_now_add=True)
+    current_login = models.DateTimeField(blank=True, auto_now_add=True)
+
     objects = UserManager()
 
     USERNAME_FIELD = 'username'
@@ -78,27 +85,15 @@ class User(AbstractBaseUser):
     def get_full_name(self):
         return "%s %s" % (self.firstname, self.lastname)
 
-    def get_previous_login(self):
-        from bars_core.models.loginattempt import LoginAttempt
-        qs = LoginAttempt.objects.filter(user=self, success=True).order_by('-timestamp')[1:2]
-        try:
-            pl = qs.get().timestamp
-        except LoginAttempt.DoesNotExist:
-            pl = None
-
-        return pl
-
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        read_only_fields = ('is_active', 'last_login', 'last_modified')
-        write_only_fields = ('password',)
-        exclude = ('is_staff', 'is_superuser', )
+        read_only_fields = ('is_active', 'last_login', 'last_modified', 'previous_login', )
+        write_only_fields = ('password', )
+        exclude = ('is_staff', 'is_superuser', 'current_login', )
         extra_kwargs = {'password':{'required':False}}
     _type = VirtualField("User")
-
-    previous_login = serializers.DateTimeField(read_only=True, source='get_previous_login')
 
     def validate(self, data):
         """Check valid email"""
