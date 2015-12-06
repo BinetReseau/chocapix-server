@@ -390,7 +390,7 @@ class ApproSerializerTests(SerializerTests):
         self.context = {'request': Mock(user=self.staff_user, bar=self.bar)}
         data = {'type':'appro',
                 'items': [
-                    {'buyitem':self.buyitem.id, 'qty':10, 'price':250},
+                    {'buyitem':self.buyitem.id, 'qty':10, 'price':250, 'occasional': False},
                     {'buyitem':self.buyitem2.id, 'qty':100}
                 ]
                 }
