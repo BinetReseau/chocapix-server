@@ -406,7 +406,7 @@ class ApproSerializerTests(SerializerTests):
         self.assertAlmostEqual(reload(self.stockitem2).sell_qty, self.stockitem2.sell_qty + data['items'][1]['qty'] * self.buyitem2.itemqty / self.stockitem2.sell_to_buy)
 
         # Test prices
-        stockitem_newprice = (self.stockitem.qty * self.stockitem.price + data['items'][0]['price']) / (self.stockitem.qty + data['items'][0]['qty'])
+        stockitem_newprice = (self.stockitem.qty * self.stockitem.price + data['items'][0]['price']) / (self.stockitem.qty + data['items'][0]['qty'] * self.buyitem.itemqty)
         self.assertAlmostEqual(reload(self.stockitem).price, stockitem_newprice)
         self.assertAlmostEqual(reload(self.stockitem2).price, self.stockitem2.price)
         self.assertAlmostEqual(reload(self.buyitemprice).price, 25)
