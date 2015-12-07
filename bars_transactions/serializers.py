@@ -652,9 +652,9 @@ class ApproTransactionSerializer(BaseTransactionSerializer):
 
                 if "price" in i:
                     if stockitem.qty <= 0:
-                        stockitem.price = i["price"] / qty
+                        stockitem.price = i["price"] / (qty*buyitem.itemqty)
                     else:
-                        stockitem.price = (stockitem.qty * stockitem.price + i["price"]) / (stockitem.qty + qty)
+                        stockitem.price = (stockitem.qty * stockitem.price + i["price"]) / (stockitem.qty + qty*buyitem.itemqty)
                     stockitem.save()
             except:
                 t.delete()
