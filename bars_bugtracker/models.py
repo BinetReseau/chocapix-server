@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*- 
+# -*- coding: utf-8 -*-
 
 import requests
 
@@ -50,12 +50,12 @@ class BugReportSerializer(serializers.ModelSerializer):
                     "fields": [
                         {
                             "title": "Message",
-                            "value": b.message,
+                            "value": b.message.encode('utf8'),
                             "short": False
                         },
                         {
                             "title": "Contexte",
-                            "value": "```%s```" % b.data,
+                            "value": "```%s```" % b.data.encode('utf8'),
                             "short": False
                         }
                     ],
