@@ -9,6 +9,7 @@ from bars_django.utils import VirtualField, permission_logic, CurrentBarCreateOn
 from bars_core.perms import PerBarPermissionsOrAnonReadOnly, BarRolePermissionLogic
 from bars_core.models.bar import Bar
 from bars_core.models.user import User
+from bars_django.settings import SLACK_HOOK, PROXIES
 
 
 @permission_logic(BarRolePermissionLogic())
@@ -35,38 +36,32 @@ class BugReportSerializer(serializers.ModelSerializer):
 
     def create(self, data):
         b = super(BugReportSerializer, self).create(data)
-
-        proxies = {
-            "http": "http://129.104.247.2:8080/",
-            "https": "http://129.104.247.2:8080/"
-        }
-
-        payload = {
-            "attachments": [
-                {
-                    "fallback": u"Un bug a été reporté par _%s_ dans le bar _%s_" % (b.author.get_full_name(), b.bar.name),
-                    "text": u"Un bug a été reporté par *%s* dans le bar *%s*" % (b.author.get_full_name(), b.bar.name),
-                    "color": "#D00000",
-                    "fields": [
-                        {
-                            "title": "Message",
-                            "value": b.message,
-                            "short": False
-                        },
-                        {
-                            "title": "Contexte",
-                            "value": "```%s```" % b.data,
-                            "short": False
-                        }
-                    ],
-                    "mrkdwn_in": ["pretext", "text", "fields"]
-                }
-            ]
-        }
-
-        url_slack = "https://hooks.slack.com/services/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"
-
-        requests.post(url_slack, json=payload, proxies=proxies)
+        if SLACK_HOOK:
+            proxies = PROXIES
+            payload = {
+                "attachments": [
+                    {
+                        "fallback": u"Un bug a été reporté par _%s_ dans le bar _%s_" % (b.author.get_full_name(), b.bar.name),
+                        "text": u"Un bug a été reporté par *%s* dans le bar *%s*" % (b.author.get_full_name(), b.bar.name),
+                        "color": "#D00000",
+                        "fields": [
+                            {
+                                "title": "Message",
+                                "value": b.message,
+                                "short": False
+                            },
+                            {
+                                "title": "Contexte",
+                                "value": "```%s```" % b.data,
+                                "short": False
+                            }
+                        ],
+                        "mrkdwn_in": ["pretext", "text", "fields"]
+                    }
+                ]
+            }
+            url_slack = "https://hooks.slack.com/services/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"
+            requests.post(url_slack, json=payload, proxies=proxies)
 
         return b
 

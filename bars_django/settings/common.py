@@ -158,3 +158,7 @@ CORS_ORIGIN_ALLOW_ALL = True
 # API app
 
 AUTH_USER_MODEL = 'bars_core.User'
+
+# Slack hook for BugReport
+SLACK_HOOK = False
+PROXIES = {}
