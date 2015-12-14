@@ -1,3 +1,5 @@
+import requests
+
 from django.db import models
 from rest_framework import serializers, viewsets
 
@@ -28,6 +30,48 @@ class BugReportSerializer(serializers.ModelSerializer):
     _type = VirtualField("BugReport")
     bar = serializers.PrimaryKeyRelatedField(read_only=True, default=CurrentBarCreateOnlyDefault())
     author = serializers.PrimaryKeyRelatedField(read_only=True, default=CurrentUserCreateOnlyDefault())
+
+    def create(self, data):
+        import logging
+        logger = logging.getLogger(__name__)
+        b = super(BugReportSerializer, self).create(data)
+
+        proxies = {
+            "http": "http://129.104.247.2:8080/",
+            "https": "http://129.104.247.2:8080/"
+        }
+
+        # user = User.objects.get(pk=b.author.)
+        # bar = Bar.objects.get(id=data["bar"])
+
+        payload = {
+            "attachments": [
+                {
+                    "fallback": "Un bug a été reporté par _%s_ dans le bar _%s_" % (b.author.get_full_name(), b.bar.name),
+                    "text": "Un bug a été reporté par *%s* dans le bar *%s*" % (b.author.get_full_name(), b.bar.name),
+                    "color": "#D00000",
+                    "fields": [
+                        {
+                            "title": "Message",
+                            "value": b.message,
+                            "short": False
+                        },
+                        {
+                            "title": "Contexte",
+                            "value": "```%s```" % b.data,
+                            "short": False
+                        }
+                    ],
+                    "mrkdwn_in": ["pretext", "text", "fields"]
+                }
+            ]
+        }
+
+        url_slack = "https://hooks.slack.com/services/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"
+
+        requests.post(url_slack, json=payload, proxies=proxies)
+
+        return b
 
 
 class BugReportViewSet(viewsets.ModelViewSet):
