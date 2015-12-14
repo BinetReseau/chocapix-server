@@ -44,18 +44,18 @@ class BugReportSerializer(serializers.ModelSerializer):
         payload = {
             "attachments": [
                 {
-                    "fallback": "Un bug a été reporté par _%s_ dans le bar _%s_" % (b.author.get_full_name(), b.bar.name),
-                    "text": "Un bug a été reporté par *%s* dans le bar *%s*" % (b.author.get_full_name(), b.bar.name),
+                    "fallback": u"Un bug a été reporté par _%s_ dans le bar _%s_" % (b.author.get_full_name(), b.bar.name),
+                    "text": u"Un bug a été reporté par *%s* dans le bar *%s*" % (b.author.get_full_name(), b.bar.name),
                     "color": "#D00000",
                     "fields": [
                         {
                             "title": "Message",
-                            "value": b.message.encode('utf8'),
+                            "value": b.message,
                             "short": False
                         },
                         {
                             "title": "Contexte",
-                            "value": "```%s```" % b.data.encode('utf8'),
+                            "value": "```%s```" % b.data,
                             "short": False
                         }
                     ],
