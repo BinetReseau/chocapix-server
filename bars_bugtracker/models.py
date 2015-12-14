@@ -1,15 +1,16 @@
 # -*- coding: utf-8 -*-
 
 import requests
+import os
 
 from django.db import models
+from django.conf import settings
 from rest_framework import serializers, viewsets
 
 from bars_django.utils import VirtualField, permission_logic, CurrentBarCreateOnlyDefault, CurrentUserCreateOnlyDefault
 from bars_core.perms import PerBarPermissionsOrAnonReadOnly, BarRolePermissionLogic
 from bars_core.models.bar import Bar
 from bars_core.models.user import User
-from bars_django.settings import SLACK_HOOK, PROXIES
 
 
 @permission_logic(BarRolePermissionLogic())
@@ -36,8 +37,8 @@ class BugReportSerializer(serializers.ModelSerializer):
 
     def create(self, data):
         b = super(BugReportSerializer, self).create(data)
-        if SLACK_HOOK:
-            proxies = PROXIES
+        if settings.SLACK_HOOK:
+            proxies = settings.PROXIES
             payload = {
                 "attachments": [
                     {
