@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*- 
+
 import requests
 
 from django.db import models
@@ -32,17 +34,12 @@ class BugReportSerializer(serializers.ModelSerializer):
     author = serializers.PrimaryKeyRelatedField(read_only=True, default=CurrentUserCreateOnlyDefault())
 
     def create(self, data):
-        import logging
-        logger = logging.getLogger(__name__)
         b = super(BugReportSerializer, self).create(data)
 
         proxies = {
             "http": "http://129.104.247.2:8080/",
             "https": "http://129.104.247.2:8080/"
         }
-
-        # user = User.objects.get(pk=b.author.)
-        # bar = Bar.objects.get(id=data["bar"])
 
         payload = {
             "attachments": [
