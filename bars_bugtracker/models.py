@@ -1,4 +1,10 @@
+# -*- coding: utf-8 -*-
+
+import requests
+import os
+
 from django.db import models
+from django.conf import settings
 from rest_framework import serializers, viewsets
 
 from bars_django.utils import VirtualField, permission_logic, CurrentBarCreateOnlyDefault, CurrentUserCreateOnlyDefault
@@ -28,6 +34,37 @@ class BugReportSerializer(serializers.ModelSerializer):
     _type = VirtualField("BugReport")
     bar = serializers.PrimaryKeyRelatedField(read_only=True, default=CurrentBarCreateOnlyDefault())
     author = serializers.PrimaryKeyRelatedField(read_only=True, default=CurrentUserCreateOnlyDefault())
+
+    def create(self, data):
+        b = super(BugReportSerializer, self).create(data)
+        if settings.SLACK_HOOK:
+            proxies = settings.PROXIES
+            payload = {
+                "attachments": [
+                    {
+                        "fallback": u"Un bug a été reporté par _%s_ dans le bar _%s_" % (b.author.get_full_name(), b.bar.name),
+                        "text": u"Un bug a été reporté par *%s* dans le bar *%s*" % (b.author.get_full_name(), b.bar.name),
+                        "color": "#D00000",
+                        "fields": [
+                            {
+                                "title": "Message",
+                                "value": b.message,
+                                "short": False
+                            },
+                            {
+                                "title": "Contexte",
+                                "value": "```%s```" % b.data,
+                                "short": False
+                            }
+                        ],
+                        "mrkdwn_in": ["pretext", "text", "fields"]
+                    }
+                ]
+            }
+            url_slack = "https://hooks.slack.com/services/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"
+            requests.post(url_slack, json=payload, proxies=proxies)
+
+        return b
 
 
 class BugReportViewSet(viewsets.ModelViewSet):
