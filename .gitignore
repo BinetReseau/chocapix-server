@@ -7,3 +7,4 @@
 /secret.key
 *.save
 env/
+coverage_html/
