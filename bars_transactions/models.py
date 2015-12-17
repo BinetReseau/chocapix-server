@@ -181,7 +181,10 @@ class AccountOperation(BaseOperation):
         if ((self.target.money >= 0) and (self.target.money + self.delta < 0) and (self.target.owner != self.transaction.author) and (not self.pk)):
             ## if the transaction empties the account of the user, notify the account owner
             message = switching_to_negative_notification_mail.copy()
-            message["from_email"] = "babe@eleves.polytechnique.fr"
+            if self.transaction.author.email:
+                message["from_email"] = self.transaction.author.email
+            else:
+                message["from_email"] = "babe@eleves.polytechnique.fr"
             if self.target.owner.email:
                 message["recipient_list"] = [self.target.owner.email]
                 message["message"] = message["message"].format(
