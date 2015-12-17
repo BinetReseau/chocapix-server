@@ -164,8 +164,8 @@ switching_to_negative_notification_mail = {
     'message': u"""
 Salut,
 
-Tu viens de payer {amount} € dans le bar {bar}, ce qui te fait passer en négatif.
-Ton nouveau solde est {solde} €.
+Tu viens de payer {amount:.2f} € dans le bar {bar}, ce qui te fait passer en négatif.
+Ton nouveau solde est {solde:.2f} €.
 Pense à donner rapidement un chèque à un respo bar.
 
 Ce mail a été envoyé automatiquement par Chocapix.
@@ -191,6 +191,6 @@ class AccountOperation(BaseOperation):
                 )
                 send_mail(**message)
         super(AccountOperation, self).save(*args, **kwargs)
-        
+
     op_model = Account
     op_model_field = 'money'
