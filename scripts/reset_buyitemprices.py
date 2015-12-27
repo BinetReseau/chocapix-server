@@ -11,8 +11,13 @@ def run():
             select_related('buyitem', 'buyitem__details').\
             prefetch_related(Prefetch('buyitem__details__stockitem_set', queryset=StockItem.objects.filter(bar=bar), to_attr='stockitems'))
         for bip in list(bips):
-            print(bip.price)
-            bip.price = bip.buyitem.details.stockitems[0].price * bip.buyitem.itemqty
-            print(bip.price)
-            print("")
-            bip.save()
+            try:
+                bip.price = bip.buyitem.details.stockitems[0].price * bip.buyitem.itemqty
+                bip.save()
+            except IndexError:
+                print("ERROR !")
+                print("Bar : %s" % bar)
+                print("Aliment : %s" % bip.buyitem.details.name)
+                print("BuyItemPrice : %d" % bip.id)
+                print("BuyItem : %d" % bip.buyitem.id)
+                print("ItemDetails : %d" % bip.buyitem.details.id)
