@@ -7,3 +7,5 @@
 /secret.key
 *.save
 env/
+*.bak
+
