@@ -157,6 +157,7 @@ class BuyItemQtyPriceSerializer(serializers.Serializer):
     buyitem = serializers.PrimaryKeyRelatedField(queryset=BuyItem.objects.all())
     qty = serializers.FloatField()
     price = serializers.FloatField(required=False)
+    occasional = serializers.BooleanField(required=False)
 
     def validate_qty(self, value):
         if value <= 0:
@@ -167,6 +168,11 @@ class BuyItemQtyPriceSerializer(serializers.Serializer):
         if value is not None and value < 0:
             raise ValidationError("Price must be positive")
         return value
+
+    def validate(self, data):
+        if "price" in data and not "occasional" in data:
+            raise ValidationError("Is this new price permanent or occasional?")
+        return data
 
 
 class AccountSerializer(serializers.Serializer):
@@ -631,8 +637,9 @@ class ApproTransactionSerializer(BaseTransactionSerializer):
 
             priceobj, _ = BuyItemPrice.objects.get_or_create(bar=t.bar, buyitem=buyitem)
             if "price" in i:
-                priceobj.price = i["price"] / qty
-                priceobj.save()
+                if not i["occasional"]:
+                    priceobj.price = i["price"] / qty
+                    priceobj.save()
                 total += i["price"]
             else:
                 total += priceobj.price * qty
@@ -642,9 +649,17 @@ class ApproTransactionSerializer(BaseTransactionSerializer):
                 if stockitem.id not in stockitem_map:
                     stockitem_map[stockitem.id] = {'stockitem': stockitem, 'delta': 0}
                 stockitem_map[stockitem.id]['delta'] += qty * buyitem.itemqty
+
+                if "price" in i:
+                    if stockitem.qty <= 0:
+                        stockitem.price = i["price"] / (qty*buyitem.itemqty)
+                    else:
+                        stockitem.price = (stockitem.qty * stockitem.price + i["price"]) / (stockitem.qty + qty*buyitem.itemqty)
+                    stockitem.save()
             except:
                 t.delete()
                 raise Http404("Stockitem does not exist")
+
 
         for x in stockitem_map.values():
             x['stockitem'].create_operation(delta=x['delta'], unit='buy', transaction=t)
