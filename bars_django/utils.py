@@ -64,6 +64,8 @@ class BarMiddleware(object):
 
 
 class CurrentUserCreateOnlyDefault:
+    is_update = None
+    user = None
     def set_context(self, serializer_field):
         self.is_update = serializer_field.parent.instance is not None
         self.user = serializer_field.context['request'].user
@@ -74,6 +76,8 @@ class CurrentUserCreateOnlyDefault:
         return self.user
 
 class CurrentBarCreateOnlyDefault:
+    is_update = None
+    bar = None
     def set_context(self, serializer_field):
         self.is_update = serializer_field.parent.instance is not None
         self.bar = serializer_field.context['request'].bar

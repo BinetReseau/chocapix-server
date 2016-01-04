@@ -63,6 +63,7 @@ INSTALLED_APPS = (
     'rest_framework',
     'corsheaders',
     # 'permission',
+    'rest_framework_swagger',
 
     'bars_core',
     'bars_items',
