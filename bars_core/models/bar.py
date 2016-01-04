@@ -24,8 +24,11 @@ class Bar(models.Model):
         from bars_core.models.bar import BarSettings
         BarSettings.objects.get_or_create(bar=self)
 
-
     def apply_agios(self, account):
+        """
+        Create an AgiosTransaction for each account in the bar whose money is not positive, according to BarSettings values.
+        This method is called by `scripts/agios.py`.
+        """
         if account.money >= 0 and account.overdrawn_since is not None:
             account.overdrawn_since = None
             account.save()
@@ -43,10 +46,16 @@ class Bar(models.Model):
         return 0
 
     def count_accounts(self):
+        """
+        Return the count of active (ie non-deleted) accounts in the bar.
+        """
         return self.account_set.filter(deleted=False).count()
 
 
 def makeAgiosTransaction(bar, account, amount):
+    """
+    Create and save an AgiosTransaction.
+    """
     from bars_transactions.serializers import AgiosTransactionSerializer
     from bars_core.models.user import get_default_user
     user = get_default_user()
@@ -75,6 +84,9 @@ class BarViewSet(viewsets.ModelViewSet):
 
     @decorators.detail_route(methods=['get'])
     def sellitem_ranking(self, request, pk):
+        """
+        Return a ranking of the most consumed SellItems in the bar.
+        """
         from bars_items.models.sellitem import SellItem
         from bars_stats.utils import compute_ranking
         f = {
@@ -92,6 +104,9 @@ class BarViewSet(viewsets.ModelViewSet):
 
     @decorators.list_route(methods=['get'])
     def nazi_ranking(self, request):
+        """
+        Return a ranking of the bars according to the total amount of punishments.
+        """
         from bars_stats.utils import compute_ranking
         f = {
             'transaction__type': "punish"
@@ -102,6 +117,9 @@ class BarViewSet(viewsets.ModelViewSet):
 
     @decorators.list_route(methods=['get'])
     def items_ranking(self, request):
+        """
+        Return a ranking of the bars according to their consumption of the items given in GET parameters.
+        """
         from bars_stats.utils import compute_ranking
 
         items = request.query_params.getlist("item")
