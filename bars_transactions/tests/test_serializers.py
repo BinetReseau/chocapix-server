@@ -347,6 +347,19 @@ class MealSerializerTests(SerializerTests):
         end_money = self.account.money - data['items'][0]['qty'] * self.stockitem.sell_price
         self.assertAlmostEqual(reload(self.account).money, end_money)
 
+    def test_meal_no_item(self):
+        data = {
+            'type': 'meal',
+            'name': '',
+            'items': [],
+            'accounts': [
+                {'account': self.account.id, 'ratio': 1},
+            ]
+        }
+
+        s = MealTransactionSerializer(data=data, context=self.context)
+        self.assertFalse(s.is_valid())
+
     def test_meal_multiple(self):
         self.account2
         data = {'type':'meal', 'name':'',

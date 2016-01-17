@@ -569,6 +569,9 @@ class MealTransactionSerializer(BaseTransactionSerializer):
         if "accounts" not in data or len(data["accounts"]) < 1:
             raise ValidationError("There is no account in this meal")
 
+        if "items" not in data or len(data["items"]) < 1:
+            raise ValidationError("There is no item in this meal")
+
         return data
 
     def create(self, data):
