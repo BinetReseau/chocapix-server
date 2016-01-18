@@ -148,7 +148,7 @@ class BarViewSet(viewsets.ModelViewSet):
         omit_serializer: true
         parameters:
             - name: item
-              description: List of ItemDetails id (in url: item=1&item=3&...)
+              description: List of ItemDetails id (item=1&item=3&...)
               required: true
               type: integer
             - name: date_start
