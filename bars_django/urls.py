@@ -17,6 +17,7 @@ from bars_items.models.sellitem import SellItemViewSet
 from bars_items.models.stockitem import StockItemViewSet
 from bars_items.models.itemdetails import ItemDetailsViewSet
 from bars_items.models.buyitem import BuyItemViewSet, BuyItemPriceViewSet
+from bars_items.models.suggesteditem import SuggestedItemViewSet
 
 from bars_transactions.views import TransactionViewSet
 
@@ -40,6 +41,7 @@ router.register('buyitemprice', BuyItemPriceViewSet)
 router.register('itemdetails', ItemDetailsViewSet)
 router.register('sellitem', SellItemViewSet)
 router.register('stockitem', StockItemViewSet)
+router.register('suggesteditem', SuggestedItemViewSet)
 
 router.register('transaction', TransactionViewSet)
 
