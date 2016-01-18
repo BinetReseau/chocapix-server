@@ -42,6 +42,9 @@ class SuggestedItemViewSet(viewsets.ModelViewSet):
     queryset = SuggestedItem.objects.all()
     serializer_class = SuggestedItemSerializer
     permission_classes = (PerBarPermissionsOrAnonReadOnly, )
+    filter_fields = {
+        'bar': ['exact'],
+    }
     search_fields = ('name', )
 
     def create(self, request):
