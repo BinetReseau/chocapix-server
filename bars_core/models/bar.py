@@ -86,6 +86,18 @@ class BarViewSet(viewsets.ModelViewSet):
     def sellitem_ranking(self, request, pk):
         """
         Return a ranking of the most consumed SellItems in the bar.
+        Response format: `[{sellitem: id, total: (float)total}, ...]`
+        ---
+        omit_serializer: true
+        parameters:
+            - name: date_start
+              required: false
+              type: datetime
+              paramType: query
+            - name: date_end
+              required: false
+              type: datetime
+              paramType: query
         """
         from bars_items.models.sellitem import SellItem
         from bars_stats.utils import compute_ranking
@@ -97,7 +109,7 @@ class BarViewSet(viewsets.ModelViewSet):
         ann = Count('stockitems__itemoperation__transaction')/Count('stockitems', distinct=True)
         ranking = compute_ranking(request, model=SellItem, t_path='stockitems__itemoperation__transaction__', filter=f, annotate=ann)
         if ranking is None:
-            return HttpResponseBadRequest("I can only give a ranking within a bar")
+            return Response("I can only give a ranking within a bar", 400)
         else:
             ranking = ranking.annotate(total=Sum(F('stockitems__itemoperation__delta') * F('stockitems__itemoperation__target__unit_factor')))
             return Response(ranking, 200)
@@ -106,6 +118,18 @@ class BarViewSet(viewsets.ModelViewSet):
     def nazi_ranking(self, request):
         """
         Return a ranking of the bars according to the total amount of punishments.
+        Response format: `[{bar: id, val: (float)total}, ...]`
+        ---
+        omit_serializer: true
+        parameters:
+            - name: date_start
+              required: false
+              type: datetime
+              paramType: query
+            - name: date_end
+              required: false
+              type: datetime
+              paramType: query
         """
         from bars_stats.utils import compute_ranking
         f = {
@@ -118,13 +142,31 @@ class BarViewSet(viewsets.ModelViewSet):
     @decorators.list_route(methods=['get'])
     def items_ranking(self, request):
         """
-        Return a ranking of the bars according to their consumption of the items given in GET parameters.
+        Return a ranking of the bars according to their consumption of the items (in quantity) given in GET parameters.
+        Response format: `[{sellitem: id, val: (float)total}, ...]`
+        ---
+        omit_serializer: true
+        parameters:
+            - name: item
+              description: List of ItemDetails id (in url: item=1&item=3&...)
+              required: true
+              type: integer
+            - name: date_start
+              required: false
+              type: string
+              format: datetime
+              paramType: query
+            - name: date_end
+              required: false
+              type: string
+              format: datetime
+              paramType: query
         """
         from bars_stats.utils import compute_ranking
 
         items = request.query_params.getlist("item")
         if len(items) == 0:
-            return HttpResponseBadRequest("Give me some items to compare bars with")
+            return Response("Give me some items to compare bars with", 400)
 
         f = {
             'transaction__type__in': ("buy", "meal"),
