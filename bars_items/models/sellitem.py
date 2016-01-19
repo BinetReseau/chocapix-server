@@ -55,9 +55,7 @@ class SellItem(models.Model):
     @unit_factor.setter
     def unit_factor(self, factor):
         if factor != 1:
-            for stockitem in self.stockitems.all():
-                stockitem.unit_factor *= factor
-                stockitem.save()
+            self.stockitems.all().update(unit_factor=F('unit_factor') * factor)
 
     @property
     def calc_oldest_inventory(self):
