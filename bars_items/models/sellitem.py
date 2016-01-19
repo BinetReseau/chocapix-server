@@ -55,9 +55,11 @@ class SellItem(models.Model):
     @unit_factor.setter
     def unit_factor(self, factor):
         if factor != 1:
-            for stockitem in self.stockitems.all():
-                stockitem.unit_factor *= factor
-                stockitem.save()
+            # Update related StockItem.unit_factor
+            self.stockitems.all().update(unit_factor=F('unit_factor') * factor)
+            # Update related MenuSellItem.qty
+            from bars_menus.models import MenuSellItem
+            MenuSellItem.objects.filter(sellitem=self).update(qty=F('qty') * factor)
 
     @property
     def calc_oldest_inventory(self):

@@ -194,6 +194,15 @@ class SellItemTests(ItemTests, AutoTestBarMixin):
         self.assertEqual(reload(self.sellitem2).tax, 0.15)
         self.assertEqual(reload(self.sellitem3).tax, 0.1)
 
+    def test_update_1(self):
+        self.client.force_authenticate(user=self.staff_user)
+        update_data = self.update_data.copy()
+        update_data['unit_factor'] = 20
+        old_sell_to_buy = self.stockitem.sell_to_buy
+        response = self.client.put("/sellitem/%d/?bar=%s" % (self.sellitem.id, self.bar), update_data)
+        self.assertEqual(response.status_code, 200)
+        self.assertAlmostEqual(reload(self.stockitem).sell_to_buy, old_sell_to_buy / update_data['unit_factor'])
+
 
 class ItemDetailsTests(ItemTests, AutoTestMixin):
     @classmethod
