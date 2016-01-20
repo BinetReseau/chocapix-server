@@ -83,7 +83,7 @@ class User(AbstractBaseUser):
         return self.username
 
     def get_full_name(self):
-        return "%s %s" % (self.firstname, self.lastname)
+        return "%s %s" % (self.lastname, self.firstname)
 
 
 class UserSerializer(serializers.ModelSerializer):
