@@ -52,6 +52,7 @@ class AccountViewSet(viewsets.ModelViewSet):
     permission_classes = (PerBarPermissionsOrAnonReadOnly,)
     filter_fields = {
         'owner': ['exact'],
+        'owner__username': ['exact'],
         'bar': ['exact'],
         'money': ['lte', 'gte']}
 
@@ -94,26 +95,26 @@ class AccountViewSet(viewsets.ModelViewSet):
     def coheze_ranking(self, request):
         from django.db.models import Sum, Count, Prefetch
         from bars_transactions.models import Transaction
-        
+
         bar = request.query_params.get('bar', None)
         t_filter = {}
         if bar is None:
             return HttpResponseBadRequest("I can only give a ranking within a bar")
         else:
             t_filter['bar'] = bar
-        
+
         t_filter['canceled'] = False
-        
+
         date_start = request.query_params.get('date_start')
         date_end = request.query_params.get('date_end', datetime.now())
         if date_start is not None:
             t_filter['timestamp__range'] = (date_start, date_end)
-        
+
         t_filter['type'] = "meal"
 
         admissible_transactions = list(Transaction.objects.filter(**t_filter).annotate(nb_accounts=Count('accountoperation__target')).filter(nb_accounts__gte=2).values('id'))
         admissible_transactions = [t['id'] for t in admissible_transactions]
-        
+
         ranking = Account.objects.filter(bar=bar, accountoperation__transaction__id__in=admissible_transactions).values('id').annotate(val=Sum('accountoperation__delta'))
         return Response(ranking, 200)
 
@@ -122,8 +123,8 @@ class AccountViewSet(viewsets.ModelViewSet):
         from bars_items.models.sellitem import SellItem
         from bars_stats.utils import compute_ranking
         f = {
-            'stockitems__itemoperation__transaction__accountoperation__target': pk, 
-            'stockitems__itemoperation__transaction__type__in': ("buy", "meal"), 
+            'stockitems__itemoperation__transaction__accountoperation__target': pk,
+            'stockitems__itemoperation__transaction__type__in': ("buy", "meal"),
             'stockitems__deleted': False
         }
         ann = models.Count('stockitems__itemoperation__transaction')/models.Count('stockitems', distinct=True)
@@ -139,8 +140,8 @@ class AccountViewSet(viewsets.ModelViewSet):
         from bars_items.models.sellitem import SellItem
         from bars_stats.utils import compute_ranking
         f = {
-            'stockitems__itemoperation__transaction__accountoperation__target': pk, 
-            #'stockitems__itemoperation__transaction__type__in': ("buy", "meal"), 
+            'stockitems__itemoperation__transaction__accountoperation__target': pk,
+            #'stockitems__itemoperation__transaction__type__in': ("buy", "meal"),
             'stockitems__deleted': False
         }
         ann = models.Count('stockitems__itemoperation__transaction')/models.Count('stockitems', distinct=True)
@@ -153,7 +154,7 @@ class AccountViewSet(viewsets.ModelViewSet):
 
         if request.query_params.get('bar') is None:
             return HttpResponseBadRequest("I can only give a ranking within a bar")
-        
+
         ranking_ever = compute_ranking(request, model=SellItem, t_path='stockitems__itemoperation__transaction__', filter=f_ever, annotate=ann)
         ranking_month = list(compute_ranking(request, model=SellItem, t_path='stockitems__itemoperation__transaction__', filter=f_month, annotate=ann))
         ranking_week = list(compute_ranking(request, model=SellItem, t_path='stockitems__itemoperation__transaction__', filter=f_week, annotate=ann))
@@ -164,11 +165,11 @@ class AccountViewSet(viewsets.ModelViewSet):
             si_m = next((t for t in ranking_month if t['id'] == si['id']), None)
             si_w = next((t for t in ranking_week if t['id'] == si['id']), None)
             si_val = si['val']
-            si_val += 5 * si_m['val'] if si_m is not None else 0 
+            si_val += 5 * si_m['val'] if si_m is not None else 0
             si_val += 10 * si_w['val'] if si_w is not None else 0
 
             ranking.append({'id': si_id, 'val': si_val})
-        
+
         return Response(ranking, 200)
 
     @decorators.list_route(methods=['get'])
