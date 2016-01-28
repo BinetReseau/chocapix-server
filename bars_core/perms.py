@@ -3,22 +3,28 @@ from restfw_composed_permissions.base import BasePermissionComponent, BaseCompos
 from restfw_composed_permissions.generic.components import AllowAll, AllowOnlyAuthenticated, AllowOnlySafeHttpMethod
 from bars_django.utils import get_root_bar
 
+# Debug utils
 DEBUG = False
 DEBUG_INDENT = 0
+DEBUG_STEP = 2
 
 def debug_begin(name, perm, obj):
     if DEBUG:
         global DEBUG_INDENT
         print("%s%s: %s, %s" % (" "*DEBUG_INDENT, name, perm, repr(obj)))
-        DEBUG_INDENT += 1
+        DEBUG_INDENT += DEBUG_STEP
 
 def debug_end(name, perm, obj, res):
     if DEBUG:
         global DEBUG_INDENT
-        DEBUG_INDENT -= 1
+        DEBUG_INDENT -= DEBUG_STEP
         print("%s%s: %s, %s => %s" % (" "*DEBUG_INDENT, name, perm, repr(obj), res))
 
 def debug_perm(name):
+    """
+    Decorators for permissions debug.
+    Usage: set DEBUG to True to enable debugging, and in runserver console you will see debug log for each request.
+    """
     def wrapper(f):
         def f_(self, user, perm, obj=None):
             debug_begin(name, perm, obj)
@@ -29,7 +35,8 @@ def debug_perm(name):
     return wrapper
 
 
-class BaseComposedPermission(BaseComposedPermision):
+# Utils classes for permissions set definitions
+class BaseComposedPermission(BaseComposedPermision): # typo in original package...
     def global_permission_set(self):
         return self.permission_set()
 
