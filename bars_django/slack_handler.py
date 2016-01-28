@@ -30,17 +30,16 @@ class SlackHandler(AdminEmailHandler):
         else:
             exc_info = (None, record.getMessage(), None)
 
-        message = "%s\n\nRequest repr(): %s" % (self.format(record), request_repr)
-        traceback = "%s" % self.format(record)
-        fault_req = "%s" % request_repr
+        title = self.format(record).split("\n")[0]
+        message = "```\n%s\n\nRequest repr(): %s\n```" % (self.format(record), request_repr)
         reporter = ExceptionReporter(request, is_email=True, *exc_info)
         html_message = reporter.get_traceback_html() if self.include_html else None
         proxies = settings.PROXIES
 
         requests.post(settings.SLACK_WEBHOOK_ERROR_URL, json={
             "attachments": [{
-                "fallback": "*An error occured*",
-                "pretext": "*An error occured*",
+                "fallback": "*" + title +"*",
+                "pretext": "*" + title +"*",
                 "color": "#ef2a2a",
                 "text": message,
                 "mrkdwn_in": ["pretext", "text"]
