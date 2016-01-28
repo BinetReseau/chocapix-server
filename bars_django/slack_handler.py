@@ -2,6 +2,7 @@ import requests
 
 from django.conf import settings
 from django.utils.log import AdminEmailHandler
+from django.views.debug import ExceptionReporter, get_exception_reporter_filter
 
 class SlackHandler(AdminEmailHandler):
     def emit(self, record):
@@ -30,19 +31,18 @@ class SlackHandler(AdminEmailHandler):
             exc_info = (None, record.getMessage(), None)
 
         message = "%s\n\nRequest repr(): %s" % (self.format(record), request_repr)
+        traceback = "%s" % self.format(record)
+        fault_req = "%s" % request_repr
         reporter = ExceptionReporter(request, is_email=True, *exc_info)
         html_message = reporter.get_traceback_html() if self.include_html else None
         proxies = settings.PROXIES
 
         requests.post(settings.SLACK_WEBHOOK_ERROR_URL, json={
-            "fallback": message,
-            "pretext": "An error occured",
-            "color": "#ef2a2a",
-            "fields": [
-                {
-                    "title": "Error",
-                    "value": message,
-                    "short": False
-                }
-            ]
+            "attachments": [{
+                "fallback": "*An error occured*",
+                "pretext": "*An error occured*",
+                "color": "#ef2a2a",
+                "text": message,
+                "mrkdwn_in": ["pretext", "text"]
+            }]
         }, proxies=proxies)
