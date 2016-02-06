@@ -105,7 +105,7 @@ class BuyItemPriceSerializer(serializers.ModelSerializer):
     _type = VirtualField("BuyItemPrice")
     bar = serializers.PrimaryKeyRelatedField(read_only=True, default=CurrentBarCreateOnlyDefault())
     barcode = serializers.CharField(required=False, write_only=True)
-    buyitem = serializers.PrimaryKeyRelatedField(required=False, default=CreateOnlyDefault(None), queryset=BuyItem.objects.all())
+    buyitem = serializers.PrimaryKeyRelatedField(required=False, default=None, queryset=BuyItem.objects.all())
     price = serializers.FloatField(required=False)
 
     def validate_price(self, price):

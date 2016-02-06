@@ -53,13 +53,13 @@ class User(AbstractBaseUser):
     is_superuser = models.BooleanField(default=False)
     is_staff = models.BooleanField(default=False)
 
-    previous_login = models.DateTimeField(blank=True, auto_now_add=True)
+    previous_login = models.DateTimeField(blank=True, auto_now_add=True) # to display "last connection" on frontend
     current_login = models.DateTimeField(blank=True, auto_now_add=True)
 
     objects = UserManager()
 
     USERNAME_FIELD = 'username'
-    REQUIRED_FIELDS = []
+    REQUIRED_FIELDS = [] # TODO: require email !
 
     def has_perm(self, perm, obj=None):
         if self.is_active and self.is_superuser:
@@ -83,16 +83,18 @@ class User(AbstractBaseUser):
         return self.username
 
     def get_full_name(self):
-        return "%s %s" % (self.firstname, self.lastname)
+        return "%s %s" % (self.lastname, self.firstname)
 
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        read_only_fields = ('is_active', 'last_login', 'last_modified', 'previous_login', )
-        write_only_fields = ('password', )
-        exclude = ('is_staff', 'is_superuser', 'current_login', )
-        extra_kwargs = {'password':{'required':False}}
+        read_only_fields = ('is_active', 'last_modified', 'previous_login', )
+        exclude = ('is_staff', 'is_superuser', 'current_login', 'last_login', )
+        extra_kwargs = {
+            'password': { 'write_only': True, 'required':False }
+        }
+
     _type = VirtualField("User")
 
     def validate(self, data):
@@ -105,7 +107,7 @@ class UserSerializer(serializers.ModelSerializer):
 
     def create(self, data):
         u = super(UserSerializer, self).create(data)
-        u.set_password(data.get('password', '0000'))
+        u.set_password(data.get('password', '0000')) # TODO: Generate random password and send email
         u.save()
         return u
 
@@ -118,11 +120,26 @@ class UserViewSet(viewsets.ModelViewSet):
 
     @decorators.list_route()
     def me(self, request):
+        """
+        Return current user data.
+        """
         serializer = self.serializer_class(request.user)
         return Response(serializer.data)
 
     @decorators.list_route(methods=['put'])
     def change_password(self, request):
+        """
+        Change current user's password.
+        ---
+        parameters_strategy: replace
+        parameters:
+            - name: old_password
+              required: true
+              type: string
+            - name: password
+              required: true
+              type: string
+        """
         user = request.user
 
         data = request.data
@@ -138,6 +155,34 @@ class UserViewSet(viewsets.ModelViewSet):
 
     @decorators.detail_route()
     def stats(self, request, pk):
+        """
+        Return consumption stats of the given user (pk).
+        Response format: [["*date*": value, ...], ...]
+        ---
+        omit_serializer: true
+        parameters:
+            - name: bar
+              required: false
+              type: string
+              paramType: query
+            - name: type
+              required: false
+              type: string
+              description: The types of transactions to consider in stats computing (type=buy&type=meal&...)
+              paramType: query
+            - name: interval
+              required: false
+              type: string
+              paramType: query
+            - name: date_start
+              required: false
+              type: datetime
+              paramType: query
+            - name: date_end
+              required: false
+              type: datetime
+              paramType: query
+        """
         from bars_stats.utils import compute_transaction_stats
         f = lambda qs: qs.filter(accountoperation__target__owner=pk)
         aggregate = models.Sum('accountoperation__delta')
@@ -164,6 +209,14 @@ class ResetPasswordView(APIView):
     permission_classes = (permissions.AllowAny,)
 
     def post(self, request, format=None):
+        """
+        Reset the password of the user whose email is passed in parameter.
+        ---
+        parameters:
+            - name: email
+              type: string
+              required: true
+        """
         email = request.data.get('email')
         if email == '':
             return Response("'email' field cannot be empty", 400)
@@ -183,6 +236,10 @@ class ResetPasswordView(APIView):
 
 
 def get_default_user():
+    """
+    Default user is a fictive user, who has an account in each bar.
+    It is used for comptability purposes.
+    """
     if get_default_user._cache is None:
         get_default_user._cache, _ = User.objects.get_or_create(username="bar", firstname="Bar", is_active=False)
     return get_default_user._cache

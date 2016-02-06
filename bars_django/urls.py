@@ -59,5 +59,6 @@ urlpatterns = patterns(
     # url(r'^api-token-auth/', 'rest_framework_jwt.views.obtain_jwt_token'),
     url(r'^api-token-auth/', 'bars_core.auth.obtain_jwt_token'),
     url(r'^reset-password/$', ResetPasswordView.as_view()),
+    url(r'^docs/', include('rest_framework_swagger.urls')),
     url(r'^', include(router.urls)),
 )

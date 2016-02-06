@@ -24,8 +24,11 @@ class Bar(models.Model):
         from bars_core.models.bar import BarSettings
         BarSettings.objects.get_or_create(bar=self)
 
-
     def apply_agios(self, account):
+        """
+        Create an AgiosTransaction for each account in the bar whose money is not positive, according to BarSettings values.
+        This method is called by `scripts/agios.py`.
+        """
         if account.money >= 0 and account.overdrawn_since is not None:
             account.overdrawn_since = None
             account.save()
@@ -43,10 +46,16 @@ class Bar(models.Model):
         return 0
 
     def count_accounts(self):
+        """
+        Return the count of active (ie non-deleted) accounts in the bar.
+        """
         return self.account_set.filter(deleted=False).count()
 
 
 def makeAgiosTransaction(bar, account, amount):
+    """
+    Create and save an AgiosTransaction.
+    """
     from bars_transactions.serializers import AgiosTransactionSerializer
     from bars_core.models.user import get_default_user
     user = get_default_user()
@@ -75,6 +84,21 @@ class BarViewSet(viewsets.ModelViewSet):
 
     @decorators.detail_route(methods=['get'])
     def sellitem_ranking(self, request, pk):
+        """
+        Return a ranking of the most consumed SellItems in the bar.
+        Response format: `[{sellitem: id, total: (float)total}, ...]`
+        ---
+        omit_serializer: true
+        parameters:
+            - name: date_start
+              required: false
+              type: datetime
+              paramType: query
+            - name: date_end
+              required: false
+              type: datetime
+              paramType: query
+        """
         from bars_items.models.sellitem import SellItem
         from bars_stats.utils import compute_ranking
         f = {
@@ -85,13 +109,28 @@ class BarViewSet(viewsets.ModelViewSet):
         ann = Count('stockitems__itemoperation__transaction')/Count('stockitems', distinct=True)
         ranking = compute_ranking(request, model=SellItem, t_path='stockitems__itemoperation__transaction__', filter=f, annotate=ann)
         if ranking is None:
-            return HttpResponseBadRequest("I can only give a ranking within a bar")
+            return Response("I can only give a ranking within a bar", 400)
         else:
             ranking = ranking.annotate(total=Sum(F('stockitems__itemoperation__delta') * F('stockitems__itemoperation__target__unit_factor')))
             return Response(ranking, 200)
 
     @decorators.list_route(methods=['get'])
     def nazi_ranking(self, request):
+        """
+        Return a ranking of the bars according to the total amount of punishments.
+        Response format: `[{bar: id, val: (float)total}, ...]`
+        ---
+        omit_serializer: true
+        parameters:
+            - name: date_start
+              required: false
+              type: datetime
+              paramType: query
+            - name: date_end
+              required: false
+              type: datetime
+              paramType: query
+        """
         from bars_stats.utils import compute_ranking
         f = {
             'transaction__type': "punish"
@@ -102,11 +141,32 @@ class BarViewSet(viewsets.ModelViewSet):
 
     @decorators.list_route(methods=['get'])
     def items_ranking(self, request):
+        """
+        Return a ranking of the bars according to their consumption of the items (in quantity) given in GET parameters.
+        Response format: `[{sellitem: id, val: (float)total}, ...]`
+        ---
+        omit_serializer: true
+        parameters:
+            - name: item
+              description: List of ItemDetails id (item=1&item=3&...)
+              required: true
+              type: integer
+            - name: date_start
+              required: false
+              type: string
+              format: datetime
+              paramType: query
+            - name: date_end
+              required: false
+              type: string
+              format: datetime
+              paramType: query
+        """
         from bars_stats.utils import compute_ranking
 
         items = request.query_params.getlist("item")
         if len(items) == 0:
-            return HttpResponseBadRequest("Give me some items to compare bars with")
+            return Response("Give me some items to compare bars with", 400)
 
         f = {
             'transaction__type__in': ("buy", "meal"),

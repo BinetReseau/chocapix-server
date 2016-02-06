@@ -63,6 +63,7 @@ INSTALLED_APPS = (
     'rest_framework',
     'corsheaders',
     # 'permission',
+    'rest_framework_swagger',
 
     'bars_core',
     'bars_items',
@@ -162,3 +163,8 @@ AUTH_USER_MODEL = 'bars_core.User'
 # Slack hook for BugReport
 SLACK_HOOK = False
 PROXIES = {}
+
+# Swagger
+SWAGGER_SETTINGS = {
+    'enabled_methods': ['get', 'post', 'put', 'delete']
+}
