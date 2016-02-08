@@ -42,7 +42,7 @@ class ItemDetailsSerializer(serializers.ModelSerializer):
             bar = self.context['request'].query_params.get('bar', None)
             if bar is not None:
                 try:
-                    obj["stockitem"] = itemdetails.stockitem[0].id
+                    obj["stockitem"] = itemdetails.stockitems[0].id
                 except IndexError:
                     obj["stockitem"] = None
         else:
@@ -67,7 +67,7 @@ class ItemDetailsViewSet(viewsets.ModelViewSet):
         if bar is None:
             serializer = ItemDetailsSerializer(self.filter_queryset(self.get_queryset()), many=True)
         else:
-            serializer = ItemDetailsSerializer(self.filter_queryset(self.get_queryset()).prefetch_related(Prefetch('stockitem_set', queryset=StockItem.objects.filter(bar__id=bar), to_attr='stockitem')), many=True, context={'request': request})
+            serializer = ItemDetailsSerializer(self.filter_queryset(self.get_queryset()).prefetch_related(Prefetch('stockitem_set', queryset=StockItem.objects.filter(bar__id=bar), to_attr='stockitems')), many=True, context={'request': request})
         return Response(serializer.data)
 
     def retrieve(self, request, pk=None):
@@ -75,7 +75,7 @@ class ItemDetailsViewSet(viewsets.ModelViewSet):
         if bar is None:
             qs = self.filter_queryset(self.get_queryset())
         else:
-            qs = self.filter_queryset(self.get_queryset()).prefetch_related(Prefetch('stockitem_set', queryset=StockItem.objects.filter(bar__id=bar), to_attr='stockitem'))
+            qs = self.filter_queryset(self.get_queryset()).prefetch_related(Prefetch('stockitem_set', queryset=StockItem.objects.filter(bar__id=bar), to_attr='stockitems'))
 
         try:
             instance = qs.get(pk=pk)

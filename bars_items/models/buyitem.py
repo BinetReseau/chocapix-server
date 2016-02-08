@@ -49,7 +49,7 @@ class BuyItemSerializer(serializers.ModelSerializer):
             bar = self.context['request'].query_params.get('bar', None)
             if bar is not None:
                 try:
-                    obj["buyitemprice"] = buyitem.buyitemprice[0].id
+                    obj["buyitemprice"] = buyitem.buyitemprices[0].id
                 except IndexError:
                     obj["buyitemprice"] = None
         else:
@@ -76,7 +76,7 @@ class BuyItemViewSet(viewsets.ModelViewSet):
         if bar is None:
             serializer = BuyItemSerializer(qs, many=True)
         else:
-            serializer = BuyItemSerializer(qs.prefetch_related(Prefetch('buyitemprice_set', queryset=BuyItemPrice.objects.filter(bar__id=bar), to_attr='buyitemprice')), many=True, context={'request': request})
+            serializer = BuyItemSerializer(qs.prefetch_related(Prefetch('buyitemprice_set', queryset=BuyItemPrice.objects.filter(bar__id=bar), to_attr='buyitemprices')), many=True, context={'request': request})
 
         return Response(serializer.data)
 
@@ -86,7 +86,7 @@ class BuyItemViewSet(viewsets.ModelViewSet):
         if bar is None:
             qs = self.get_queryset()
         else:
-            qs = self.get_queryset().prefetch_related(Prefetch('buyitemprice_set', queryset=BuyItemPrice.objects.filter(bar__id=bar), to_attr='buyitemprice'))
+            qs = self.get_queryset().prefetch_related(Prefetch('buyitemprice_set', queryset=BuyItemPrice.objects.filter(bar__id=bar), to_attr='buyitemprices'))
 
         try:
             instance = qs.get(pk=pk)
