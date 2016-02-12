@@ -255,7 +255,8 @@ class AccountViewSet(viewsets.ModelViewSet):
             'stockitems__deleted': False
         }
         # Clean request.query_params to avoid conflicts in filtering
-        request.query_params.setlist('type', [])
+        # TODO: find a workaround
+        # request.query_params.setlist('type', [])
 
         if request.bar is None:
             return Response("I can only give a ranking within a bar", 400)
