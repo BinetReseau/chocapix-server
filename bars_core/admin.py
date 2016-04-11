@@ -47,10 +47,9 @@ class RoleAdmin(admin.ModelAdmin):
    search_fields  = ('username', 'firstname')
    exclude = None"""
 
-admin.site.register(User, UserAdmin)
-
 
 admin.site.unregister(Group)
+admin.site.register(User, UserAdmin)
 admin.site.register(Bar)
 admin.site.register(BarSettings)
 admin.site.register(Role, RoleAdmin)
