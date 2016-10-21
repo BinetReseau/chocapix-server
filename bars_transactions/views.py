@@ -39,7 +39,8 @@ class TransactionFilterBackend(filters.BaseFilterBackend):
             page_size = int(request.query_params.get('page_size', 10))
             queryset = queryset[(page - 1) * page_size: page * page_size]
 
-        return queryset
+            return queryset
+        return Response("Please parametrize your request.", 400)
 
 
 class TransactionViewSet(viewsets.ModelViewSet):
