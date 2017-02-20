@@ -9,4 +9,4 @@
 *.save
 env/
 *.bak
-
+bars_django/settings/prod.py
