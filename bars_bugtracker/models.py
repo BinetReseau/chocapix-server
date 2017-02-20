@@ -63,6 +63,15 @@ class BugReportSerializer(serializers.ModelSerializer):
             }
             url_slack = "https://hooks.slack.com/services/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"
             requests.post(url_slack, json=payload, proxies=proxies)
+        if settings.IRC_HOOK:
+            lines = []
+            lines.append(u"Un bug a été reporté par _%s_ dans le bar _%s_" % (b.author.get_full_name(), b.bar.name))
+            lines.append("Message: ")
+            lines.append(b.message)
+            lines.append("Contexte: ")
+            lines.append("```%s```" % b.data)
+            for line in lines:
+                requests.post(settings.IRC_HOOK_URL, data = {'key': settings.IRC_HOOK_KEY, 'message': line})
 
         return b
 
