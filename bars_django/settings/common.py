@@ -169,6 +169,9 @@ AUTH_USER_MODEL = 'bars_core.User'
 SLACK_HOOK = False
 PROXIES = {}
 
+# IRC hook for BugReport
+IRC_HOOK = False
+
 # Swagger
 SWAGGER_SETTINGS = {
     'enabled_methods': ['get', 'post', 'put', 'delete']
