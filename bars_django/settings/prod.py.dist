@@ -5,10 +5,10 @@ ALLOWED_HOSTS = [ "*" ]
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'django',
-        'HOST': 'mysqldb',
-        'USER': 'root',
-        'PASSWORD': 'root',
+        'NAME': 'chocapix',
+        'HOST': 'localhost',
+        'USER': 'chocapix',
+        'PASSWORD': 'password',
     }
 }
 
@@ -22,8 +22,12 @@ PROXIES = {
     "https": "http://129.104.247.2:8080/"
 }
 
+IRC_HOOK = True
+IRC_HOOK_URL = "http://129.104.201.57:3000/chocapix"
+IRC_HOOK_KEY = "key"
+
 # Logging - Slack notifications on Error 500
-SLACK_WEBHOOK_ERROR_URL = "https://hooks.slack.com/services/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"
+SLACK_WEBHOOK_ERROR_URL = "https://hooks.slack.com/services/T00000000/B00000000/00000000000000000000000r"
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
@@ -37,12 +41,12 @@ LOGGING = {
             'level': 'ERROR',
             'filters': ['require_debug_false'],
             'class': 'bars_django.slack_handler.SlackHandler'
-        }
-        # 'mail_admins': {
-        #     'level': 'ERROR',
-        #     'filters': ['require_debug_false'],
-        #     'class': 'django.utils.log.AdminEmailHandler'
-        # }
+        },
+         'mail_admins': {
+             'level': 'ERROR',
+             'filters': ['require_debug_false'],
+             'class': 'django.utils.log.AdminEmailHandler'
+         }
     },
     'loggers': {
         'django.request': {

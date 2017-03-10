@@ -69,10 +69,19 @@ def _get_interval_sql(date_field, interval, engine):
 # Inspired from https://github.com/kmike/django-qsstats-magic
 from datetime import datetime
 from django.db.models import Count, Sum, F
+from django.core.exceptions import ValidationError
 from bars_transactions.models import Transaction
 from bars_core.models.bar import Bar
 from bars_core.models.account import Account
 from bars_items.models.sellitem import SellItem
+
+def validate_date(d):
+    try:
+        datetime.strptime(d, '%Y-%m-%dT%H:%M:%S.%fZ')
+        return True
+    except ValueError:
+        return False
+
 def time_series(qs, date_field, aggregate=None, interval='days', engine=None):
     aggregate = aggregate or Count('id')
     engine = engine or _guess_engine(qs)
@@ -89,12 +98,17 @@ def compute_transaction_stats(request, filter=id, aggregate=None):
     qs = Transaction.objects.filter(canceled=False)
     qs = filter(qs)
 
-    if request.bar:
+    if request.bar is not None:
         qs = qs.filter(bar=request.bar)
 
-    date_start = request.query_params.get('date_start')
+    date_start = request.query_params.get('date_start', None)
     date_end = request.query_params.get('date_end', datetime.now())
     if date_start is not None:
+        # Check that date_start and date_end are well-formatted
+        if not validate_date(date_start):
+            raise ValidationError('Non-valid date_start format')
+        if not (date_end.__class__ == datetime or validate_date(date_end)):
+            raise ValidationError('Non-valid date_end format')
         qs = qs.filter(timestamp__range=(date_start, date_end))
 
     types = request.query_params.getlist("type")
@@ -111,12 +125,17 @@ def compute_total_spent(request, filter=id, aggregate=None):
     qs = Transaction.objects.filter(canceled=False)
     qs = filter(qs)
 
-    if request.bar:
+    if request.bar is not None:
         qs = qs.filter(bar=request.bar)
 
-    date_start = request.query_params.get('date_start')
+    date_start = request.query_params.get('date_start', None)
     date_end = request.query_params.get('date_end', datetime.now())
     if date_start is not None:
+        # Check that date_start and date_end are well-formatted
+        if not validate_date(date_start):
+            raise ValidationError('Non-valid date_start format')
+        if not (date_end.__class__ == datetime or validate_date(date_end)):
+            raise ValidationError('Non-valid date_end format')
         qs = qs.filter(timestamp__range=(date_start, date_end))
 
     types = request.query_params.getlist("type")
@@ -129,19 +148,24 @@ def compute_total_spent(request, filter=id, aggregate=None):
 def compute_ranking(request, model=Account, t_path='accountoperation__transaction__', filter={}, annotate=None, all_bars=False):
     t_filter = {}
     if not all_bars:
-        bar = request.query_params.get('bar')
+        bar = request.bar
         if bar is None:
             return None
         else:
             t_filter[t_path + 'bar'] = bar
-    
+
     t_filter[t_path + 'canceled'] = False
-    
-    date_start = request.query_params.get('date_start')
+
+    date_start = request.query_params.get('date_start', None)
     date_end = request.query_params.get('date_end', datetime.now())
     if date_start is not None:
+        # Check that date_start and date_end are well-formatted
+        if not validate_date(date_start):
+            raise ValidationError('Non-valid date_start format')
+        if not (date_end.__class__ == datetime or validate_date(date_end)):
+            raise ValidationError('Non-valid date_end format')
         t_filter[t_path + 'timestamp__range'] = (date_start, date_end)
-    
+
     types = request.query_params.getlist("type")
     if len(types) != 0:
         t_filter[t_path + 'type__in'] = types

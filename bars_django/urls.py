@@ -17,6 +17,7 @@ from bars_items.models.sellitem import SellItemViewSet
 from bars_items.models.stockitem import StockItemViewSet
 from bars_items.models.itemdetails import ItemDetailsViewSet
 from bars_items.models.buyitem import BuyItemViewSet, BuyItemPriceViewSet
+from bars_items.models.suggesteditem import SuggestedItemViewSet
 
 from bars_transactions.views import TransactionViewSet
 
@@ -40,6 +41,7 @@ router.register('buyitemprice', BuyItemPriceViewSet)
 router.register('itemdetails', ItemDetailsViewSet)
 router.register('sellitem', SellItemViewSet)
 router.register('stockitem', StockItemViewSet)
+router.register('suggesteditem', SuggestedItemViewSet)
 
 router.register('transaction', TransactionViewSet)
 
@@ -57,5 +59,6 @@ urlpatterns = patterns(
     # url(r'^api-token-auth/', 'rest_framework_jwt.views.obtain_jwt_token'),
     url(r'^api-token-auth/', 'bars_core.auth.obtain_jwt_token'),
     url(r'^reset-password/$', ResetPasswordView.as_view()),
+    url(r'^docs/', include('rest_framework_swagger.urls')),
     url(r'^', include(router.urls)),
 )

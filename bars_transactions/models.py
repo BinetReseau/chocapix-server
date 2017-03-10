@@ -1,3 +1,5 @@
+# encoding: utf8
+from django.core.mail import send_mail
 from django.db import models
 from bars_django.utils import VirtualField, permission_logic
 from bars_core.perms import BarRolePermissionLogic
@@ -8,7 +10,6 @@ from bars_core.models.account import Account
 from bars_transactions.perms import TransactionAuthorPermissionLogic
 
 
-@permission_logic(BarRolePermissionLogic())
 @permission_logic(TransactionAuthorPermissionLogic(field_name='author'))
 class Transaction(models.Model):
     class Meta:
@@ -156,10 +157,42 @@ class ItemOperation(BaseOperation):
     op_model = StockItem
     op_model_field = 'qty'
 
+
+switching_to_negative_notification_mail = {
+    'subject': "[Chocapix] Notification de passage en négatif",
+    'message': u"""
+Salut,
+
+Tu viens de payer {amount:.2f} € dans le bar {bar}, ce qui te fait passer en négatif.
+Ton nouveau solde est {solde:.2f} €.
+Pense à donner rapidement un chèque à un respo bar.
+
+Ce mail a été envoyé automatiquement par Chocapix.
+"""
+}
+
 class AccountOperation(BaseOperation):
     class Meta:
         app_label = 'bars_transactions'
     target = models.ForeignKey(Account)
+
+    def save(self, *args, **kwargs):
+        if ((self.target.money >= 0) and (self.target.money + self.delta < 0) and (self.target.owner != self.transaction.author) and (not self.pk)):
+            ## if the transaction empties the account of the user, notify the account owner
+            message = switching_to_negative_notification_mail.copy()
+            if self.transaction.author.email:
+                message["from_email"] = self.transaction.author.email
+            else:
+                message["from_email"] = "babe@binets.polytechnique.fr"
+            if self.target.owner.email:
+                message["recipient_list"] = [self.target.owner.email]
+                message["message"] = message["message"].format(
+                    amount = -self.delta,
+                    solde = self.target.money + self.delta,
+                    bar = self.target.bar.name
+                )
+                send_mail(**message)
+        super(AccountOperation, self).save(*args, **kwargs)
 
     op_model = Account
     op_model_field = 'money'

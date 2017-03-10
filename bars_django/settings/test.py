@@ -11,19 +11,9 @@ INSTALLED_APPS = INSTALLED_APPS + (
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': 'db.sqlite3'
+        'NAME': 'db_test.sqlite3'
     }
 }
-
-# DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.mysql',
-#         'NAME': 'chocapix',
-#         'HOST': 'localhost',
-#         'USER': 'root',
-#         'PASSWORD': 'root',
-#     }
-# }
 
 
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'

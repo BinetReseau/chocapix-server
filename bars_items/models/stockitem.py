@@ -1,6 +1,7 @@
 import datetime
 from django.db import models
 from django.db.models import Sum, F
+from django.core.exceptions import ValidationError
 from django.utils.timezone import utc
 from rest_framework import viewsets, serializers, permissions, decorators
 from rest_framework.response import Response
@@ -10,6 +11,11 @@ from bars_core.perms import PerBarPermissionsOrAnonReadOnly, BarRolePermissionLo
 from bars_core.models.bar import Bar
 # from bars_items.models.itemdetails import ItemDetails
 # from bars_items.models.sellitem import SellItem
+
+
+class StockItemManager(models.Manager):
+    def get_queryset(self):
+        return super(StockItemManager, self).get_queryset().select_related('bar', 'sellitem', 'details')
 
 
 @permission_logic(BarRolePermissionLogic())
@@ -27,6 +33,8 @@ class StockItem(models.Model):
 
     last_inventory = models.DateTimeField(auto_now_add=True)
     deleted = models.BooleanField(default=False)
+
+    objects = StockItemManager()
 
     def get_unit(self, unit=''):
         return {'':1., 'sell':self.unit_factor, 'buy':1.}[unit]

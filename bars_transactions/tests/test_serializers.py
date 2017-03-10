@@ -82,6 +82,7 @@ class SerializerTests(APITestCase):
         self.sellitem, _ = SellItem.objects.get_or_create(bar=self.bar, name="Chocolat", tax=0.2)
         self.itemdetails, _ = ItemDetails.objects.get_or_create(name="Chocolat")
         self.buyitem, _ = BuyItem.objects.get_or_create(details=self.itemdetails, itemqty=2.5)
+        self.buyitemprice, _ = BuyItemPrice.objects.get_or_create(buyitem=self.buyitem, bar=self.bar, price=1)
         self.stockitem, _ = StockItem.objects.get_or_create(bar=self.bar, sellitem=self.sellitem, details=self.itemdetails, price=1)
         self.stockitem.unit_factor = 5
         self.stockitem.qty = 5
@@ -346,6 +347,19 @@ class MealSerializerTests(SerializerTests):
         end_money = self.account.money - data['items'][0]['qty'] * self.stockitem.sell_price
         self.assertAlmostEqual(reload(self.account).money, end_money)
 
+    def test_meal_no_item(self):
+        data = {
+            'type': 'meal',
+            'name': '',
+            'items': [],
+            'accounts': [
+                {'account': self.account.id, 'ratio': 1},
+            ]
+        }
+
+        s = MealTransactionSerializer(data=data, context=self.context)
+        self.assertFalse(s.is_valid())
+
     def test_meal_multiple(self):
         self.account2
         data = {'type':'meal', 'name':'',
@@ -390,7 +404,7 @@ class ApproSerializerTests(SerializerTests):
         self.context = {'request': Mock(user=self.staff_user, bar=self.bar)}
         data = {'type':'appro',
                 'items': [
-                    {'buyitem':self.buyitem.id, 'qty':10, 'price':250},
+                    {'buyitem':self.buyitem.id, 'qty':10, 'price':250, 'occasional': False},
                     {'buyitem':self.buyitem2.id, 'qty':100}
                 ]
                 }
@@ -400,9 +414,16 @@ class ApproSerializerTests(SerializerTests):
         tct = s.save()
         self.assertAlmostEqual(tct.moneyflow, data['items'][0]['price'] + self.buyitemprice2.price * data['items'][1]['qty'])
 
+        # Test quantities
         self.assertAlmostEqual(reload(self.stockitem).sell_qty, self.stockitem.sell_qty + data['items'][0]['qty'] * self.buyitem.itemqty / self.stockitem.sell_to_buy)
         self.assertAlmostEqual(reload(self.stockitem2).sell_qty, self.stockitem2.sell_qty + data['items'][1]['qty'] * self.buyitem2.itemqty / self.stockitem2.sell_to_buy)
 
+        # Test prices
+        stockitem_newprice = (self.stockitem.qty * self.stockitem.price + data['items'][0]['price']) / (self.stockitem.qty + data['items'][0]['qty'] * self.buyitem.itemqty)
+        self.assertAlmostEqual(reload(self.stockitem).price, stockitem_newprice)
+        self.assertAlmostEqual(reload(self.stockitem2).price, self.stockitem2.price)
+        self.assertAlmostEqual(reload(self.buyitemprice).price, 25)
+        self.assertAlmostEqual(reload(self.buyitemprice2).price, self.buyitemprice2.price)
         end_money = self.bar_account.money
         end_money -= data['items'][0]['price']
         end_money -= data['items'][1]['qty'] * self.buyitemprice2.price

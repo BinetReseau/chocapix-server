@@ -1,4 +1,6 @@
 # encoding: utf8
+import math
+
 from django.core.mail import send_mail
 from django.utils import timezone
 
@@ -124,6 +126,8 @@ class ItemQtySerializer(serializers.Serializer):
 
         elif "sellitem" in data:
             sellitem = data['sellitem']
+            if not sellitem.sell_fraction:
+                qty = math.ceil(qty)
             total_qty = sellitem.calc_qty()
             stockitems = sellitem.stockitems.all()
 
@@ -161,6 +165,7 @@ class BuyItemQtyPriceSerializer(serializers.Serializer):
     buyitem = serializers.PrimaryKeyRelatedField(queryset=BuyItem.objects.all())
     qty = serializers.FloatField()
     price = serializers.FloatField(required=False)
+    occasional = serializers.BooleanField(required=False)
 
     def validate_qty(self, value):
         if value <= 0:
@@ -171,6 +176,11 @@ class BuyItemQtyPriceSerializer(serializers.Serializer):
         if value is not None and value < 0:
             raise ValidationError("Price must be positive")
         return value
+
+    def validate(self, data):
+        if "price" in data and not "occasional" in data:
+            raise ValidationError("Is this new price permanent or occasional?")
+        return data
 
 
 class AccountSerializer(serializers.Serializer):
@@ -409,12 +419,13 @@ class RefundTransactionSerializer(BaseTransactionSerializer, AccountAmountSerial
 
         return obj
 
-punishement_notification_mail = {
+punishment_notification_mail = {
+    'from_email': "babe@binets.polytechnique.fr",
     'subject': "[Chocapix] Notification d'amende",
     'message': u"""
 Salut,
 
-{name} a infligé une amende de {amount} € à ton compte dans le bar {bar}.
+{name} a infligé une amende de {amount:.2f} € à ton compte dans le bar {bar}.
 La raison invoquée est la suivante :
     « {cause} »
 
@@ -440,8 +451,9 @@ class PunishTransactionSerializer(BaseTransactionSerializer, AccountAmountSerial
         t.save()
 
         ## notify the account owner
-        message = punishement_notification_mail.copy()
-        message["from_email"] = t.author.email
+        message = punishment_notification_mail.copy()
+        if t.author.email:
+            message["from_email"] = t.author.email
         account = operation.target
         if account.owner.email:
             message["recipient_list"] = [account.owner.email]
@@ -475,8 +487,8 @@ agios_notification_mail = {
     'message': u"""
 Salut,
 
-Tu viens de payer {amount} € d'agios dans le bar {bar}.
-Ton nouveau solde est {solde} €.
+Tu viens de payer {amount:.2f} € d'agios dans le bar {bar}.
+Ton nouveau solde est {solde:.2f} €.
 Pense à donner rapidement un chèque à un respo bar.
 
 Ce mail a été envoyé automatiquement par Chocapix.
@@ -496,7 +508,7 @@ class AgiosTransactionSerializer(BaseTransactionSerializer, AccountAmountSeriali
 
         ## notify the account owner
         message = agios_notification_mail.copy()
-        message["from_email"] = "babe@eleves.polytechnique.fr"
+        message["from_email"] = "babe@binets.polytechnique.fr"
         account = operation.target
         if account.owner.email:
             message["recipient_list"] = [account.owner.email]
@@ -560,6 +572,15 @@ class MealTransactionSerializer(BaseTransactionSerializer):
     items = ItemQtySerializer(many=True)
     accounts = AccountRatioSerializer(many=True)
     name = serializers.CharField(allow_blank=True)
+
+    def validate(self, data):
+        if "accounts" not in data or len(data["accounts"]) < 1:
+            raise ValidationError("There is no account in this meal")
+
+        if "items" not in data or len(data["items"]) < 1:
+            raise ValidationError("There is no item in this meal")
+
+        return data
 
     def create(self, data):
         t = super(MealTransactionSerializer, self).create(data)
@@ -627,8 +648,9 @@ class ApproTransactionSerializer(BaseTransactionSerializer):
 
             priceobj, _ = BuyItemPrice.objects.get_or_create(bar=t.bar, buyitem=buyitem)
             if "price" in i:
-                priceobj.price = i["price"] / qty
-                priceobj.save()
+                if not i["occasional"]:
+                    priceobj.price = i["price"] / qty
+                    priceobj.save()
                 total += i["price"]
             else:
                 total += priceobj.price * qty
@@ -638,9 +660,17 @@ class ApproTransactionSerializer(BaseTransactionSerializer):
                 if stockitem.id not in stockitem_map:
                     stockitem_map[stockitem.id] = {'stockitem': stockitem, 'delta': 0}
                 stockitem_map[stockitem.id]['delta'] += qty * buyitem.itemqty
+
+                if "price" in i:
+                    if stockitem.qty <= 0:
+                        stockitem.price = i["price"] / (qty*buyitem.itemqty)
+                    else:
+                        stockitem.price = (stockitem.qty * stockitem.price + i["price"]) / (stockitem.qty + qty*buyitem.itemqty)
+                    stockitem.save()
             except:
                 t.delete()
                 raise Http404("Stockitem does not exist")
+
 
         for x in stockitem_map.values():
             x['stockitem'].create_operation(delta=x['delta'], unit='buy', transaction=t)

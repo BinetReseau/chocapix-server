@@ -1,6 +1,7 @@
 from django.http import Http404
 from django.db.models import Q, Prefetch
 from rest_framework import viewsets, decorators, exceptions, filters
+from rest_framework.request import Request
 from rest_framework.response import Response
 
 from bars_core.perms import PerBarPermissionsOrObjectPermissionsOrAnonReadOnly
@@ -57,7 +58,10 @@ class TransactionViewSet(viewsets.ModelViewSet):
     filter_backends = (TransactionFilterBackend,)
 
     def get_serializer_class(self):
-        data = self.request.data
+        try:
+            data = self.request.data
+        except AttributeError:
+            data = Request(self.request).data
         if "type" in data:
             return serializers_class_map[data["type"]]
         else:

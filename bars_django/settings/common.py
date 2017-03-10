@@ -63,6 +63,7 @@ INSTALLED_APPS = (
     'rest_framework',
     'corsheaders',
     # 'permission',
+    'rest_framework_swagger',
 
     'bars_core',
     'bars_items',
@@ -106,8 +107,13 @@ DEFAULT_CHARSET = "utf-8"
 
 # Static files (CSS, JavaScript, Images)
 
-STATIC_URL = '/api/static/'
-STATIC_ROOT = os.path.join(PROJECT_ROOT, 'static/')
+STATIC_URL = '/assets/static/'
+
+STATIC_ROOT = os.path.join(PROJECT_ROOT, "assets/static/")
+
+MEDIA_ROOT = os.path.join(PROJECT_ROOT, "assets/media/")
+
+MEDIA_URL = '/assets/media/'
 
 # Rest framework
 
@@ -158,3 +164,15 @@ CORS_ORIGIN_ALLOW_ALL = True
 # API app
 
 AUTH_USER_MODEL = 'bars_core.User'
+
+# Slack hook for BugReport
+SLACK_HOOK = False
+PROXIES = {}
+
+# IRC hook for BugReport
+IRC_HOOK = False
+
+# Swagger
+SWAGGER_SETTINGS = {
+    'enabled_methods': ['get', 'post', 'put', 'delete']
+}

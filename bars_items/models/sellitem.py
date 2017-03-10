@@ -1,6 +1,6 @@
 from django.http import Http404, HttpResponseBadRequest
 from django.db import models
-from django.db.models import Sum, F
+from django.db.models import Sum, F, Prefetch
 import datetime
 from django.utils.timezone import utc
 from rest_framework import viewsets, serializers, permissions, decorators, exceptions
@@ -10,6 +10,10 @@ from bars_django.utils import VirtualField, permission_logic, CurrentBarCreateOn
 from bars_core.perms import PerBarPermissionsOrAnonReadOnly, BarRolePermissionLogic
 from bars_core.models.bar import Bar
 from bars_items.models.stockitem import StockItem
+
+class SellItemManager(models.Manager):
+    def get_queryset(self):
+        return super(SellItemManager, self).get_queryset().prefetch_related(Prefetch('stockitems', queryset=StockItem.objects.order_by('last_inventory')))
 
 
 @permission_logic(BarRolePermissionLogic())
@@ -24,9 +28,13 @@ class SellItem(models.Model):
     unit_name = models.CharField(max_length=100, blank=True)
     unit_name_plural = models.CharField(max_length=100, blank=True)
 
+    sell_fraction = models.BooleanField(default=True)
+
     tax = models.FloatField(default=0)
 
     deleted = models.BooleanField(default=False)
+
+    objects = SellItemManager()
 
     def calc_qty(self):
         if not hasattr(self, '_qty'):
@@ -49,17 +57,18 @@ class SellItem(models.Model):
     @unit_factor.setter
     def unit_factor(self, factor):
         if factor != 1:
-            for stockitem in self.stockitems.all():
-                stockitem.unit_factor *= factor
-                stockitem.save()
+            # Update related StockItem.unit_factor
+            self.stockitems.all().update(unit_factor=F('unit_factor') * factor)
+            # Update related MenuSellItem.qty
+            from bars_menus.models import MenuSellItem
+            MenuSellItem.objects.filter(sellitem=self).update(qty=F('qty') * factor)
 
     @property
     def calc_oldest_inventory(self):
-        si = self.stockitems.all().order_by('last_inventory')
+        si = self.stockitems.all()
         if not si:
             return datetime.datetime(2015, 2, 24, 21, 17, 0, 0, tzinfo=utc)
         return si[0].last_inventory
-
 
     def __unicode__(self):
         return self.name
@@ -81,7 +90,6 @@ class SellItemSerializer(serializers.ModelSerializer):
     oldest_inventory = serializers.DateTimeField(read_only=True, source='calc_oldest_inventory')
 
 
-
 class MergeSellItemSerializer(serializers.Serializer):
     sellitem = serializers.PrimaryKeyRelatedField(queryset=SellItem.objects.all())
     unit_factor = serializers.FloatField(default=1)
@@ -93,12 +101,14 @@ class AddStockItemSerializer(serializers.Serializer):
 class RemoveStockItemSerializer(serializers.Serializer):
     stockitem = serializers.PrimaryKeyRelatedField(queryset=StockItem.objects.all())
 
+class ChangeTaxSerializer(serializers.Serializer):
+    tax = serializers.FloatField(default=None)
+
 class SellItemViewSet(viewsets.ModelViewSet):
     queryset = SellItem.objects.all()
     serializer_class = SellItemSerializer
     permission_classes = (PerBarPermissionsOrAnonReadOnly,)
     filter_fields = ['bar']
-
 
     @decorators.detail_route(methods=['put'])
     def merge(self, request, pk=None):
@@ -186,6 +196,22 @@ class SellItemViewSet(viewsets.ModelViewSet):
         srz = SellItemSerializer(new_sellitem)
         return Response(srz.data, 200)
 
+    @decorators.list_route(methods=['put'])
+    def set_global_tax(self, request):
+        bar = request.query_params.get('bar', None)
+        unsrz = ChangeTaxSerializer(data=request.data)
+        unsrz.is_valid(raise_exception=True)
+        tax = unsrz.validated_data['tax']
+
+        if bar is None:
+            return Response('Please give me a bar', 400)
+        if tax is None:
+            return Response('Please give me a new tax', 400)
+        if tax < 0 or tax > 1:
+            return Response('Tax must be between 0 and 1', 400)
+
+        SellItem.objects.filter(bar=bar).update(tax=tax)
+        return Response(status=204)
 
     @decorators.detail_route()
     def stats(self, request, pk):
