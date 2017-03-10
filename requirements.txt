@@ -10,7 +10,6 @@ django-permission==0.8.8
 djangorestframework-composed-permissions==0.1
 
 requests==2.8.1
-mysql-python==1.2.5
 sqlparse==0.1.16
 markdown==2.6.2
 werkzeug==0.10.4
