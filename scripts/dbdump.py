@@ -28,6 +28,7 @@
 
 import sys
 import os
+import csv
 
 class BasicImportHelper(object):
 
@@ -124,124 +125,162 @@ def run():
     importer.post_import()
 
 def import_data():
+    #reading user base
+
+    with open("users.csv", 'rb') as csvfile:
+        spamreader = csv.reader(csvfile)
+        next(spamreader)
+        users=list(spamreader)
+    users.append(("admin", "admin", "admin")) 
+
     # Processing model: Bar
 
     from bars_core.models.bar import Bar
 
-    bar_1 = Bar()
-    bar_1.id = u'faerix'
-    bar_1.name = u'Faërix'
-    bar_1 = importer.save_or_locate(bar_1)
-
+    bar = Bar()
+    bar.id = u'conv'
+    bar.name = u'conv'
+    bar = importer.save_or_locate(bar)
     # Processing model: User
 
     from bars_core.models.user import User
-
-    User.objects.create_superuser('admin', 'xwpts')
-
-    user_1 = User()
-    user_1.username = u'faerix'
-    user_1.set_password('faerix')
-    user_1.firstname = u'Respo'
-    user_1.lastname = u'Bar'
-    user_1.pseudo = u'Faërix'
-    user_1 = importer.save_or_locate(user_1)
-
-    user_2 = User()
-    user_2.username = u'ryzum'
-    user_2.set_password('ryzum')
-    user_2.firstname = u'Nicolas'
-    user_2.lastname = u'Ding'
-    user_2.pseudo = u'RyZum'
-    user_2 = importer.save_or_locate(user_2)
-
-    # Processing model: Account
-
     from bars_core.models.account import Account
 
-    account_1 = Account()
-    account_1.bar = bar_1
-    account_1.owner = user_1
-    account_1 = importer.save_or_locate(account_1)
+    for pseudo, name, NAME, in users:
 
-    account_2 = Account()
-    account_2.bar = bar_1
-    account_2.owner = user_2
-    account_2 = importer.save_or_locate(account_2)
+        user = User()
+        user.username = pseudo
+        user.set_password('password')
+        user.firstname = name
+        user.lastname = NAME
+        user.pseudo = pseudo
+        user.email = "faerix@localhost"
+        user = importer.save_or_locate(user)
 
-    # Processing Model: Role
+        # Processing model: Account
 
-    from bars_core.models.role import Role
-    from bars_django.utils import get_root_bar
 
-    role_1 = Role(name="admin", user=user_1, bar=bar_1)
-    role_1 = importer.save_or_locate(role_1)
-    
-    role_2 = Role(name="staff", user=user_1, bar=get_root_bar())
-    role_2 = importer.save_or_locate(role_2)
+        account = Account()
+        account.bar = bar
+        account.owner = user
+        account = importer.save_or_locate(account)
 
-    # Processing model: SellItem
+    # the last user is admin
+    user.is_superuser = True
+    user.save()
 
-    from bars_items.models.sellitem import SellItem
+    #user_2 = User()
+    #user_2.username = u'ntag'
+    #user_2.set_password('ntag')
+    #user_2.firstname = u'Basile'
+    #user_2.lastname = u'Bruneau'
+    #user_2.pseudo = u'NTag'
+    #user_2 = importer.save_or_locate(user_2)
 
-    sellitem_1 = SellItem()
-    sellitem_1.bar = bar_1
-    sellitem_1.name = "Mr Freeze"
-    sellitem_1.unit_name = u''
-    sellitem_1.unit_name_plural = u''
-    sellitem_1.tax = 0.2
-    sellitem_1 = importer.save_or_locate(sellitem_1)
 
-    # Processing model: ItemDetails
 
-    from bars_items.models.itemdetails import ItemDetails
+    #account_2 = Account()
+    #account_2.bar = bar_1
+    #account_2.owner = user_2
+    #account_2 = importer.save_or_locate(account_2)
 
-    itemdetails_1 = ItemDetails()
-    itemdetails_1.name = u'Mr Freeze'
-    itemdetails_1.unit_name = u''
-    itemdetails_1.unit_name_plural = u''
-    itemdetails_1 = importer.save_or_locate(itemdetails_1)
-    # Processing model: BuyItem
+    ## Processing model: SellItem
 
-    from bars_items.models.buyitem import BuyItem
+    #from bars_items.models.sellitem import SellItem
 
-    buyitem_1 = BuyItem()
-    buyitem_1.details = itemdetails_1
-    buyitem_1 = importer.save_or_locate(buyitem_1)
+    #sellitem_1 = SellItem()
+    #sellitem_1.bar = bar_1
+    #sellitem_1.name = "Chocolat"
+    #sellitem_1.unit_name = u'carre'
+    #sellitem_1.unit_name_plural = u'carres'
+    #sellitem_1.tax = 0.2
+    #sellitem_1 = importer.save_or_locate(sellitem_1)
 
-    # Processing model: StockItem
+    #sellitem_2 = SellItem()
+    #sellitem_2.bar = bar_1
+    #sellitem_2.name = "Pizza"
+    #sellitem_2 = importer.save_or_locate(sellitem_2)
 
-    from bars_items.models.stockitem import StockItem
+    ## Processing model: ItemDetails
 
-    stockitem_1 = StockItem()
-    stockitem_1.bar = bar_1
-    stockitem_1.sellitem = sellitem_1
-    stockitem_1.details = itemdetails_1
-    stockitem_1.price = 1
-    stockitem_1 = importer.save_or_locate(stockitem_1)
+    #from bars_items.models.itemdetails import ItemDetails
 
-    # Processing model: Transaction
+    #itemdetails_1 = ItemDetails()
+    #itemdetails_1.name = u'Chocolat'
+    #itemdetails_1.unit_name = u'tablette'
+    #itemdetails_1.unit_name_plural = u'tablettes'
+    #itemdetails_1 = importer.save_or_locate(itemdetails_1)
 
-    from bars_transactions.models import Transaction
-    from bars_transactions.models import AccountOperation
-    from bars_transactions.models import ItemOperation
+    #itemdetails_2 = ItemDetails()
+    #itemdetails_2.name = u'Pizza'
+    #itemdetails_2.unit_name = u''
+    #itemdetails_2.unit_name_plural = u''
+    #itemdetails_2 = importer.save_or_locate(itemdetails_2)
 
-    for i in range(20):
-        t = Transaction()
-        t.bar = bar_1
-        t.author = user_2
-        t.type = u'buy'
-        t = importer.save_or_locate(t)
+    ## Processing model: BuyItem
 
-        ao = AccountOperation()
-        ao.transaction = t
-        ao.fixed = False
-        ao.delta = -2
-        ao.target = account_2
-        ao = importer.save_or_locate(ao)
+    #from bars_items.models.buyitem import BuyItem
 
-        io = ItemOperation()
-        io.transaction = t
-        io.delta = -1.0
-        io.target = stockitem_1
-        io = importer.save_or_locate(io)
+    #buyitem_1 = BuyItem()
+    #buyitem_1.details = itemdetails_1
+    #buyitem_1 = importer.save_or_locate(buyitem_1)
+
+    #buyitem_2 = BuyItem()
+    #buyitem_2.details = itemdetails_2
+    #buyitem_2 = importer.save_or_locate(buyitem_2)
+
+    ## Processing model: StockItem
+
+    #from bars_items.models.stockitem import StockItem
+
+    #stockitem_1 = StockItem()
+    #stockitem_1.bar = bar_1
+    #stockitem_1.sellitem = sellitem_1
+    #stockitem_1.details = itemdetails_1
+    #stockitem_1.price = 1
+    #stockitem_1 = importer.save_or_locate(stockitem_1)
+
+    #stockitem_2 = StockItem()
+    #stockitem_2.bar = bar_1
+    #stockitem_2.sellitem = sellitem_2
+    #stockitem_2.details = itemdetails_2
+    #stockitem_2.price = 2
+    #stockitem_2 = importer.save_or_locate(stockitem_2)
+
+    # Processing model: News
+
+    from bars_news.models import News
+
+    news = News()
+    news.bar = bar
+    news.author = user
+    news.name = u"MDP"
+    news.text = u"mot de passe: 'password' pour tout le monde\nse logger en tant que admin"
+    news.timestamp = dateutil.parser.parse("2015-01-30T02:37:14+00:00")
+    news = importer.save_or_locate(news)
+
+    ## Processing model: Transaction
+
+    #from bars_transactions.models import Transaction
+    #from bars_transactions.models import AccountOperation
+    #from bars_transactions.models import ItemOperation
+
+    #for i in range(20):
+    #    t = Transaction()
+    #    t.bar = bar_1
+    #    t.author = user_2
+    #    t.type = u'buy'
+    #    t = importer.save_or_locate(t)
+
+    #    ao = AccountOperation()
+    #    ao.transaction = t
+    #    ao.fixed = False
+    #    ao.delta = -2
+    #    ao.target = account_2
+    #    ao = importer.save_or_locate(ao)
+
+    #    io = ItemOperation()
+    #    io.transaction = t
+    #    io.delta = -1.0
+    #    io.target = stockitem_1
+    #    io = importer.save_or_locate(io)
