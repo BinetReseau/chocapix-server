@@ -131,7 +131,7 @@ def import_data():
         spamreader = csv.reader(csvfile)
         next(spamreader)
         users=list(spamreader)
-    users.append(("admin", "admin", "admin")) 
+    users.append(("admin", "admin", "admin", "admin", "admin")) 
 
     # Processing model: Bar
 
@@ -146,11 +146,11 @@ def import_data():
     from bars_core.models.user import User
     from bars_core.models.account import Account
 
-    for pseudo, name, NAME, in users:
+    for NAME, name, pseudo, _, _ in users:
 
         user = User()
         user.username = pseudo
-        user.set_password('password')
+        user.set_password('blahchombier42')
         user.firstname = name
         user.lastname = NAME
         user.pseudo = pseudo
@@ -254,8 +254,8 @@ def import_data():
     news = News()
     news.bar = bar
     news.author = user
-    news.name = u"MDP"
-    news.text = u"mot de passe: 'password' pour tout le monde\nse logger en tant que admin"
+    news.name = u"Chocapix conv"
+    news.text = u"tous les preinscrits ont un compte, se connecter en tant qu'admin, les negatifs ne marchent pas -> faire attention au message d'erreur"
     news.timestamp = dateutil.parser.parse("2015-01-30T02:37:14+00:00")
     news = importer.save_or_locate(news)
 
