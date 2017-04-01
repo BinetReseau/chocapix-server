@@ -12,7 +12,8 @@ def reload(obj):
 
 class BackendTests(APITestCase):
     @classmethod
-    def setUpClass(self):
+    def setUpTestData(self):
+        super(BackendTests, self).setUpTestData()
         User.objects.create_user("test", "test")
 
 
@@ -51,7 +52,8 @@ class BackendTests(APITestCase):
 
 class BarTests(APITestCase):
     @classmethod
-    def setUpClass(self):
+    def setUpTestData(self):
+        super(BarTests, self).setUpTestData()
         get_root_bar._cache = None  # Workaround
         root_bar = get_root_bar()
         self.manager, _ = User.objects.get_or_create(username="manager")
@@ -100,7 +102,8 @@ class BarTests(APITestCase):
 
 class BarSettingsTests(APITestCase):
     @classmethod
-    def setUpClass(self):
+    def setUpTestData(self):
+        super(BarSettingsTests, self).setUpTestData()
         self.bar, _ = Bar.objects.get_or_create(id="barjone")
         self.manager, _ = User.objects.get_or_create(username="manager")
         self.manager.role_set.all().delete()
@@ -150,7 +153,8 @@ class BarSettingsTests(APITestCase):
 
 class UserTests(APITestCase):
     @classmethod
-    def setUpClass(self):
+    def setUpTestData(self):
+        super(UserTests, self).setUpTestData()
         get_root_bar._cache = None  # Workaround
         root_bar = get_root_bar()
         self.manager, _ = User.objects.get_or_create(username="manager")
@@ -159,6 +163,7 @@ class UserTests(APITestCase):
 
         self.user, _ = User.objects.get_or_create(username="bob")
         self.user.set_password("password")
+        self.user.email = "bob@chocapix.org"
         self.user.save()
 
         serializer = UserSerializer(self.user)
@@ -167,6 +172,7 @@ class UserTests(APITestCase):
 
     def setUp(self):
         self.data['username'] = "bob"
+        self.data['email'] = "bob@chocapix.org"
         self.user.username = "bob"
         self.user.save()
 
@@ -193,7 +199,7 @@ class UserTests(APITestCase):
 
     def test_create_user_admin(self):
         # Authenticated as admin
-        data = {'username': "charles2"}
+        data = {'username': "charles2", 'email': "blabla@m4x.org"}
         self.client.force_authenticate(user=self.manager)
         response = self.client.post('/user/', data)
         self.assertEqual(response.status_code, 201)
@@ -245,7 +251,8 @@ class UserTests(APITestCase):
 
 class AccountTests(APITestCase):
     @classmethod
-    def setUpClass(self):
+    def setUpTestData(self):
+        super(AccountTests, self).setUpTestData()
         self.bar, _ = Bar.objects.get_or_create(id='natationjone')
         Bar.objects.get_or_create(id='avironjone')
 
@@ -325,7 +332,10 @@ class AccountTests(APITestCase):
 
 class RoleTests(APITestCase):
     @classmethod
-    def setUpClass(self):
+    def setUpTestData(self):
+        super(RoleTests, self).setUpTestData()
+        get_root_bar._cache = None  # Workaround
+
         self.bar, _ = Bar.objects.get_or_create(id='natationjone')
         Bar.objects.get_or_create(id='avironjone')
 

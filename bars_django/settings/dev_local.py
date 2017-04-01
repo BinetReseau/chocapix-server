@@ -14,3 +14,16 @@ DATABASES = {
         'NAME': 'db.sqlite3'
     }
 }
+
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.mysql',
+#         'NAME': 'chocapix',
+#         'HOST': 'localhost',
+#         'USER': 'root',
+#         'PASSWORD': 'root',
+#     }
+# }
+
+
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'

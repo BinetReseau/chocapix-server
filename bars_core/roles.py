@@ -6,6 +6,8 @@ roles_map['customer'] = [
     'bars_transactions.add_givetransaction',
     'bars_transactions.add_mealtransaction',
     'bars_bugtracker.add_bugreport',
+    'bars_menus.add_menu',
+    'bars_items.add_suggesteditem',
 ]
 roles_map['agios_daemon'] = [
     'bars_transactions.add_transaction',
@@ -36,6 +38,7 @@ roles_map['treasurer'] = \
         'bars_transactions.add_refundtransaction',
         'bars_transactions.add_barInvestmenttransaction',
         'bars_transactions.add_collectivePaymenttransaction',
+        'bars_core.change_barsettings', # to let the treasurer adjust agios parameters
 ]
 
 # Items
@@ -46,6 +49,9 @@ roles_map['itemmanager'] = [
     'bars_items.change_sellitem',
     'bars_items.add_stockitem',
     'bars_items.change_stockitem',
+    'bars_items.add_suggesteditem',
+    'bars_items.change_suggesteditem',
+    'bars_items.delete_suggesteditem',
 ]
 roles_map['inventorymanager'] = [
     'bars_transactions.add_transaction',

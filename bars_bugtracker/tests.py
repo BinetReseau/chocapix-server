@@ -12,6 +12,7 @@ def reload(obj):
 class BugreportTests(APITestCase):
     @classmethod
     def setUpClass(self):
+        super(BugreportTests, self).setUpClass()
         self.bar, _ = Bar.objects.get_or_create(id='natationjone')
         self.user, _ = User.objects.get_or_create(username='bob')
 

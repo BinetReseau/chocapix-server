@@ -1,11 +1,21 @@
+import datetime
 from django.db import models
-from rest_framework import viewsets, serializers, permissions
+from django.db.models import Sum, F
+from django.core.exceptions import ValidationError
+from django.utils.timezone import utc
+from rest_framework import viewsets, serializers, permissions, decorators
+from rest_framework.response import Response
 
 from bars_django.utils import VirtualField, permission_logic, CurrentBarCreateOnlyDefault
 from bars_core.perms import PerBarPermissionsOrAnonReadOnly, BarRolePermissionLogic
 from bars_core.models.bar import Bar
 # from bars_items.models.itemdetails import ItemDetails
 # from bars_items.models.sellitem import SellItem
+
+
+class StockItemManager(models.Manager):
+    def get_queryset(self):
+        return super(StockItemManager, self).get_queryset().select_related('bar', 'sellitem', 'details')
 
 
 @permission_logic(BarRolePermissionLogic())
@@ -21,7 +31,10 @@ class StockItem(models.Model):
     unit_factor = models.FloatField(default=1)
     price = models.FloatField()
 
+    last_inventory = models.DateTimeField(auto_now_add=True)
     deleted = models.BooleanField(default=False)
+
+    objects = StockItemManager()
 
     def get_unit(self, unit=''):
         return {'':1., 'sell':self.unit_factor, 'buy':1.}[unit]
@@ -81,6 +94,12 @@ class StockItemSerializer(serializers.ModelSerializer):
     qty = serializers.FloatField(source='sell_qty', read_only=True)
     price = serializers.FloatField(source='display_price')
     sell_to_buy = serializers.FloatField()
+    last_inventory = serializers.DateTimeField(read_only=True)
+
+    def validate_sell_to_buy(self, value):
+        if value <= 0:
+            raise ValidationError("'sell_to_buy' field has to be nonnegative")
+        return value
 
 
 class StockItemViewSet(viewsets.ModelViewSet):
@@ -88,3 +107,12 @@ class StockItemViewSet(viewsets.ModelViewSet):
     serializer_class = StockItemSerializer
     permission_classes = (PerBarPermissionsOrAnonReadOnly,)
     filter_fields = ['bar', 'details', 'sellitem']
+
+    @decorators.detail_route()
+    def stats(self, request, pk):
+        from bars_stats.utils import compute_transaction_stats
+        f = lambda qs: qs.filter(itemoperation__target=pk)
+        aggregate = Sum(F('itemoperation__delta') * F('itemoperation__target__unit_factor'))
+
+        stats = compute_transaction_stats(request, f, aggregate)
+        return Response(stats, 200)

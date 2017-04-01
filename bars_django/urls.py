@@ -17,12 +17,15 @@ from bars_items.models.sellitem import SellItemViewSet
 from bars_items.models.stockitem import StockItemViewSet
 from bars_items.models.itemdetails import ItemDetailsViewSet
 from bars_items.models.buyitem import BuyItemViewSet, BuyItemPriceViewSet
+from bars_items.models.suggesteditem import SuggestedItemViewSet
 
 from bars_transactions.views import TransactionViewSet
 
 from bars_news.models import NewsViewSet
 
 from bars_bugtracker.models import BugReportViewSet
+
+from bars_menus.models import MenuViewSet
 
 router = routers.DefaultRouter()
 
@@ -38,12 +41,15 @@ router.register('buyitemprice', BuyItemPriceViewSet)
 router.register('itemdetails', ItemDetailsViewSet)
 router.register('sellitem', SellItemViewSet)
 router.register('stockitem', StockItemViewSet)
+router.register('suggesteditem', SuggestedItemViewSet)
 
 router.register('transaction', TransactionViewSet)
 
 router.register('news', NewsViewSet)
 
 router.register('bugreport', BugReportViewSet)
+
+router.register('menu', MenuViewSet)
 
 
 urlpatterns = patterns(
@@ -53,5 +59,6 @@ urlpatterns = patterns(
     # url(r'^api-token-auth/', 'rest_framework_jwt.views.obtain_jwt_token'),
     url(r'^api-token-auth/', 'bars_core.auth.obtain_jwt_token'),
     url(r'^reset-password/$', ResetPasswordView.as_view()),
+    url(r'^docs/', include('rest_framework_swagger.urls')),
     url(r'^', include(router.urls)),
 )

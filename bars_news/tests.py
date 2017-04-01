@@ -7,7 +7,9 @@ from bars_news.models import News
 
 
 class NewsTests(APITestCase):
-    def setUp(self):
+    @classmethod
+    def setUpTestData(self):
+        super(NewsTests, self).setUpTestData()
         self.bar, _ = Bar.objects.get_or_create(id='natationjone')
         self.bar2, _ = Bar.objects.get_or_create(id='avironjone')
 

@@ -25,7 +25,8 @@ def reload(obj):
 
 class BaseSerializerTests(APITestCase):
     @classmethod
-    def setUpClass(self):
+    def setUpTestData(self):
+        super(BaseSerializerTests, self).setUpTestData()
         self.bar, _ = Bar.objects.get_or_create(id='barjone')
         self.wrong_bar, _ = Bar.objects.get_or_create(id='barrouje')
 
@@ -62,7 +63,8 @@ class BaseSerializerTests(APITestCase):
 
 class SerializerTests(APITestCase):
     @classmethod
-    def setUpClass(self):
+    def setUpTestData(self):
+        super(SerializerTests, self).setUpTestData()
         self.bar, _ = Bar.objects.get_or_create(id='barjone')
         self.wrong_bar, _ = Bar.objects.get_or_create(id='barrouje')
 
@@ -80,6 +82,7 @@ class SerializerTests(APITestCase):
         self.sellitem, _ = SellItem.objects.get_or_create(bar=self.bar, name="Chocolat", tax=0.2)
         self.itemdetails, _ = ItemDetails.objects.get_or_create(name="Chocolat")
         self.buyitem, _ = BuyItem.objects.get_or_create(details=self.itemdetails, itemqty=2.5)
+        self.buyitemprice, _ = BuyItemPrice.objects.get_or_create(buyitem=self.buyitem, bar=self.bar, price=1)
         self.stockitem, _ = StockItem.objects.get_or_create(bar=self.bar, sellitem=self.sellitem, details=self.itemdetails, price=1)
         self.stockitem.unit_factor = 5
         self.stockitem.qty = 5
@@ -111,7 +114,8 @@ class BuySerializerTests(SerializerTests):
         data = {'type':'buy', 'stockitem':self.stockitem.id, 'qty':3}
         s = BuyTransactionSerializer(data=data, context=self.context)
         self.assertTrue(s.is_valid())
-        s.save()
+        tct = s.save()
+        self.assertAlmostEqual(tct.moneyflow, self.stockitem.sell_price * data['qty'])
 
         self.assertAlmostEqual(reload(self.stockitem).sell_qty, self.stockitem.sell_qty - data['qty'])
         self.assertAlmostEqual(reload(self.account).money, self.account.money - data['qty'] * self.stockitem.sell_price)
@@ -125,7 +129,8 @@ class BuySerializerTests(SerializerTests):
 
         s = BuyTransactionSerializer(data=data, context=self.context)
         self.assertTrue(s.is_valid())
-        s.save()
+        tct = s.save()
+        self.assertAlmostEqual(tct.moneyflow, self.sellitem.calc_price() * data['qty'])
 
         total_qty = self.stockitem.sell_qty + stockitem3.sell_qty
         self.assertAlmostEqual(reload(self.stockitem).sell_qty, self.stockitem.sell_qty * (1 - data['qty'] / total_qty))
@@ -156,8 +161,8 @@ class BuySerializerTests(SerializerTests):
 
 class GiveSerializerTests(SerializerTests):
     @classmethod
-    def setUpClass(self):
-        super(GiveSerializerTests, self).setUpClass()
+    def setUpTestData(self):
+        super(GiveSerializerTests, self).setUpTestData()
         self.user2, _ = User.objects.get_or_create(username='user2')
         self.account2, _ = Account.objects.get_or_create(bar=self.bar, owner=self.user2)
 
@@ -172,7 +177,8 @@ class GiveSerializerTests(SerializerTests):
         data = {'type':'give', 'account':self.account2.id, 'amount':10}
         s = GiveTransactionSerializer(data=data, context=self.context)
         self.assertTrue(s.is_valid())
-        s.save()
+        tct = s.save()
+        self.assertAlmostEqual(tct.moneyflow, data['amount'])
 
         self.assertAlmostEqual(reload(self.account).money, self.account.money - data['amount'])
         self.assertAlmostEqual(reload(self.account2).money, self.account2.money + data['amount'])
@@ -201,7 +207,8 @@ class ThrowSerializerTests(SerializerTests):
 
         s = ThrowTransactionSerializer(data=data, context=self.context)
         self.assertTrue(s.is_valid())
-        s.save()
+        tct = s.save()
+        self.assertAlmostEqual(tct.moneyflow, - self.stockitem.sell_price * data['qty'])
 
         self.assertAlmostEqual(reload(self.stockitem).sell_qty, self.stockitem.sell_qty - data['qty'])
 
@@ -225,8 +232,8 @@ class ThrowSerializerTests(SerializerTests):
 
 class DepositSerializerTests(SerializerTests):
     @classmethod
-    def setUpClass(self):
-        super(DepositSerializerTests, self).setUpClass()
+    def setUpTestData(self):
+        super(DepositSerializerTests, self).setUpTestData()
 
         self.bar_account = get_default_account(self.bar)
         self.wrong_bar_account = get_default_account(self.wrong_bar)
@@ -238,7 +245,8 @@ class DepositSerializerTests(SerializerTests):
 
         s = DepositTransactionSerializer(data=data, context=self.context)
         self.assertTrue(s.is_valid())
-        s.save()
+        tct = s.save()
+        self.assertAlmostEqual(tct.moneyflow, data['amount'])
 
         self.assertAlmostEqual(reload(self.account).money, self.account.money + data['amount'])
         self.assertAlmostEqual(reload(self.bar_account).money, self.bar_account.money + data['amount'])
@@ -281,7 +289,8 @@ class PunishSerializerTests(SerializerTests):
 
         s = PunishTransactionSerializer(data=data, context=self.context)
         self.assertTrue(s.is_valid())
-        s.save()
+        tct = s.save()
+        self.assertAlmostEqual(tct.moneyflow, -data['amount'])
 
         self.assertAlmostEqual(reload(self.account).money, self.account.money - data['amount'])
 
@@ -304,8 +313,8 @@ class PunishSerializerTests(SerializerTests):
 
 class MealSerializerTests(SerializerTests):
     @classmethod
-    def setUpClass(self):
-        super(MealSerializerTests, self).setUpClass()
+    def setUpTestData(self):
+        super(MealSerializerTests, self).setUpTestData()
 
         self.user2, _ = User.objects.get_or_create(username='user2')
         self.account2, _ = Account.objects.get_or_create(bar=self.bar, owner=self.user2)
@@ -331,11 +340,25 @@ class MealSerializerTests(SerializerTests):
 
         s = MealTransactionSerializer(data=data, context=self.context)
         self.assertTrue(s.is_valid())
-        s.save()
+        tct = s.save()
+        self.assertAlmostEqual(tct.moneyflow, self.stockitem.sell_price * data['items'][0]['qty'])
 
         self.assertAlmostEqual(reload(self.stockitem).sell_qty, self.stockitem.sell_qty - data['items'][0]['qty'])
         end_money = self.account.money - data['items'][0]['qty'] * self.stockitem.sell_price
         self.assertAlmostEqual(reload(self.account).money, end_money)
+
+    def test_meal_no_item(self):
+        data = {
+            'type': 'meal',
+            'name': '',
+            'items': [],
+            'accounts': [
+                {'account': self.account.id, 'ratio': 1},
+            ]
+        }
+
+        s = MealTransactionSerializer(data=data, context=self.context)
+        self.assertFalse(s.is_valid())
 
     def test_meal_multiple(self):
         self.account2
@@ -351,7 +374,7 @@ class MealSerializerTests(SerializerTests):
 
         s = MealTransactionSerializer(data=data, context=self.context)
         self.assertTrue(s.is_valid())
-        s.save()
+        tct = s.save()
 
         self.assertAlmostEqual(reload(self.stockitem).sell_qty, self.stockitem.sell_qty - data['items'][0]['qty'])
         self.assertAlmostEqual(reload(self.stockitem2).sell_qty, self.stockitem2.sell_qty - data['items'][1]['qty'])
@@ -366,12 +389,13 @@ class MealSerializerTests(SerializerTests):
 
         self.assertAlmostEqual(reload(self.account).money, end_money)
         self.assertAlmostEqual(reload(self.account2).money, end_money2)
+        self.assertAlmostEqual(tct.moneyflow, total_money)
 
 
 class ApproSerializerTests(SerializerTests):
     @classmethod
-    def setUpClass(self):
-        super(ApproSerializerTests, self).setUpClass()
+    def setUpTestData(self):
+        super(ApproSerializerTests, self).setUpTestData()
 
         self.bar_account = get_default_account(self.bar)
 
@@ -380,18 +404,26 @@ class ApproSerializerTests(SerializerTests):
         self.context = {'request': Mock(user=self.staff_user, bar=self.bar)}
         data = {'type':'appro',
                 'items': [
-                    {'buyitem':self.buyitem.id, 'qty':10, 'price':250},
+                    {'buyitem':self.buyitem.id, 'qty':10, 'price':250, 'occasional': False},
                     {'buyitem':self.buyitem2.id, 'qty':100}
                 ]
                 }
 
         s = ApproTransactionSerializer(data=data, context=self.context)
         self.assertTrue(s.is_valid())
-        s.save()
+        tct = s.save()
+        self.assertAlmostEqual(tct.moneyflow, data['items'][0]['price'] + self.buyitemprice2.price * data['items'][1]['qty'])
 
+        # Test quantities
         self.assertAlmostEqual(reload(self.stockitem).sell_qty, self.stockitem.sell_qty + data['items'][0]['qty'] * self.buyitem.itemqty / self.stockitem.sell_to_buy)
         self.assertAlmostEqual(reload(self.stockitem2).sell_qty, self.stockitem2.sell_qty + data['items'][1]['qty'] * self.buyitem2.itemqty / self.stockitem2.sell_to_buy)
 
+        # Test prices
+        stockitem_newprice = (self.stockitem.qty * self.stockitem.price + data['items'][0]['price']) / (self.stockitem.qty + data['items'][0]['qty'] * self.buyitem.itemqty)
+        self.assertAlmostEqual(reload(self.stockitem).price, stockitem_newprice)
+        self.assertAlmostEqual(reload(self.stockitem2).price, self.stockitem2.price)
+        self.assertAlmostEqual(reload(self.buyitemprice).price, 25)
+        self.assertAlmostEqual(reload(self.buyitemprice2).price, self.buyitemprice2.price)
         end_money = self.bar_account.money
         end_money -= data['items'][0]['price']
         end_money -= data['items'][1]['qty'] * self.buyitemprice2.price
@@ -409,7 +441,7 @@ class ApproSerializerTests(SerializerTests):
         self.assertTrue(s.is_valid())
 
         with self.assertRaises(exceptions.PermissionDenied):
-            s.save()
+            tct = s.save()
 
         self.assertAlmostEqual(reload(self.stockitem).qty, self.stockitem.qty)
         self.assertAlmostEqual(reload(self.bar_account).money, self.bar_account.money)
@@ -420,14 +452,20 @@ class InventorySerializerTests(SerializerTests):
         self.context = {'request': Mock(user=self.staff_user, bar=self.bar)}
         data = {'type':'inventory',
                 'items': [
-                    {'stockitem':self.stockitem.id, 'qty':3},
+                    {'stockitem':self.stockitem.id, 'qty': 3},
                     {'stockitem':self.stockitem2.id, 'qty': 5}
                 ]
                 }
 
+        s1_sell_qty = self.stockitem.sell_qty
+        s2_sell_qty = self.stockitem2.sell_qty
+
         s = InventoryTransactionSerializer(data=data, context=self.context)
         self.assertTrue(s.is_valid())
-        s.save()
+        tct = s.save()
+        moneyflow = self.stockitem.get_price('sell') * (data['items'][0]['qty'] - s1_sell_qty)
+        moneyflow += self.stockitem2.get_price('sell') * (data['items'][1]['qty'] - s2_sell_qty)
+        self.assertAlmostEqual(tct.moneyflow, moneyflow)
 
         self.assertAlmostEqual(reload(self.stockitem).sell_qty, data['items'][0]['qty'])
         self.assertAlmostEqual(reload(self.stockitem2).sell_qty, data['items'][1]['qty'])
