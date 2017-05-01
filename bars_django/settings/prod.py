@@ -22,6 +22,10 @@ PROXIES = {
     "https": "http://129.104.247.2:8080/"
 }
 
+IRC_HOOK = True
+IRC_HOOK_URL = "http://129.104.201.57:3000/chocapix"
+IRC_HOOK_KEY = "key"
+
 # Logging - Slack notifications on Error 500
 SLACK_WEBHOOK_ERROR_URL = "https://hooks.slack.com/services/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"
 LOGGING = {
