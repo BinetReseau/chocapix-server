@@ -61,7 +61,7 @@ class SuggestedItemViewSet(viewsets.ModelViewSet):
         try:
             si = SuggestedItem.objects.get(pk=pk)
         except SuggestedItem.DoesNotExist:
-            raise Http404("SuggestedItem (id {0}) was not found.".format(pk))
+            raise Http404("SuggestedItem (id %d) was not found." % pk)
 
         si.voters_list.add(request.user)
         si.save()
@@ -74,7 +74,7 @@ class SuggestedItemViewSet(viewsets.ModelViewSet):
         try:
             si = SuggestedItem.objects.get(pk=pk)
         except SuggestedItem.DoesNotExist:
-            raise Http404("SuggestedItem (id {0}) was not found.".format(pk))
+            raise Http404("SuggestedItem (id %d) was not found." % pk)
 
         si.voters_list.remove(request.user)
         si.save()
