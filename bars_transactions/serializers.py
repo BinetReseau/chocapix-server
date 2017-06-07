@@ -124,16 +124,11 @@ class ItemQtySerializer(serializers.Serializer):
             sellitem = data['sellitem']
             if not sellitem.sell_fraction:
                 qty = math.ceil(qty)
-            total_qty = sellitem.calc_qty()
-            stockitems = sellitem.stockitems.all()
 
             total_price = 0
-            for si in stockitems.all():
-                if total_qty != 0:
-                    delta = (si.sell_qty * qty) / total_qty
-                else:
-                    delta = qty / stockitems.count()
-
+            for (si, si_qty) in sellitem.calc_price_qty_per_stockitem():
+                print("si " + str(si) + " " + str(qty))
+                delta = si_qty * qty
                 si.create_operation(delta=-delta, unit='sell', transaction=t, fuzzy=True)
                 total_price += delta * si.get_price(unit='sell')
 

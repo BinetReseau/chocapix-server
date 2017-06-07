@@ -41,14 +41,30 @@ class SellItem(models.Model):
             self._qty = sum(i.sell_qty for i in self.stockitems.all())
         return self._qty
 
-    def calc_price(self):
-        qty = self.calc_qty()
-        if qty != 0:
-            return sum(i.qty * i.get_price() for i in self.stockitems.all()) / qty
-        elif self.stockitems.count() != 0:
-            return sum(i.get_price('sell') for i in self.stockitems.all()) / self.stockitems.count()
+    def calc_price_qty_per_stockitem(self):
+        # Calcule le prix unitaire du sellitem, ainsi que la composition d'une unite de ce sellitem
+        # Renvoie donc une liste de paires (si, qty) avec :
+        # - si = un stockitem composant l'unite de sellitem
+        # - qty = la quantite de ce sellitem contenue dans une unite sellitem
+        #
+        # Voici comment cette liste est calculee :
+        # - S'il reste des aliments en quantite positive, on ne compte que ceux-la
+        # - S'il n'y a plus d'aliments en quantite positive, on ne compte que les aliments en quantite negative
+        # - Si tous les aliments sont a zero, on repartit equitablement chaque quantite
+        stockitems = list(self.stockitems.all())
+        positive_qty = sum(si.sell_qty for si in stockitems if si.sell_qty > 0)
+        if positive_qty > 0:
+            return [(si, si.sell_qty / positive_qty) for si in stockitems if si.sell_qty > 0]
         else:
-            return 0
+            negative_qty = sum(si.sell_qty for si in stockitems if si.sell_qty < 0)
+            if negative_qty < 0:
+                return [(si, si.sell_qty / negative_qty) for si in stockitems if si.sell_qty < 0]
+            else:
+                n = len(stockitems)
+                return [(si, 1. / n) for si in stockitems]
+
+    def calc_price(self):
+        return sum(si.get_price('sell') * qty for (si, qty) in self.calc_price_qty_per_stockitem())
 
     @property
     def unit_factor(self):
